@@ -1,6 +1,6 @@
 # Release pipeline — design
 
-**Date:** 2026-09-28 · **Status:** approved in conversation, awaiting spec review · **Tool:** obs-producer
+**Date:** 2026-09-28 · **Status:** approved · **Tool:** obs-producer
 
 ## Goal
 
@@ -63,7 +63,7 @@ Set up a GitHub release pipeline for obs-producer. Mike will create GitHub issue
 5. The tag targets the exact commit the preflight checked.
 6. Release tags can't be moved or deleted: a tag ruleset on `refs/tags/*-v*` restricts updates and deletions, and GitHub **immutable releases** is enabled (confirmed available: `GET /repos/wardmanm/GROBS/immutable-releases` → `enabled: false`).
 7. **Agents never release.** Hard rule 7 in `obs-producer/AGENTS.md`, canonical in ADR-0009. Its wording:
-   > **Releases are deliberate.** A release is cut only by a person running the release workflow and approving it. Agents never create release tags or GitHub Releases, and never start the release workflow, unless the user explicitly asks to release a specific version.
+   > **Releases are deliberate.** A release is cut only by a person running the release workflow and approving it. Agents never create release tags or GitHub Releases, and never start the release workflow (even as a dry run), unless the user explicitly asks them to for a specific version.
 8. The `/release` skill is user-invocable only (`disable-model-invocation: true`).
 
 ## Files
@@ -125,7 +125,11 @@ Set up a GitHub release pipeline for obs-producer. Mike will create GitHub issue
   - `notes` prints exactly the section body;
   - pre-release versions compare correctly (`0.3.0-beta.1` < `0.3.0`).
 - **`actionlint`**, downloaded into the scratchpad, must report no problems for both workflows.
-- **After merge to `main`, one dry run** with a version that has no milestone. It must fail preflight with the milestone error, and no tag or release may exist afterwards. A second dry run against a scratch milestone may be done only if Mike asks.
+- **After merge to `main`, two dry runs, started by Mike or by Claude only when Mike explicitly asks** (see hard rule 7):
+  - `v0.0.1` must fail at version validation;
+  - `0.0.1` must fail the changelog check, because there is no `[0.0.1]` section.
+
+  No tag or release may exist afterwards.
 
 ## Out of scope
 
