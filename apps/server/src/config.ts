@@ -5,10 +5,13 @@ export interface ServerConfig {
   host: string;
   port: number;
   dataDir: string;
+  webDir: string;
 }
 
 // obs-producer/data (git-ignored), resolved from this file so it doesn't depend on the working directory.
 const DEFAULT_DATA_DIR = fileURLToPath(new URL('../../../data', import.meta.url));
+// The web app's production build (`yarn workspace @obs-producer/web build`).
+const DEFAULT_WEB_DIR = fileURLToPath(new URL('../../web/dist', import.meta.url));
 
 // Variables are prefixed because shells such as zsh set HOST to the machine name.
 export function loadConfig(env: Record<string, string | undefined> = process.env): ServerConfig {
@@ -21,5 +24,6 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     host: env.OBS_PRODUCER_HOST ?? '0.0.0.0',
     port,
     dataDir: env.OBS_PRODUCER_DATA_DIR ? resolve(env.OBS_PRODUCER_DATA_DIR) : DEFAULT_DATA_DIR,
+    webDir: env.OBS_PRODUCER_WEB_DIR ? resolve(env.OBS_PRODUCER_WEB_DIR) : DEFAULT_WEB_DIR,
   };
 }

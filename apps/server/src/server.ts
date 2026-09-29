@@ -15,7 +15,7 @@ export async function startServer(
   { version, logger = true }: { version: string; logger?: boolean },
 ): Promise<RunningServer> {
   const { sqlite } = openDatabase(config.dataDir);
-  const app = buildApp({ version, logger });
+  const app = buildApp({ version, logger, webDir: config.webDir });
   const io = attachRealtime(app.server, { version });
 
   // Drop live sockets first, or closing the HTTP server waits on them forever.

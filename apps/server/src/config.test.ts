@@ -9,11 +9,18 @@ describe('loadConfig', () => {
     expect(config.port).toBe(5580);
     expect(isAbsolute(config.dataDir)).toBe(true);
     expect(config.dataDir.endsWith('obs-producer/data')).toBe(true);
+    expect(isAbsolute(config.webDir)).toBe(true);
+    expect(config.webDir.endsWith('obs-producer/apps/web/dist')).toBe(true);
   });
 
   it('reads OBS_PRODUCER_* overrides', () => {
-    const config = loadConfig({ OBS_PRODUCER_HOST: '127.0.0.1', OBS_PRODUCER_PORT: '6000', OBS_PRODUCER_DATA_DIR: '/tmp/op-data' });
-    expect(config).toEqual({ host: '127.0.0.1', port: 6000, dataDir: '/tmp/op-data' });
+    const config = loadConfig({
+      OBS_PRODUCER_HOST: '127.0.0.1',
+      OBS_PRODUCER_PORT: '6000',
+      OBS_PRODUCER_DATA_DIR: '/tmp/op-data',
+      OBS_PRODUCER_WEB_DIR: '/tmp/op-web',
+    });
+    expect(config).toEqual({ host: '127.0.0.1', port: 6000, dataDir: '/tmp/op-data', webDir: '/tmp/op-web' });
   });
 
   it('ignores the unprefixed HOST and PORT that shells like zsh set', () => {

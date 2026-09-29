@@ -1,9 +1,26 @@
 import { defineConfig } from 'vitest/config';
 
-// One test run for every workspace. Web-specific settings (DOM environment, React) arrive with #10.
+// `yarn test` runs every workspace: Node for server and shared, jsdom + React for the web app.
 export default defineConfig({
   test: {
-    include: ['{apps,packages}/*/src/**/*.test.ts'],
-    environment: 'node',
+    projects: [
+      {
+        test: {
+          name: 'node',
+          include: ['packages/*/src/**/*.test.ts', 'apps/server/src/**/*.test.ts'],
+          environment: 'node',
+        },
+      },
+      {
+        extends: './apps/web/vite.config.ts',
+        test: {
+          name: 'web',
+          root: './apps/web',
+          include: ['src/**/*.test.{ts,tsx}'],
+          environment: 'jsdom',
+          setupFiles: ['src/test/setup.ts'],
+        },
+      },
+    ],
   },
 });

@@ -19,7 +19,7 @@ afterEach(async () => {
 describe('startServer', () => {
   it('serves HTTP and greets Socket.IO clients on the same port', async () => {
     dataDir = mkdtempSync(join(tmpdir(), 'op-server-'));
-    running = await startServer({ host: '127.0.0.1', port: 0, dataDir }, { version: '9.9.9', logger: false });
+    running = await startServer({ host: '127.0.0.1', port: 0, dataDir, webDir: join(dataDir, 'no-web-build') }, { version: '9.9.9', logger: false });
 
     const health = await fetch(`${running.url}/api/health`);
     expect(health.status).toBe(200);
@@ -31,7 +31,7 @@ describe('startServer', () => {
 
   it('closes cleanly while a client is still connected', async () => {
     dataDir = mkdtempSync(join(tmpdir(), 'op-server-'));
-    running = await startServer({ host: '127.0.0.1', port: 0, dataDir }, { version: '9.9.9', logger: false });
+    running = await startServer({ host: '127.0.0.1', port: 0, dataDir, webDir: join(dataDir, 'no-web-build') }, { version: '9.9.9', logger: false });
     client = connect(running.url, { transports: ['websocket'] });
     await new Promise((resolve) => client!.once(SERVER_HELLO_EVENT, resolve));
     await expect(running.close()).resolves.toBeUndefined();

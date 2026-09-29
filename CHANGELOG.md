@@ -11,5 +11,6 @@ All notable changes to OBS Producer are documented here, newest first. The forma
 - Docs lint (`scripts/check-docs.mjs`) with CI (#1)
 - Release pipeline: changelog, and a deliberate, approval-gated release workflow (#3)
 - Issue forms (feature, bug, chore), PR template and labels (#4)
+- Server with a health endpoint, and a web app shell that shows whether the server is reachable (#6, #8)
 
 [Unreleased]: https://github.com/wardmanm/GROBS/commits/main/obs-producer
