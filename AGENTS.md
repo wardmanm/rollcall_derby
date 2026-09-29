@@ -65,6 +65,7 @@ Run from `obs-producer/`:
 | `node scripts/release.mjs prepare <version>` | Move `Unreleased` notes under `<version>` and bump package versions ([releasing](docs/guides/releasing.md)) |
 | `node scripts/release.mjs check <version>` | Check that the changelog and versions are ready to release |
 | `node scripts/release.mjs notes <version>` | Print a version's release notes |
+| `node scripts/release.mjs tag-absent\|milestone <version>` | Tag and milestone checks run by the release workflow, before and after approval |
 
 App commands (`npm run dev`, `test`, `lint`, `build`) arrive with the scaffold in roadmap Phase 0. Add them to this table then, and wire the lint in as `npm run docs:check`.
 

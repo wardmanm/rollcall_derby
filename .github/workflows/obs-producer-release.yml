@@ -66,30 +66,19 @@ jobs:
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Tag must not exist yet
-        run: |
-          if git ls-remote --exit-code --tags origin "refs/tags/${TAG_PREFIX}${VERSION}" > /dev/null; then
-            echo "::error::Tag ${TAG_PREFIX}${VERSION} already exists. That version is already released; pick the next one."
-            exit 1
-          fi
+        working-directory: obs-producer
+        run: node scripts/release.mjs tag-absent "$VERSION"
 
       - name: CHANGELOG and package versions are ready
         working-directory: obs-producer
         run: node scripts/release.mjs check "$VERSION"
 
       - name: Milestone exists and has no open issues
+        working-directory: obs-producer
         run: |
-          title="${MILESTONE_PREFIX}${VERSION}"
-          milestone=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/milestones?state=all&per_page=100" \
-            | jq -c --arg t "$title" '.[] | select(.title == $t)')
-          if [ -z "$milestone" ]; then
-            echo "::error::No milestone titled '${title}'. Create it and assign this release's issues to it."
-            exit 1
-          fi
-          open=$(jq -r '.open_issues' <<< "$milestone")
-          if [ "$open" != "0" ]; then
-            echo "::error::Milestone '${title}' still has ${open} open issue(s): $(jq -r '.html_url' <<< "$milestone")"
-            exit 1
-          fi
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/milestones?state=all&per_page=100" \
+            | jq -s 'add' \
+            | node scripts/release.mjs milestone "$VERSION"
 
       - name: Docs lint and script tests
         working-directory: obs-producer
@@ -134,29 +123,31 @@ jobs:
         with:
           node-version: 24
 
+      # Approval can come long after preflight: check again right before anything permanent happens.
+      - name: Re-check the tag and milestone after approval
+        working-directory: obs-producer
+        run: |
+          node scripts/release.mjs tag-absent "$VERSION"
+          milestone=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/milestones?state=all&per_page=100" \
+            | jq -s 'add' \
+            | node scripts/release.mjs milestone "$VERSION")
+          echo "MILESTONE_NUMBER=$(jq -r '.number' <<< "$milestone")" >> "$GITHUB_ENV"
+          echo "MILESTONE_URL=$(jq -r '.url' <<< "$milestone")" >> "$GITHUB_ENV"
+
       - name: Build the release notes
         run: |
-          title="${MILESTONE_PREFIX}${VERSION}"
-          milestone=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/milestones?state=all&per_page=100" \
-            | jq -c --arg t "$title" '.[] | select(.title == $t)')
-          number=$(jq -r '.number' <<< "$milestone")
-          if [ -z "$milestone" ] || [ "$number" = "null" ]; then
-            echo "::error::Milestone '${title}' disappeared after preflight. Re-create it and run the workflow again."
-            exit 1
-          fi
           {
             node obs-producer/scripts/release.mjs notes "$VERSION"
             echo
             echo "---"
             echo
-            echo "**Milestone:** [${title}]($(jq -r '.html_url' <<< "$milestone"))"
+            echo "**Milestone:** [${MILESTONE_PREFIX}${VERSION}](${MILESTONE_URL})"
             echo
             echo "**Closed issues:**"
             echo
-            gh api --paginate "repos/${GITHUB_REPOSITORY}/issues?milestone=${number}&state=closed&per_page=100" \
+            gh api --paginate "repos/${GITHUB_REPOSITORY}/issues?milestone=${MILESTONE_NUMBER}&state=closed&per_page=100" \
               | jq -r '.[] | select(.pull_request | not) | "- #\(.number) \(.title)"'
           } > "$RUNNER_TEMP/notes.md"
-          echo "MILESTONE_NUMBER=${number}" >> "$GITHUB_ENV"
 
       - name: Create the GitHub release
         run: |

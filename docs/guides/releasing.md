@@ -76,8 +76,9 @@ The run summary shows the release notes exactly as they'll be published.
 ### 3. Publish
 
 Run the workflow again with **Dry run** unticked. Once the checks pass, the **Publish** job waits for approval in the `release` environment. Read the notes in the summary, then choose **Approve and deploy**. The job then:
-1. creates the GitHub release `obs-producer-v0.2.0`, tagged on the exact commit that was checked, with the changelog notes, a milestone link and the list of closed issues;
-2. closes the milestone.
+1. checks again that the tag doesn't exist and the milestone has no open issues, because approval can come long after the checks ran;
+2. creates the GitHub release `obs-producer-v0.2.0`, tagged on the exact commit that was checked, with the changelog notes, a milestone link and the list of closed issues;
+3. closes the milestone.
 
 ## AI agents and releases
 

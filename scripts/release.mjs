@@ -5,14 +5,18 @@
 //   node scripts/release.mjs prepare <version> [--date YYYY-MM-DD]   move Unreleased → <version>, bump package.json
 //   node scripts/release.mjs check <version>                         verify CHANGELOG and package versions are ready
 //   node scripts/release.mjs notes <version>                         print the release notes for <version>
+//   node scripts/release.mjs tag-absent <version>                    exit 1 unless the release tag is absent on origin
+//   node scripts/release.mjs milestone <version> < milestones.json   exit 1 unless the milestone exists with 0 open issues
 //   --root <dir>                                                     project root (default: this script's parent)
 
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 
 export const REPO_URL = 'https://github.com/wardmanm/GROBS';
 export const TAG_PREFIX = 'obs-producer-v';
+export const MILESTONE_PREFIX = 'obs-producer v';
 
 // ---------- versions (SemVer 2.0 precedence, no build metadata) ----------
 
@@ -194,15 +198,38 @@ export function notes(root, version) {
   return section.body;
 }
 
+// ---------- tag and milestone guards (run by both workflow jobs) ----------
+
+// 'exists' | 'absent'. Throws when the remote can't be read: a failed lookup must never pass as "absent".
+export function tagStatus(version, { cwd, remote = 'origin' } = {}) {
+  const ref = `refs/tags/${TAG_PREFIX}${version}`;
+  const r = spawnSync('git', ['ls-remote', '--exit-code', '--tags', remote, ref], { cwd, encoding: 'utf8' });
+  if (r.status === 0) return 'exists';
+  if (r.status === 2) return 'absent';
+  throw new Error(`could not check tags on ${remote} (git exit ${r.status}): ${(r.stderr || '').trim()}`);
+}
+
+// milestones: the GitHub API's milestone list (null when the API returned nothing).
+export function milestoneCheck(milestones, version) {
+  const title = `${MILESTONE_PREFIX}${version}`;
+  const found = (milestones ?? []).find((m) => m.title === title);
+  if (!found) return { milestone: null, errors: [`no milestone titled '${title}'. Create it and assign this release's issues to it.`] };
+  const milestone = { number: found.number, url: found.html_url };
+  if (found.open_issues !== 0) {
+    return { milestone, errors: [`milestone '${title}' still has ${found.open_issues} open issue(s): ${found.html_url}`] };
+  }
+  return { milestone, errors: [] };
+}
+
 // ---------- CLI ----------
 
-const USAGE = 'usage: node scripts/release.mjs <prepare|check|notes> <version> [--date YYYY-MM-DD] [--root dir]';
+const USAGE = 'usage: node scripts/release.mjs <prepare|check|notes|tag-absent|milestone> <version> [--date YYYY-MM-DD] [--root dir]';
 
 function main(args) {
   const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
   const [command, version] = args.filter((a, i) => !a.startsWith('--') && !args[i - 1]?.startsWith('--'));
   const root = option('--root') ? resolve(option('--root')) : resolve(dirname(fileURLToPath(import.meta.url)), '..');
-  if (!['prepare', 'check', 'notes'].includes(command) || !version) {
+  if (!['prepare', 'check', 'notes', 'tag-absent', 'milestone'].includes(command) || !version) {
     console.error(USAGE);
     return 2;
   }
@@ -215,6 +242,27 @@ function main(args) {
     }
     if (command === 'notes') {
       console.log(notes(root, version));
+      return 0;
+    }
+    if (command === 'tag-absent' || command === 'milestone') {
+      const bad = versionError(version);
+      if (bad) throw new Error(bad);
+    }
+    if (command === 'tag-absent') {
+      if (tagStatus(version, { cwd: root }) === 'exists') {
+        console.error(`tag ${TAG_PREFIX}${version} already exists; that version is already released. Pick the next one.`);
+        return 1;
+      }
+      console.log(`tag ${TAG_PREFIX}${version} does not exist yet`);
+      return 0;
+    }
+    if (command === 'milestone') {
+      const { milestone, errors } = milestoneCheck(JSON.parse(readFileSync(0, 'utf8') || 'null'), version);
+      if (errors.length) {
+        console.error(errors.join('\n'));
+        return 1;
+      }
+      console.log(JSON.stringify(milestone));
       return 0;
     }
     const errors = check(root, version);

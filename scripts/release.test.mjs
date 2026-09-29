@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import {
   parseVersion, versionError, compareVersions,
   parseChangelog, formatChangelog, prepare, check, notes, REPO_URL,
+  tagStatus, milestoneCheck,
 } from './release.mjs';
 
 // --- versions ---
@@ -306,4 +307,75 @@ test('CLI without a command prints usage and exits 2', () => {
   const out = cli();
   assert.equal(out.status, 2);
   assert.match(out.stderr, /usage: node scripts\/release\.mjs/);
+});
+
+// --- tag and milestone guards (used by both workflow jobs) ---
+
+function gitRepoWithRemote(tags) {
+  const root = mkdtempSync(join(tmpdir(), 'release-git-'));
+  roots.push(root);
+  const remote = join(root, 'remote.git');
+  const work = join(root, 'work');
+  const git = (cwd, ...args) => {
+    const r = spawnSync('git', ['-c', 'commit.gpgsign=false', '-c', 'tag.gpgsign=false', '-c', 'core.hooksPath=/dev/null', ...args], { cwd, encoding: 'utf8' });
+    if (r.status !== 0) throw new Error(`git ${args.join(' ')}: ${r.stderr}`);
+  };
+  git(root, 'init', '-q', '--bare', remote);
+  git(root, 'init', '-q', work);
+  git(work, '-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-q', '--allow-empty', '-m', 'x');
+  git(work, 'remote', 'add', 'origin', remote);
+  for (const tag of tags) git(work, 'tag', tag);
+  git(work, 'push', '-q', '--tags', 'origin', 'HEAD:refs/heads/main');
+  return work;
+}
+
+test('tagStatus reports an existing release tag', () => {
+  assert.equal(tagStatus('0.1.0', { cwd: gitRepoWithRemote(['obs-producer-v0.1.0']) }), 'exists');
+});
+
+test('tagStatus reports a release tag that does not exist yet', () => {
+  assert.equal(tagStatus('0.2.0', { cwd: gitRepoWithRemote(['obs-producer-v0.1.0']) }), 'absent');
+});
+
+test('tagStatus fails loudly when the remote cannot be read, instead of assuming absent', () => {
+  assert.throws(() => tagStatus('0.1.0', { cwd: gitRepoWithRemote([]), remote: 'no-such-remote' }), /could not check tags on no-such-remote/);
+});
+
+const MILESTONES = [
+  { title: 'obs-producer v0.1.0', number: 1, open_issues: 0, html_url: 'https://example.com/m/1' },
+  { title: 'obs-producer v0.2.0', number: 2, open_issues: 3, html_url: 'https://example.com/m/2' },
+];
+
+test('milestoneCheck returns the milestone when it exists with no open issues', () => {
+  assert.deepEqual(milestoneCheck(MILESTONES, '0.1.0'), { milestone: { number: 1, url: 'https://example.com/m/1' }, errors: [] });
+});
+
+test('milestoneCheck reports open issues', () => {
+  assert.deepEqual(milestoneCheck(MILESTONES, '0.2.0').errors, [
+    "milestone 'obs-producer v0.2.0' still has 3 open issue(s): https://example.com/m/2",
+  ]);
+});
+
+test('milestoneCheck reports a missing milestone, including when the API returned nothing', () => {
+  for (const list of [MILESTONES, [], null]) {
+    assert.deepEqual(milestoneCheck(list, '0.3.0').errors, [
+      "no milestone titled 'obs-producer v0.3.0'. Create it and assign this release's issues to it.",
+    ]);
+  }
+});
+
+test('CLI tag-absent exits 1 when the tag already exists', () => {
+  const out = cli('tag-absent', '0.1.0', '--root', gitRepoWithRemote(['obs-producer-v0.1.0']));
+  assert.equal(out.status, 1);
+  assert.match(out.stderr, /tag obs-producer-v0\.1\.0 already exists/);
+  assert.equal(cli('tag-absent', '0.2.0', '--root', gitRepoWithRemote(['obs-producer-v0.1.0'])).status, 0);
+});
+
+test('CLI milestone reads the API response on stdin and prints number and url', () => {
+  const ok = spawnSync(process.execPath, [SCRIPT, 'milestone', '0.1.0'], { input: JSON.stringify(MILESTONES), encoding: 'utf8' });
+  assert.equal(ok.status, 0, ok.stderr);
+  assert.deepEqual(JSON.parse(ok.stdout), { number: 1, url: 'https://example.com/m/1' });
+  const open = spawnSync(process.execPath, [SCRIPT, 'milestone', '0.2.0'], { input: JSON.stringify(MILESTONES), encoding: 'utf8' });
+  assert.equal(open.status, 1);
+  assert.match(open.stderr, /still has 3 open issue\(s\)/);
 });
