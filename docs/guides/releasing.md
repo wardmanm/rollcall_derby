@@ -78,7 +78,7 @@ In GitHub, go to **Actions** ▸ **obs-producer release** ▸ **Run workflow**. 
 | Tag `obs-producer-v0.2.0` doesn't exist yet | That version is out already. Use the next one |
 | CHANGELOG has a dated `[0.2.0]` section with entries, `Unreleased` is empty, and package versions match | Do step 1 |
 | Milestone `obs-producer v0.2.0` exists with no open issues (required for `x.y.0`; enforced for other versions only if it exists) | Create it, or finish or move its open issues |
-| Docs lint and script tests pass | Fix what they report |
+| `yarn check`, the production build and the Playwright tests pass | Run the same commands locally and fix what they report |
 
 The run summary shows the release notes exactly as they'll be published.
 

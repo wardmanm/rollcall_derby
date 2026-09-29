@@ -113,15 +113,27 @@ export function latestVersion(versions) {
   return versions.reduce((best, v) => (best === null || compareVersions(v, best) > 0 ? v : best), null);
 }
 
-// package.json files that carry the app version: the root, apps/*, packages/*.
+// package.json files that carry the app version: the root plus every workspace it lists
+// (`dir/*` or a plain folder); apps/* and packages/* when the root lists none.
+const DEFAULT_WORKSPACES = ['apps/*', 'packages/*'];
+
 export function packageFiles(root) {
+  const rootFile = join(root, 'package.json');
+  const listed = existsSync(rootFile) ? JSON.parse(readFileSync(rootFile, 'utf8')).workspaces : undefined;
   const files = ['package.json'];
-  for (const dir of ['apps', 'packages']) {
-    if (!existsSync(join(root, dir))) continue;
-    const entries = readdirSync(join(root, dir), { withFileTypes: true }).toSorted((a, b) =>
-      a.name.localeCompare(b.name),
-    );
-    for (const e of entries) if (e.isDirectory()) files.push(`${dir}/${e.name}/package.json`);
+  for (const pattern of listed ?? DEFAULT_WORKSPACES) {
+    if (pattern.endsWith('/*') && !pattern.slice(0, -2).includes('*')) {
+      const dir = pattern.slice(0, -2);
+      if (!existsSync(join(root, dir))) continue;
+      const entries = readdirSync(join(root, dir), { withFileTypes: true }).toSorted((a, b) =>
+        a.name.localeCompare(b.name),
+      );
+      for (const e of entries) if (e.isDirectory()) files.push(`${dir}/${e.name}/package.json`);
+    } else if (pattern.includes('*')) {
+      throw new Error(`unsupported workspaces pattern ${JSON.stringify(pattern)}: use "dir/*" or a folder name`);
+    } else {
+      files.push(`${pattern.replace(/\/$/, '')}/package.json`);
+    }
   }
   return files.filter((f) => existsSync(join(root, f)));
 }

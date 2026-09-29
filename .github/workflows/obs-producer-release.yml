@@ -80,11 +80,27 @@ jobs:
             | jq -s 'add' \
             | node scripts/release.mjs milestone "$VERSION"
 
-      - name: Docs lint and script tests
+      # The app itself must pass everything CI checks before anyone is asked to approve it.
+      - name: Enable Corepack (Yarn 4 from packageManager)
+        run: corepack enable
+
+      - name: Install dependencies
+        working-directory: obs-producer
+        run: yarn install --immutable
+
+      - name: App checks (types, lint, formatting, unit tests, script tests, docs lint)
+        working-directory: obs-producer
+        run: yarn check
+
+      - name: Build
+        working-directory: obs-producer
+        run: yarn build
+
+      - name: End-to-end tests
         working-directory: obs-producer
         run: |
-          node --test "scripts/*.test.mjs"
-          node scripts/check-docs.mjs
+          yarn workspace @obs-producer/e2e playwright install --with-deps chromium
+          yarn test:e2e
 
       - name: Show the release notes
         working-directory: obs-producer

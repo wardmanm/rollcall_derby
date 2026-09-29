@@ -210,6 +210,35 @@ test('prepare bumps the version in every package.json', () => {
   for (const file of packages) assert.equal(read(root, file), pkg('0.1.0'), file);
 });
 
+test('prepare bumps every workspace listed in the root package.json, including single folders', () => {
+  const rootPkg =
+    JSON.stringify({ name: 'x', version: '0.0.0', private: true, workspaces: ['apps/*', 'e2e'] }, null, 2) + '\n';
+  const root = makeTree({
+    'CHANGELOG.md': FIRST,
+    'package.json': rootPkg,
+    'apps/server/package.json': pkg('0.0.0'),
+    'e2e/package.json': pkg('0.0.0'),
+    'packages/shared/package.json': pkg('0.0.0'), // not listed in workspaces here
+  });
+  const { packages } = prepare(root, '0.1.0', { date: '2026-10-14' });
+  assert.deepEqual(packages, ['package.json', 'apps/server/package.json', 'e2e/package.json']);
+  assert.equal(JSON.parse(read(root, 'e2e/package.json')).version, '0.1.0');
+  assert.deepEqual(JSON.parse(read(root, 'package.json')).workspaces, ['apps/*', 'e2e']);
+  assert.equal(read(root, 'packages/shared/package.json'), pkg('0.0.0'));
+});
+
+test('prepare refuses workspace patterns it cannot expand, instead of silently skipping them', () => {
+  const rootPkg = JSON.stringify({ name: 'x', version: '0.0.0', workspaces: ['apps/**'] }, null, 2) + '\n';
+  const root = makeTree({ 'CHANGELOG.md': FIRST, 'package.json': rootPkg });
+  assert.throws(() => prepare(root, '0.1.0', { date: '2026-10-14' }), /unsupported workspaces pattern "apps\/\*\*"/);
+});
+
+test('check compares the version of every listed workspace', () => {
+  const rootPkg = JSON.stringify({ name: 'x', version: '0.1.0', workspaces: ['e2e'] }, null, 2) + '\n';
+  const root = makeTree({ 'CHANGELOG.md': FIRST_PREPARED, 'package.json': rootPkg, 'e2e/package.json': pkg('0.0.0') });
+  assert.deepEqual(check(root, '0.1.0'), ['e2e/package.json has version 0.0.0, expected 0.1.0']);
+});
+
 test('prepare refuses when Unreleased has no entries, even with empty headings', () => {
   const root = makeTree({ 'CHANGELOG.md': EMPTY_HEADINGS });
   assert.throws(() => prepare(root, '0.1.0', { date: '2026-10-14' }), /no entries to release/);
