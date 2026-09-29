@@ -45,11 +45,12 @@ describe('serving the web build', () => {
 
   it('serves the overlay page for /overlay and anything below it', async () => {
     const app = buildApp({ version: '1.0.0', webDir: webBuild() });
-    for (const url of ['/overlay', '/overlay/', '/overlay/some-output-token']) {
-      const res = await app.inject({ method: 'GET', url });
-      expect(res.statusCode, url).toBe(200);
-      expect(res.body, url).toContain('<div id="overlay">');
-    }
+    const urls = ['/overlay', '/overlay/', '/overlay/some-output-token'];
+    const responses = await Promise.all(urls.map((url) => app.inject({ method: 'GET', url })));
+    responses.forEach((res, i) => {
+      expect(res.statusCode, urls[i]).toBe(200);
+      expect(res.body, urls[i]).toContain('<div id="overlay">');
+    });
     await app.close();
   });
 

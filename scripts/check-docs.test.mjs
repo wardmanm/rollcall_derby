@@ -147,12 +147,18 @@ test('reports a feature with an invalid status', () => {
 
 test('reports a feature without a summary', () => {
   const page = BASELINE['docs/features/alpha.md'].replace('summary: The alpha feature\n', '');
-  assertError(errorsFor({ 'docs/features/alpha.md': page }), 'docs/features/alpha.md: missing frontmatter field "summary"');
+  assertError(
+    errorsFor({ 'docs/features/alpha.md': page }),
+    'docs/features/alpha.md: missing frontmatter field "summary"',
+  );
 });
 
 test('reports an ADR without a valid date', () => {
   const page = BASELINE['docs/decisions/0001-use-adrs.md'].replace('date: 2026-09-28', 'date: last week');
-  assertError(errorsFor({ 'docs/decisions/0001-use-adrs.md': page }), 'docs/decisions/0001-use-adrs.md: invalid date "last week"');
+  assertError(
+    errorsFor({ 'docs/decisions/0001-use-adrs.md': page }),
+    'docs/decisions/0001-use-adrs.md: invalid date "last week"',
+  );
 });
 
 test('reports a superseded ADR without superseded_by', () => {
@@ -193,7 +199,8 @@ test('accepts anchors that follow GitHub heading slugs', () => {
 });
 
 test('accepts links to explicit HTML anchors', () => {
-  const page = BASELINE['docs/features/alpha.md'] + '\n| <a id="jammer"></a>**Jammer** | scores |\n<a name="legacy"></a>\n';
+  const page =
+    BASELINE['docs/features/alpha.md'] + '\n| <a id="jammer"></a>**Jammer** | scores |\n<a name="legacy"></a>\n';
   const guide = BASELINE['docs/wiki-guide.md'] + '\n[j](features/alpha.md#jammer) [l](features/alpha.md#legacy)\n';
   assert.deepEqual(errorsFor({ 'docs/features/alpha.md': page, 'docs/wiki-guide.md': guide }), []);
 });
@@ -209,11 +216,15 @@ test('ignores external links', () => {
 });
 
 test('checks links in the root agent instruction files', () => {
-  assertError(errorsFor({ 'AGENTS.md': '# Agents\n\n[wiki](docs/nope.md)\n' }), 'AGENTS.md: broken link "docs/nope.md"');
+  assertError(
+    errorsFor({ 'AGENTS.md': '# Agents\n\n[wiki](docs/nope.md)\n' }),
+    'AGENTS.md: broken link "docs/nope.md"',
+  );
 });
 
 test('checks links in CHANGELOG.md but not its link reference definitions', () => {
-  const changelog = '# Changelog\n\nSee the [guide](docs/nope.md).\n\n## [Unreleased]\n\n[Unreleased]: https://example.com\n';
+  const changelog =
+    '# Changelog\n\nSee the [guide](docs/nope.md).\n\n## [Unreleased]\n\n[Unreleased]: https://example.com\n';
   const errors = errorsFor({ 'CHANGELOG.md': changelog });
   assert.deepEqual(errors, ['CHANGELOG.md: broken link "docs/nope.md"']);
 });
@@ -242,7 +253,10 @@ test('reports duplicate ADR numbers', () => {
 });
 
 test('reports gaps in ADR numbering', () => {
-  assertError(errorsFor({ 'docs/decisions/0003-pick-a-stack.md': ADR_0002 }), 'ADR numbers are not sequential: missing 0002');
+  assertError(
+    errorsFor({ 'docs/decisions/0003-pick-a-stack.md': ADR_0002 }),
+    'ADR numbers are not sequential: missing 0002',
+  );
 });
 
 // --- generated tables ---
@@ -279,7 +293,10 @@ test('renders superseded ADRs with a link to their replacement', () => {
   });
   checkDocs(root, { fix: true });
   const index = readFileSync(join(root, 'docs/decisions/README.md'), 'utf8');
-  assert.match(index, /\| \[0001\]\(0001-use-adrs\.md\) \| Use ADRs \| superseded by \[0002\]\(0002-pick-a-stack\.md\) \| 2026-09-28 \|/);
+  assert.match(
+    index,
+    /\| \[0001\]\(0001-use-adrs\.md\) \| Use ADRs \| superseded by \[0002\]\(0002-pick-a-stack\.md\) \| 2026-09-28 \|/,
+  );
 });
 
 test('--fix regenerates stale tables and a second run changes nothing', () => {
@@ -301,7 +318,7 @@ test('--fix escapes pipes in summaries', () => {
 
 // --- helpers ---
 
-test('collectOpenQuestions returns each page\'s open questions section', () => {
+test("collectOpenQuestions returns each page's open questions section", () => {
   const questions = collectOpenQuestions(makeTree());
   assert.deepEqual(questions, [{ file: 'docs/features/alpha.md', title: 'Alpha', body: '- Do we need alpha?' }]);
 });
@@ -316,9 +333,13 @@ test('nextAdrNumber returns the highest ADR number plus one, zero-padded', () =>
 test('CLI exits 0 on a clean wiki and 1 with errors listed', () => {
   const clean = spawnSync(process.execPath, [SCRIPT, '--root', makeTree()], { encoding: 'utf8' });
   assert.equal(clean.status, 0, clean.stderr);
-  const broken = spawnSync(process.execPath, [SCRIPT, '--root', makeTree({ 'docs/orphan.md': '---\ntitle: O\n---\n' })], {
-    encoding: 'utf8',
-  });
+  const broken = spawnSync(
+    process.execPath,
+    [SCRIPT, '--root', makeTree({ 'docs/orphan.md': '---\ntitle: O\n---\n' })],
+    {
+      encoding: 'utf8',
+    },
+  );
   assert.equal(broken.status, 1);
   assert.match(broken.stderr, /docs\/orphan\.md: not reachable/);
 });

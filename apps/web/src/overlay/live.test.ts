@@ -3,7 +3,7 @@ import { liveApi, makeOverlayStore, type LiveSocket } from './live.ts';
 
 class FakeSocket implements LiveSocket {
   private handlers = new Map<string, ((...args: unknown[]) => void)[]>();
-  close = vi.fn();
+  close = vi.fn<() => void>();
   on(event: string, handler: (...args: unknown[]) => void) {
     this.handlers.set(event, [...(this.handlers.get(event) ?? []), handler]);
     return this;
@@ -54,7 +54,7 @@ describe('overlay live state', () => {
 
   it('rebuilds everything from the server after a reload', async () => {
     const first = new FakeSocket();
-    (await subscribe(first)).state;
+    await subscribe(first);
     first.emit('server:hello', hello);
 
     const afterReload = new FakeSocket();

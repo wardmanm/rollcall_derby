@@ -12,8 +12,8 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from '
 import { join, relative, dirname, resolve, basename, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const FEATURE_STATUSES = ['planned', 'in-progress', 'shipped', 'deprecated'];
-const ADR_STATUSES = ['proposed', 'accepted', 'superseded', 'deprecated'];
+const FEATURE_STATUSES = new Set(['planned', 'in-progress', 'shipped', 'deprecated']);
+const ADR_STATUSES = new Set(['proposed', 'accepted', 'superseded', 'deprecated']);
 const ADR_FILENAME = /^(\d{4})-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const ROOT_FILES = ['AGENTS.md', 'CLAUDE.md', 'README.md', 'CHANGELOG.md']; // link-checked only
@@ -27,7 +27,7 @@ const toPosix = (p) => p.split(sep).join('/');
 function walk(dir) {
   if (!existsSync(dir)) return [];
   return readdirSync(dir, { withFileTypes: true })
-    .sort((a, b) => a.name.localeCompare(b.name))
+    .toSorted((a, b) => a.name.localeCompare(b.name))
     .flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : e.name.endsWith('.md') ? [join(dir, e.name)] : []));
 }
 
@@ -116,12 +116,12 @@ function checkFrontmatter(pages, adrNumbers, errors) {
     need('title');
     if (isFeature(p)) {
       const status = need('status');
-      if (status && !FEATURE_STATUSES.includes(status)) errors.push(`${p.rel}: invalid status "${status}"`);
+      if (status && !FEATURE_STATUSES.has(status)) errors.push(`${p.rel}: invalid status "${status}"`);
       need('summary');
     }
     if (isAdr(p)) {
       const status = need('status');
-      if (status && !ADR_STATUSES.includes(status)) errors.push(`${p.rel}: invalid status "${status}"`);
+      if (status && !ADR_STATUSES.has(status)) errors.push(`${p.rel}: invalid status "${status}"`);
       const date = need('date');
       if (date && !DATE.test(date)) errors.push(`${p.rel}: invalid date "${date}" (use YYYY-MM-DD)`);
       if (status === 'superseded') {
@@ -142,7 +142,8 @@ function checkLinks(pages, errors) {
   for (const p of pages) {
     for (const { raw, abs, anchor } of links(p)) {
       if (!existsSync(abs)) errors.push(`${p.rel}: broken link "${raw}"`);
-      else if (anchor && abs.endsWith('.md') && !anchorsOf(abs).has(anchor)) errors.push(`${p.rel}: broken anchor "${raw}"`);
+      else if (anchor && abs.endsWith('.md') && !anchorsOf(abs).has(anchor))
+        errors.push(`${p.rel}: broken anchor "${raw}"`);
     }
   }
 }
@@ -150,7 +151,10 @@ function checkLinks(pages, errors) {
 function checkReachability(root, pages, errors) {
   const byAbs = new Map(pages.map((p) => [p.abs, p]));
   const home = byAbs.get(join(root, HOME));
-  if (!home) return errors.push(`${HOME}: missing (it is the wiki home page)`);
+  if (!home) {
+    errors.push(`${HOME}: missing (it is the wiki home page)`);
+    return;
+  }
   const seen = new Set([home.abs]);
   const queue = [home];
   while (queue.length) {
@@ -185,7 +189,11 @@ function checkAdrNumbering(adrs, errors) {
 
 const cell = (v) => String(v ?? '').replace(/\|/g, '\\|');
 const table = (head, rows) =>
-  [`| ${head.join(' | ')} |`, `| ${head.map(() => '---').join(' | ')} |`, ...rows.map((r) => `| ${r.join(' | ')} |`)].join('\n');
+  [
+    `| ${head.join(' | ')} |`,
+    `| ${head.map(() => '---').join(' | ')} |`,
+    ...rows.map((r) => `| ${r.join(' | ')} |`),
+  ].join('\n');
 
 function renderFeatures(pages) {
   const rows = pages
@@ -200,7 +208,10 @@ function renderDecisions(pages) {
   const rows = adrs.map((p) => {
     const n = adrNumber(p);
     const by = p.meta.superseded_by;
-    const status = p.meta.status === 'superseded' && fileOf.has(by) ? `superseded by [${by}](${fileOf.get(by)})` : cell(p.meta.status);
+    const status =
+      p.meta.status === 'superseded' && fileOf.has(by)
+        ? `superseded by [${by}](${fileOf.get(by)})`
+        : cell(p.meta.status);
     return [`[${n}](${basename(p.rel)})`, cell(p.meta.title), status, cell(p.meta.date)];
   });
   return table(['ADR', 'Title', 'Status', 'Date'], rows);
@@ -240,7 +251,9 @@ export function checkDocs(root, { fix = false } = {}) {
   syncGenerated(root, loadDocs(root), fix, errors, fixed);
   const pages = loadDocs(root); // reload: --fix may have rewritten index pages
   const adrs = pages.filter(isAdr);
-  const rootFiles = ROOT_FILES.map((f) => join(root, f)).filter(existsSync).map((abs) => loadPage(root, abs));
+  const rootFiles = ROOT_FILES.map((f) => join(root, f))
+    .filter(existsSync)
+    .map((abs) => loadPage(root, abs));
 
   checkFrontmatter(pages, new Set(adrs.map(adrNumber).filter(Boolean)), errors);
   checkLinks([...rootFiles, ...pages], errors);
@@ -256,7 +269,10 @@ export function collectOpenQuestions(root) {
     const start = lines.findIndex((l) => /^##\s+Open questions\s*$/i.test(l));
     if (start < 0) continue;
     const end = lines.findIndex((l, i) => i > start && /^#{1,2}\s/.test(l));
-    const body = lines.slice(start + 1, end < 0 ? undefined : end).join('\n').trim();
+    const body = lines
+      .slice(start + 1, end < 0 ? undefined : end)
+      .join('\n')
+      .trim();
     if (body) found.push({ file: p.rel, title: p.meta.title, body });
   }
   return found;

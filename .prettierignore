@@ -1,0 +1,9 @@
+# Generated or managed by tools
+yarn.lock
+.yarn/
+**/dist/
+data/
+apps/server/drizzle/
+
+# Markdown (the wiki and working papers) keeps its hand-written layout; check-docs lints it instead.
+*.md

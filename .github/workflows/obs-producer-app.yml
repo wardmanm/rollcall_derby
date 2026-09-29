@@ -1,0 +1,52 @@
+# Checks the obs-producer app on every change: types, lint, formatting, unit tests, build, and
+# Playwright end-to-end tests against the real server. The docs lint runs in obs-producer-docs.yml.
+name: obs-producer app
+
+on:
+  push:
+    paths:
+      - "obs-producer/**"
+      - ".github/workflows/obs-producer-app.yml"
+  pull_request:
+    paths:
+      - "obs-producer/**"
+      - ".github/workflows/obs-producer-app.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: obs-producer
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Enable Corepack (Yarn 4 from packageManager)
+        run: corepack enable
+
+      - run: yarn install --immutable
+      - run: yarn typecheck
+      - run: yarn lint
+      - run: yarn format:check
+      - run: yarn test
+      - run: yarn build
+
+      - name: Install Playwright's Chromium
+        run: yarn workspace @obs-producer/e2e playwright install --with-deps chromium
+
+      - run: yarn test:e2e
+
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: obs-producer/e2e/playwright-report
+          retention-days: 7

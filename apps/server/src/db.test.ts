@@ -26,8 +26,8 @@ describe('openDatabase', () => {
     const dataDir = tempDir();
     openDatabase(dataDir).sqlite.close();
     const { sqlite } = openDatabase(dataDir);
-    const applied = sqlite.prepare('select count(*) as n from __drizzle_migrations').get() as { n: number };
-    expect(applied.n).toBe(1);
+    const applied = sqlite.prepare<[], { n: number }>('select count(*) as n from __drizzle_migrations').get();
+    expect(applied?.n).toBe(1);
     sqlite.close();
   });
 });

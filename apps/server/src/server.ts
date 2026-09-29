@@ -1,4 +1,3 @@
-import type { AddressInfo } from 'node:net';
 import { buildApp } from './app.ts';
 import type { ServerConfig } from './config.ts';
 import { openDatabase } from './db.ts';
@@ -29,7 +28,9 @@ export async function startServer(
   });
 
   await app.listen({ host: config.host, port: config.port });
-  const { port } = app.server.address() as AddressInfo;
+  const address = app.server.address();
+  if (!address || typeof address === 'string') throw new Error(`Unexpected server address: ${String(address)}`);
+  const { port } = address;
   const host = config.host === '0.0.0.0' ? 'localhost' : config.host;
   return { url: `http://${host}:${port}`, close: () => app.close() };
 }

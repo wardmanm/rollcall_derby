@@ -8,14 +8,27 @@
   },
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "e2e"
   ],
   "scripts": {
+    "dev": "yarn workspaces foreach --all --exclude obs-producer --parallel --interlaced run dev",
+    "build": "yarn workspace @obs-producer/web build",
+    "start": "yarn workspace @obs-producer/server start",
     "typecheck": "yarn workspaces foreach --all --exclude obs-producer --parallel run typecheck",
+    "lint": "oxlint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:e2e": "yarn workspace @obs-producer/e2e test",
+    "test:scripts": "node --test \"scripts/*.test.mjs\"",
     "docs:check": "node scripts/check-docs.mjs",
-    "test": "vitest run"
+    "check": "yarn typecheck && yarn lint && yarn format:check && yarn test && yarn test:scripts && yarn docs:check"
   },
   "devDependencies": {
+    "oxlint": "^1.86.0",
+    "oxlint-tsgolint": "^7.0.2003",
+    "prettier": "^3.9.9",
     "typescript": "^7.0.2",
     "vite": "^8.3.1",
     "vitest": "^5.0.2"

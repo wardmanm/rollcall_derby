@@ -36,7 +36,10 @@ describe('overlay bundle', () => {
       logLevel: 'silent',
       build: { outDir, emptyOutDir: true, manifest: true },
     });
-    const manifest = JSON.parse(readFileSync(join(outDir, '.vite/manifest.json'), 'utf8')) as Record<string, ManifestChunk>;
+    const manifest = JSON.parse(readFileSync(join(outDir, '.vite/manifest.json'), 'utf8')) as Record<
+      string,
+      ManifestChunk
+    >;
     const admin = filesFor(manifest, 'index.html');
     const overlay = filesFor(manifest, 'overlay.html');
 

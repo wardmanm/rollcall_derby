@@ -38,6 +38,8 @@ function serveWebBuild(app: FastifyInstance, webDir: string) {
     const isAppRoute = request.method === 'GET' && !/^\/(api|socket\.io)(\/|$)/.test(request.url);
     if (isAppRoute && /^\/overlay(\/|$|\?)/.test(request.url)) return reply.type('text/html').sendFile('overlay.html');
     if (isAppRoute) return reply.type('text/html').sendFile('index.html');
-    return reply.code(404).send({ message: `Route ${request.method}:${request.url} not found`, error: 'Not Found', statusCode: 404 });
+    return reply
+      .code(404)
+      .send({ message: `Route ${request.method}:${request.url} not found`, error: 'Not Found', statusCode: 404 });
   });
 }

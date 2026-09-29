@@ -56,31 +56,29 @@ obs-producer/
 
 ## Commands
 
-**One-time setup:** Yarn 4 comes from Corepack, pinned by `packageManager` in `package.json`. Yarn classic (1.x) refuses to run here. Node 25+ doesn't bundle Corepack, so run `npm install -g corepack && corepack enable` (after `npm uninstall -g yarn` if Yarn classic is installed globally).
+**One-time setup:** Yarn 4 comes from Corepack, pinned by `packageManager` in `package.json`. Yarn classic (1.x) refuses to run here. Node 25+ doesn't bundle Corepack, so run `npm install -g corepack && corepack enable` (after `npm uninstall -g yarn` if Yarn classic is installed globally). For end-to-end tests, also run `yarn workspace @obs-producer/e2e playwright install chromium` once.
 
 Run from `obs-producer/`:
 
 | Command | What it does |
 |---|---|
 | `yarn install` | Install dependencies for all workspaces (CI uses `yarn install --immutable`) |
-| `yarn typecheck` | Type-check every workspace |
-| `yarn test` | Run every workspace's Vitest tests (`*.test.ts` next to the code) |
-| `yarn workspace @obs-producer/server start` | Run the server (`dev` restarts on changes). Listens on `OBS_PRODUCER_HOST`:`OBS_PRODUCER_PORT` (default `0.0.0.0:5580`), with data in `OBS_PRODUCER_DATA_DIR` (default `obs-producer/data/`, git-ignored). Serves the web build from `OBS_PRODUCER_WEB_DIR` (default `apps/web/dist/`) if it exists |
-| `yarn workspace @obs-producer/web dev` | Vite dev server on port 5173, proxying `/api` and `/socket.io` to the server at `OBS_PRODUCER_DEV_SERVER` (default `http://localhost:5580`). Run the server alongside it |
-| `yarn workspace @obs-producer/web build` | Production build to `apps/web/dist/`: the admin app plus the OBS overlay page, which the server serves at `/overlay` (and `/overlay/*`) on its own port |
+| `yarn check` | **Run before every commit:** typecheck, lint, format check, unit tests, script tests and docs lint |
+| `yarn dev` | Server (restarts on changes) and Vite dev server together; open `http://localhost:5173` |
+| `yarn build` / `yarn start` | Production build of the web app (admin app + OBS overlay), then run the server that serves it |
+| `yarn typecheck` | Type-check every workspace with TypeScript 7 |
+| `yarn lint` | Oxlint with type-aware rules, React hooks and jsx-a11y rules ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md)). Config: `.oxlintrc.json` |
+| `yarn format` / `yarn format:check` | Prettier (Markdown is excluded; the docs lint covers it) |
+| `yarn test` | Vitest: every workspace's `*.test.ts(x)` next to the code (Node for server/shared, jsdom for web) |
+| `yarn test:e2e` | Playwright end-to-end tests in `e2e/tests/`: builds the app and runs the real server on port 5590 |
+| `yarn test:scripts` | Tests for the docs lint and release helper (`node --test "scripts/*.test.mjs"`) |
+| `yarn docs:check` | Docs lint (`node scripts/check-docs.mjs`); add `--fix`, `--questions` or `--next-adr` as needed |
+| `yarn workspace @obs-producer/server start` | Server alone. Listens on `OBS_PRODUCER_HOST`:`OBS_PRODUCER_PORT` (default `0.0.0.0:5580`), data in `OBS_PRODUCER_DATA_DIR` (default `obs-producer/data/`, git-ignored), web build from `OBS_PRODUCER_WEB_DIR` (default `apps/web/dist/`); the overlay is at `/overlay` |
+| `yarn workspace @obs-producer/web dev` | Vite alone on port 5173, proxying `/api` and `/socket.io` to `OBS_PRODUCER_DEV_SERVER` (default `http://localhost:5580`) |
 | `yarn workspace @obs-producer/server db:generate --name <change>` | Generate a Drizzle migration after editing `apps/server/src/db/schema.ts`. Migrations run automatically at startup |
-| `yarn docs:check` | Same as `node scripts/check-docs.mjs` |
-| `node scripts/check-docs.mjs` | Lint the wiki: frontmatter, links, anchors, reachability, ADR numbering, generated tables |
-| `node scripts/check-docs.mjs --fix` | Regenerate the feature and ADR index tables from frontmatter, then lint |
-| `node scripts/check-docs.mjs --questions` | List every open question across the wiki |
-| `node scripts/check-docs.mjs --next-adr` | Print the next free ADR number |
-| `node --test "scripts/*.test.mjs"` | Test the scripts (docs lint, release helper) |
-| `node scripts/release.mjs prepare <version>` | Move `Unreleased` notes under `<version>` and bump package versions ([releasing](docs/guides/releasing.md)) |
-| `node scripts/release.mjs check <version>` | Check that the changelog and versions are ready to release |
-| `node scripts/release.mjs notes <version>` | Print a version's release notes |
-| `node scripts/release.mjs tag-absent\|milestone\|issues <version>` | Used by the release workflow: tag and milestone checks before and after approval, and the issue numbers to mark as released |
+| `node scripts/release.mjs prepare\|check\|notes <version>` | Release helper ([releasing](docs/guides/releasing.md)); `tag-absent\|milestone\|issues` are used by the release workflow |
 
-More app commands (`yarn dev`, `yarn lint`, `yarn build`) arrive with #10. Add them to this table when they do.
+**Upgrading TypeScript:** `oxlint-tsgolint` embeds its own TypeScript 7.x. Upgrade it together with `typescript` so linting and `tsc` agree on the types.
 
 ## Documentation rules
 
@@ -96,7 +94,6 @@ The full process is in the [wiki guide](docs/wiki-guide.md).
 ## Definition of done
 
 - Behavior matches its feature page, and the page is updated if behavior changed.
-- Tests are added or updated, and they pass.
-- `node scripts/check-docs.mjs` passes.
+- Tests are added or updated, and `yarn check` passes. Changes to what users see also pass `yarn test:e2e`.
 - User-visible changes have a line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md), ending with the issue number.
 - Every hard rule above still holds.

@@ -8,6 +8,6 @@ describe('parseHealth', () => {
   });
 
   it('throws when the server sends something off-contract', () => {
-    expect(() => parseHealth({ status: 'ok' })).toThrow();
+    expect(() => parseHealth({ status: 'ok' })).toThrow(/invalid input/i);
   });
 });

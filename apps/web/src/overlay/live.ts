@@ -30,16 +30,17 @@ export const liveApi = createApi({
     getLiveState: build.query<LiveState, void>({
       queryFn: () => ({ data: { connected: false, server: null } }),
       keepUnusedDataFor: 0,
-      async onCacheEntryAdded(_arg, { extra, updateCachedData, cacheDataLoaded, cacheEntryRemoved }) {
-        await cacheDataLoaded;
-        const socket = (extra as LiveExtra).connect();
-        socket.on('connect', () => updateCachedData((draft) => void (draft.connected = true)));
-        socket.on('disconnect', () => updateCachedData((draft) => void (draft.connected = false)));
+      async onCacheEntryAdded(_arg, lifecycle) {
+        await lifecycle.cacheDataLoaded;
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- makeOverlayStore always sets this
+        const socket = (lifecycle.extra as LiveExtra).connect();
+        socket.on('connect', () => lifecycle.updateCachedData((draft) => void (draft.connected = true)));
+        socket.on('disconnect', () => lifecycle.updateCachedData((draft) => void (draft.connected = false)));
         socket.on(SERVER_HELLO_EVENT, (payload) => {
           const hello = ServerHelloSchema.safeParse(payload);
-          if (hello.success) updateCachedData((draft) => void (draft.server = hello.data));
+          if (hello.success) lifecycle.updateCachedData((draft) => void (draft.server = hello.data));
         });
-        await cacheEntryRemoved;
+        await lifecycle.cacheEntryRemoved;
         socket.close();
       },
     }),

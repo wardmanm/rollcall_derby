@@ -84,7 +84,7 @@ export function parseChangelog(text) {
   }
   return {
     preamble: preamble.join('\n').trim(),
-    sections: sections.map((s) => ({ ...s, body: s.body.join('\n').trim() })),
+    sections: sections.map(({ name, date, body }) => ({ name, date, body: body.join('\n').trim() })),
     footer,
   };
 }
@@ -118,7 +118,9 @@ export function packageFiles(root) {
   const files = ['package.json'];
   for (const dir of ['apps', 'packages']) {
     if (!existsSync(join(root, dir))) continue;
-    const entries = readdirSync(join(root, dir), { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name));
+    const entries = readdirSync(join(root, dir), { withFileTypes: true }).toSorted((a, b) =>
+      a.name.localeCompare(b.name),
+    );
     for (const e of entries) if (e.isDirectory()) files.push(`${dir}/${e.name}/package.json`);
   }
   return files.filter((f) => existsSync(join(root, f)));
@@ -133,7 +135,8 @@ export function prepare(root, version, { date = new Date().toISOString().slice(0
   const log = parseChangelog(readChangelog(root));
   const unreleased = log.sections.find(isUnreleased);
   if (!unreleased) throw new Error('CHANGELOG.md has no "## [Unreleased]" section');
-  if (log.sections.some((s) => s.name === version)) throw new Error(`CHANGELOG.md already has a section for ${version}`);
+  if (log.sections.some((s) => s.name === version))
+    throw new Error(`CHANGELOG.md already has a section for ${version}`);
   if (!hasEntries(unreleased.body)) throw new Error('the Unreleased section has no entries to release');
   const previous = latestVersion(releasedVersions(log.sections));
   if (previous && compareVersions(version, previous) <= 0) {
@@ -180,7 +183,8 @@ export function check(root, version) {
     errors.push(`CHANGELOG.md has no section for ${version}; run: node scripts/release.mjs prepare ${version}`);
   } else {
     if (!hasEntries(section.body)) errors.push(`the ${version} section has no entries`);
-    if (!section.date || !DATE.test(section.date)) errors.push(`the ${version} section needs a date: ## [${version}] - YYYY-MM-DD`);
+    if (!section.date || !DATE.test(section.date))
+      errors.push(`the ${version} section needs a date: ## [${version}] - YYYY-MM-DD`);
   }
   const previous = latestVersion(releasedVersions(log.sections, version));
   if (previous && compareVersions(version, previous) <= 0) {
@@ -222,10 +226,17 @@ export function milestoneCheck(milestones, version) {
   const title = `${MILESTONE_PREFIX}${version}`;
   const found = (milestones ?? []).find((m) => m.title === title);
   if (!found && !milestoneRequired(version)) return { milestone: null, errors: [] };
-  if (!found) return { milestone: null, errors: [`no milestone titled '${title}'. Create it and assign this release's issues to it.`] };
+  if (!found)
+    return {
+      milestone: null,
+      errors: [`no milestone titled '${title}'. Create it and assign this release's issues to it.`],
+    };
   const milestone = { number: found.number, url: found.html_url };
   if (found.open_issues !== 0) {
-    return { milestone, errors: [`milestone '${title}' still has ${found.open_issues} open issue(s): ${found.html_url}`] };
+    return {
+      milestone,
+      errors: [`milestone '${title}' still has ${found.open_issues} open issue(s): ${found.html_url}`],
+    };
   }
   return { milestone, errors: [] };
 }
@@ -240,7 +251,8 @@ export function issueRefs(text) {
 
 // ---------- CLI ----------
 
-const USAGE = 'usage: node scripts/release.mjs <prepare|check|notes|tag-absent|milestone|issues> <version> [--date YYYY-MM-DD] [--root dir]';
+const USAGE =
+  'usage: node scripts/release.mjs <prepare|check|notes|tag-absent|milestone|issues> <version> [--date YYYY-MM-DD] [--root dir]';
 
 function main(args) {
   const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
@@ -271,7 +283,9 @@ function main(args) {
     }
     if (command === 'tag-absent') {
       if (tagStatus(version, { cwd: root }) === 'exists') {
-        console.error(`tag ${TAG_PREFIX}${version} already exists; that version is already released. Pick the next one.`);
+        console.error(
+          `tag ${TAG_PREFIX}${version} already exists; that version is already released. Pick the next one.`,
+        );
         return 1;
       }
       console.log(`tag ${TAG_PREFIX}${version} does not exist yet`);
@@ -288,7 +302,9 @@ function main(args) {
     }
     const errors = check(root, version);
     if (errors.length) {
-      console.error(`release check failed for ${JSON.stringify(version)}:\n${errors.map((e) => `  - ${e}`).join('\n')}`);
+      console.error(
+        `release check failed for ${JSON.stringify(version)}:\n${errors.map((e) => `  - ${e}`).join('\n')}`,
+      );
       return 1;
     }
     console.log(`release check OK for ${version}`);

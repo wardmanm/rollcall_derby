@@ -7,9 +7,19 @@ import { join, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
-  parseVersion, versionError, compareVersions,
-  parseChangelog, formatChangelog, prepare, check, notes, REPO_URL,
-  tagStatus, milestoneCheck, milestoneRequired, issueRefs,
+  parseVersion,
+  versionError,
+  compareVersions,
+  parseChangelog,
+  formatChangelog,
+  prepare,
+  check,
+  notes,
+  REPO_URL,
+  tagStatus,
+  milestoneCheck,
+  milestoneRequired,
+  issueRefs,
 } from './release.mjs';
 
 // --- versions ---
@@ -44,8 +54,17 @@ test('versionError accepts valid versions', () => {
 
 test('compareVersions follows semver precedence', () => {
   const ascending = [
-    '0.1.9', '0.2.0', '0.3.0-1', '0.3.0-alpha', '0.3.0-beta', '0.3.0-beta.1',
-    '0.3.0-beta.2', '0.3.0-beta.10', '0.3.0-rc.1', '0.3.0', '1.0.0',
+    '0.1.9',
+    '0.2.0',
+    '0.3.0-1',
+    '0.3.0-alpha',
+    '0.3.0-beta',
+    '0.3.0-beta.1',
+    '0.3.0-beta.2',
+    '0.3.0-beta.10',
+    '0.3.0-rc.1',
+    '0.3.0',
+    '1.0.0',
   ];
   for (let i = 0; i < ascending.length - 1; i++) {
     assert.equal(compareVersions(ascending[i], ascending[i + 1]), -1, `${ascending[i]} < ${ascending[i + 1]}`);
@@ -183,7 +202,10 @@ test('prepare bumps the version in every package.json', () => {
   });
   const { packages } = prepare(root, '0.1.0', { date: '2026-10-14' });
   assert.deepEqual(packages, [
-    'package.json', 'apps/server/package.json', 'apps/web/package.json', 'packages/shared/package.json',
+    'package.json',
+    'apps/server/package.json',
+    'apps/web/package.json',
+    'packages/shared/package.json',
   ]);
   for (const file of packages) assert.equal(read(root, file), pkg('0.1.0'), file);
 });
@@ -196,8 +218,14 @@ test('prepare refuses when Unreleased has no entries, even with empty headings',
 
 test('prepare refuses a version that is not greater than the latest release', () => {
   const root = makeTree({ 'CHANGELOG.md': SECOND });
-  assert.throws(() => prepare(root, '0.0.9', { date: '2026-11-01' }), /0\.0\.9 is not greater than the latest release 0\.1\.0/);
-  assert.throws(() => prepare(root, '0.1.0-beta.1', { date: '2026-11-01' }), /not greater than the latest release 0\.1\.0/);
+  assert.throws(
+    () => prepare(root, '0.0.9', { date: '2026-11-01' }),
+    /0\.0\.9 is not greater than the latest release 0\.1\.0/,
+  );
+  assert.throws(
+    () => prepare(root, '0.1.0-beta.1', { date: '2026-11-01' }),
+    /not greater than the latest release 0\.1\.0/,
+  );
 });
 
 test('prepare refuses a version that already has a section', () => {
@@ -235,8 +263,14 @@ test('check passes for a prepared changelog', () => {
 
 test('check reports Unreleased entries that were never prepared', () => {
   const errors = check(makeTree({ 'CHANGELOG.md': FIRST }), '0.1.0');
-  assert.ok(errors.some((e) => e.startsWith('the Unreleased section still has entries')), errors.join('\n'));
-  assert.ok(errors.some((e) => e.startsWith('CHANGELOG.md has no section for 0.1.0')), errors.join('\n'));
+  assert.ok(
+    errors.some((e) => e.startsWith('the Unreleased section still has entries')),
+    errors.join('\n'),
+  );
+  assert.ok(
+    errors.some((e) => e.startsWith('CHANGELOG.md has no section for 0.1.0')),
+    errors.join('\n'),
+  );
 });
 
 test('check ignores empty subsection headings under Unreleased', () => {
@@ -311,15 +345,20 @@ test('CLI without a command prints usage and exits 2', () => {
 
 // --- tag and milestone guards (used by both workflow jobs) ---
 
+function git(cwd, ...args) {
+  const r = spawnSync(
+    'git',
+    ['-c', 'commit.gpgsign=false', '-c', 'tag.gpgsign=false', '-c', 'core.hooksPath=/dev/null', ...args],
+    { cwd, encoding: 'utf8' },
+  );
+  if (r.status !== 0) throw new Error(`git ${args.join(' ')}: ${r.stderr}`);
+}
+
 function gitRepoWithRemote(tags) {
   const root = mkdtempSync(join(tmpdir(), 'release-git-'));
   roots.push(root);
   const remote = join(root, 'remote.git');
   const work = join(root, 'work');
-  const git = (cwd, ...args) => {
-    const r = spawnSync('git', ['-c', 'commit.gpgsign=false', '-c', 'tag.gpgsign=false', '-c', 'core.hooksPath=/dev/null', ...args], { cwd, encoding: 'utf8' });
-    if (r.status !== 0) throw new Error(`git ${args.join(' ')}: ${r.stderr}`);
-  };
   git(root, 'init', '-q', '--bare', remote);
   git(root, 'init', '-q', work);
   git(work, '-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-q', '--allow-empty', '-m', 'x');
@@ -338,7 +377,10 @@ test('tagStatus reports a release tag that does not exist yet', () => {
 });
 
 test('tagStatus fails loudly when the remote cannot be read, instead of assuming absent', () => {
-  assert.throws(() => tagStatus('0.1.0', { cwd: gitRepoWithRemote([]), remote: 'no-such-remote' }), /could not check tags on no-such-remote/);
+  assert.throws(
+    () => tagStatus('0.1.0', { cwd: gitRepoWithRemote([]), remote: 'no-such-remote' }),
+    /could not check tags on no-such-remote/,
+  );
 });
 
 const MILESTONES = [
@@ -347,7 +389,10 @@ const MILESTONES = [
 ];
 
 test('milestoneCheck returns the milestone when it exists with no open issues', () => {
-  assert.deepEqual(milestoneCheck(MILESTONES, '0.1.0'), { milestone: { number: 1, url: 'https://example.com/m/1' }, errors: [] });
+  assert.deepEqual(milestoneCheck(MILESTONES, '0.1.0'), {
+    milestone: { number: 1, url: 'https://example.com/m/1' },
+    errors: [],
+  });
 });
 
 test('milestoneCheck reports open issues', () => {
@@ -372,10 +417,16 @@ test('CLI tag-absent exits 1 when the tag already exists', () => {
 });
 
 test('CLI milestone reads the API response on stdin and prints number and url', () => {
-  const ok = spawnSync(process.execPath, [SCRIPT, 'milestone', '0.1.0'], { input: JSON.stringify(MILESTONES), encoding: 'utf8' });
+  const ok = spawnSync(process.execPath, [SCRIPT, 'milestone', '0.1.0'], {
+    input: JSON.stringify(MILESTONES),
+    encoding: 'utf8',
+  });
   assert.equal(ok.status, 0, ok.stderr);
   assert.deepEqual(JSON.parse(ok.stdout), { number: 1, url: 'https://example.com/m/1' });
-  const open = spawnSync(process.execPath, [SCRIPT, 'milestone', '0.2.0'], { input: JSON.stringify(MILESTONES), encoding: 'utf8' });
+  const open = spawnSync(process.execPath, [SCRIPT, 'milestone', '0.2.0'], {
+    input: JSON.stringify(MILESTONES),
+    encoding: 'utf8',
+  });
   assert.equal(open.status, 1);
   assert.match(open.stderr, /still has 3 open issue\(s\)/);
 });
@@ -402,11 +453,12 @@ test('milestoneCheck still enforces a patch milestone that exists', () => {
 });
 
 test('issueRefs lists each referenced issue once, in order, ignoring headings, URLs and cross-repo refs', () => {
-  const text = '### Fixed\n\n- Roster paging (#20)\n- Photo crop (#7, #20)\n- See owner/repo#99, https://example.com/page#12 and &#38;';
+  const text =
+    '### Fixed\n\n- Roster paging (#20)\n- Photo crop (#7, #20)\n- See owner/repo#99, https://example.com/page#12 and &#38;';
   assert.deepEqual(issueRefs(text), [20, 7]);
 });
 
-test('CLI issues prints the issue numbers in a version\'s notes', () => {
+test("CLI issues prints the issue numbers in a version's notes", () => {
   const text = FIRST_PREPARED.replace('- Team Builder (#12)', '- Team Builder (#12)\n- Member photos (#15)');
   const out = cli('issues', '0.1.0', '--root', makeTree({ 'CHANGELOG.md': text }));
   assert.equal(out.status, 0, out.stderr);
@@ -414,7 +466,10 @@ test('CLI issues prints the issue numbers in a version\'s notes', () => {
 });
 
 test('CLI milestone prints null for a patch release without a milestone', () => {
-  const out = spawnSync(process.execPath, [SCRIPT, 'milestone', '0.1.1'], { input: JSON.stringify(MILESTONES), encoding: 'utf8' });
+  const out = spawnSync(process.execPath, [SCRIPT, 'milestone', '0.1.1'], {
+    input: JSON.stringify(MILESTONES),
+    encoding: 'utf8',
+  });
   assert.equal(out.status, 0, out.stderr);
   assert.equal(out.stdout.trim(), 'null');
 });

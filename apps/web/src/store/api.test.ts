@@ -7,7 +7,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('api.getHealth', () => {
   it('fetches /api/health and returns the parsed contract', async () => {
-    const fetchMock = vi.fn(async (_request: Request) => Response.json(health));
+    const fetchMock = vi.fn<(request: Request) => Promise<Response>>(async () => Response.json(health));
     vi.stubGlobal('fetch', fetchMock);
     const result = await makeStore().dispatch(api.endpoints.getHealth.initiate());
     expect(result.data).toEqual(health);
@@ -15,7 +15,10 @@ describe('api.getHealth', () => {
   });
 
   it('reports an error when the response is off-contract', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ status: 'ok' })));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Response.json({ status: 'ok' })),
+    );
     const result = await makeStore().dispatch(api.endpoints.getHealth.initiate());
     expect(result.isError).toBe(true);
   });
