@@ -1,0 +1,172 @@
+# Cuts an obs-producer release. Deliberate by design (ADR-0009):
+# manual start only, dry run by default, and publishing waits for approval
+# in the protected "release" environment.
+# Guide: obs-producer/docs/guides/releasing.md
+name: obs-producer release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, without a leading v (e.g. 0.2.0 or 0.3.0-beta.1)"
+        required: true
+        type: string
+      dry_run:
+        description: "Dry run: run every check, publish nothing"
+        required: true
+        type: boolean
+        default: true
+
+concurrency:
+  group: obs-producer-release
+  cancel-in-progress: false
+
+permissions: {}
+
+env:
+  TAG_PREFIX: obs-producer-v
+  MILESTONE_PREFIX: "obs-producer v"
+
+jobs:
+  preflight:
+    name: Preflight checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+    env:
+      VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Must run on main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Releases are cut from main only. Choose main in the branch dropdown."
+          exit 1
+
+      - name: Validate the version format
+        run: |
+          if [[ ! "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Invalid version input. Use semver without a leading v, e.g. 0.2.0 or 0.3.0-beta.1."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Record the commit being released
+        id: commit
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Tag must not exist yet
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG_PREFIX}${VERSION}" > /dev/null; then
+            echo "::error::Tag ${TAG_PREFIX}${VERSION} already exists. That version is already released; pick the next one."
+            exit 1
+          fi
+
+      - name: CHANGELOG and package versions are ready
+        working-directory: obs-producer
+        run: node scripts/release.mjs check "$VERSION"
+
+      - name: Milestone exists and has no open issues
+        run: |
+          title="${MILESTONE_PREFIX}${VERSION}"
+          milestone=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/milestones?state=all&per_page=100" \
+            | jq -c --arg t "$title" '.[] | select(.title == $t)')
+          if [ -z "$milestone" ]; then
+            echo "::error::No milestone titled '${title}'. Create it and assign this release's issues to it."
+            exit 1
+          fi
+          open=$(jq -r '.open_issues' <<< "$milestone")
+          if [ "$open" != "0" ]; then
+            echo "::error::Milestone '${title}' still has ${open} open issue(s): $(jq -r '.html_url' <<< "$milestone")"
+            exit 1
+          fi
+
+      - name: Docs lint and script tests
+        working-directory: obs-producer
+        run: |
+          node --test "scripts/*.test.mjs"
+          node scripts/check-docs.mjs
+
+      - name: Show the release notes
+        working-directory: obs-producer
+        run: |
+          {
+            echo "## Release notes for ${TAG_PREFIX}${VERSION}"
+            echo
+            node scripts/release.mjs notes "$VERSION"
+            echo
+            if [ "${{ inputs.dry_run }}" = "true" ]; then
+              echo "> **Dry run:** every check passed. Nothing was published."
+            else
+              echo "> Checks passed. **Publish** is waiting for approval in the \`release\` environment."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    name: Publish (needs approval)
+    needs: preflight
+    if: ${{ !inputs.dry_run }}
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+      issues: write
+    env:
+      VERSION: ${{ inputs.version }}
+      SHA: ${{ needs.preflight.outputs.sha }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.preflight.outputs.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Build the release notes
+        run: |
+          title="${MILESTONE_PREFIX}${VERSION}"
+          milestone=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/milestones?state=all&per_page=100" \
+            | jq -c --arg t "$title" '.[] | select(.title == $t)')
+          number=$(jq -r '.number' <<< "$milestone")
+          if [ -z "$milestone" ] || [ "$number" = "null" ]; then
+            echo "::error::Milestone '${title}' disappeared after preflight. Re-create it and run the workflow again."
+            exit 1
+          fi
+          {
+            node obs-producer/scripts/release.mjs notes "$VERSION"
+            echo
+            echo "---"
+            echo
+            echo "**Milestone:** [${title}]($(jq -r '.html_url' <<< "$milestone"))"
+            echo
+            echo "**Closed issues:**"
+            echo
+            gh api --paginate "repos/${GITHUB_REPOSITORY}/issues?milestone=${number}&state=closed&per_page=100" \
+              | jq -r '.[] | select(.pull_request | not) | "- #\(.number) \(.title)"'
+          } > "$RUNNER_TEMP/notes.md"
+          echo "MILESTONE_NUMBER=${number}" >> "$GITHUB_ENV"
+
+      - name: Create the GitHub release
+        run: |
+          flags=()
+          if [[ "$VERSION" == *-* ]]; then flags+=(--prerelease); fi
+          gh release create "${TAG_PREFIX}${VERSION}" \
+            --target "$SHA" \
+            --title "OBS Producer v${VERSION}" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            "${flags[@]}"
+
+      - name: Close the milestone
+        run: gh api -X PATCH "repos/${GITHUB_REPOSITORY}/milestones/${MILESTONE_NUMBER}" -f state=closed
