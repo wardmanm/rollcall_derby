@@ -1,0 +1,42 @@
+name: "OBS Producer: bug"
+description: Something in OBS Producer doesn't behave the way its wiki page says.
+labels: ["bug", "obs-producer"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The release you're running (e.g. obs-producer-v0.2.0), or "main".
+    validations:
+      required: true
+  - type: input
+    id: wiki-page
+    attributes:
+      label: Expected behavior is specified in
+      description: Wiki page and requirement number, if there is one.
+      placeholder: obs-producer/docs/features/live-mode.md R6
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      render: shell

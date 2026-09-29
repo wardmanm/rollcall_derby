@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: OBS Producer wiki
+    url: https://github.com/wardmanm/GROBS/blob/main/obs-producer/docs/README.md
+    about: Features, decisions and guides. Check the feature page before filing.
