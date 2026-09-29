@@ -35,6 +35,7 @@ Details and rationale are in the [ADRs](docs/decisions/README.md).
 - Web: Vite + React SPA, React Router, Mantine for admin UI, Redux Toolkit + RTK Query ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md), [ADR-0003](docs/decisions/0003-client-state-with-redux-toolkit.md))
 - Server: Fastify + Socket.IO; SQLite via Drizzle ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md), [ADR-0004](docs/decisions/0004-server-is-the-hub.md))
 - Contract: Zod schemas in `packages/shared` ([ADR-0007](docs/decisions/0007-shared-zod-contract.md))
+- TypeScript runs natively on Node with no build step: erasable syntax only (no `enum`/`namespace`), `.ts` extensions on relative imports ([ADR-0013](docs/decisions/0013-run-typescript-natively-on-node.md))
 - Lint and format: Oxlint with type-aware rules (not ESLint), Prettier ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md))
 - Tests: Vitest, React Testing Library, Playwright
 
@@ -63,6 +64,7 @@ Run from `obs-producer/`:
 |---|---|
 | `yarn install` | Install dependencies for all workspaces (CI uses `yarn install --immutable`) |
 | `yarn typecheck` | Type-check every workspace |
+| `yarn test` | Run every workspace's Vitest tests (`*.test.ts` next to the code) |
 | `yarn docs:check` | Same as `node scripts/check-docs.mjs` |
 | `node scripts/check-docs.mjs` | Lint the wiki: frontmatter, links, anchors, reachability, ADR numbering, generated tables |
 | `node scripts/check-docs.mjs --fix` | Regenerate the feature and ADR index tables from frontmatter, then lint |
@@ -74,7 +76,7 @@ Run from `obs-producer/`:
 | `node scripts/release.mjs notes <version>` | Print a version's release notes |
 | `node scripts/release.mjs tag-absent\|milestone\|issues <version>` | Used by the release workflow: tag and milestone checks before and after approval, and the issue numbers to mark as released |
 
-More app commands (`yarn dev`, `yarn test`, `yarn lint`, `yarn build`) arrive with #10. Add them to this table when they do.
+More app commands (`yarn dev`, `yarn lint`, `yarn build`) arrive with #10. Add them to this table when they do.
 
 ## Documentation rules
 
