@@ -4,9 +4,22 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "node --watch src/main.ts",
+    "start": "node src/main.ts",
+    "db:generate": "drizzle-kit generate",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@obs-producer/shared": "workspace:^"
+    "@obs-producer/shared": "workspace:^",
+    "better-sqlite3": "^13.0.3",
+    "drizzle-orm": "^0.45.3",
+    "fastify": "^5.12.5",
+    "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^24",
+    "drizzle-kit": "^0.31.11",
+    "socket.io-client": "^4.8.4"
   }
 }
