@@ -3,7 +3,7 @@ title: Data model
 ---
 # Data model
 
-This page covers the domain entities and how they relate. It deliberately lists no columns. Once the app is scaffolded, the Drizzle schema in `apps/server` becomes the source of truth for fields ([ADR-0002](../decisions/0002-initial-technology-stack.md)), and this page stays a map of the concepts.
+This page covers the domain entities and how they relate. It deliberately lists no columns. Once the app is scaffolded, the Drizzle schema in `apps/server` becomes the source of truth for fields ([ADR-0011](../decisions/0011-technology-stack-with-yarn.md)), and this page stays a map of the concepts.
 
 ## Entities
 

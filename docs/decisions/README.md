@@ -11,7 +11,7 @@ To write a new one, follow [recording decisions](../wiki-guide.md#recording-deci
 | ADR | Title | Status | Date |
 | --- | --- | --- | --- |
 | [0001](0001-record-decisions-as-adrs.md) | Record decisions as ADRs | accepted | 2026-09-28 |
-| [0002](0002-initial-technology-stack.md) | Initial technology stack | accepted | 2026-09-28 |
+| [0002](0002-initial-technology-stack.md) | Initial technology stack | superseded by [0011](0011-technology-stack-with-yarn.md) | 2026-09-28 |
 | [0003](0003-client-state-with-redux-toolkit.md) | Client state with Redux Toolkit | accepted | 2026-09-28 |
 | [0004](0004-server-is-the-hub.md) | Server is the hub | accepted | 2026-09-28 |
 | [0005](0005-crg-is-listen-only.md) | CRG is listen-only | accepted | 2026-09-28 |
@@ -20,4 +20,5 @@ To write a new one, follow [recording decisions](../wiki-guide.md#recording-deci
 | [0008](0008-auth-rbac-and-overlay-access.md) | Auth, RBAC and overlay access | proposed | 2026-09-28 |
 | [0009](0009-deliberate-milestone-driven-releases.md) | Deliberate, milestone-driven releases | superseded by [0010](0010-deliberate-releases-patch-tracking.md) | 2026-09-28 |
 | [0010](0010-deliberate-releases-patch-tracking.md) | Deliberate releases, milestones for planned versions only | accepted | 2026-09-29 |
+| [0011](0011-technology-stack-with-yarn.md) | Technology stack, with Yarn workspaces | accepted | 2026-09-29 |
 <!-- /generated:decisions -->

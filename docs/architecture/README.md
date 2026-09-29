@@ -40,7 +40,7 @@ flowchart LR
 
 ## Pieces
 
-These workspaces are planned in [ADR-0002](../decisions/0002-initial-technology-stack.md).
+These workspaces are planned in [ADR-0011](../decisions/0011-technology-stack-with-yarn.md).
 
 | Workspace | Responsibility |
 |---|---|

@@ -1,9 +1,12 @@
 ---
 title: Initial technology stack
-status: accepted
+status: superseded
 date: 2026-09-28
+superseded_by: "0011"
 ---
 # 0002. Initial technology stack
+
+> **Superseded by [ADR-0011](0011-technology-stack-with-yarn.md):** the monorepo uses Yarn workspaces instead of npm workspaces. The rest of the stack is unchanged.
 
 ## Context
 

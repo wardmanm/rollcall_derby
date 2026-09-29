@@ -6,8 +6,10 @@ All notable changes to OBS Producer are documented here, newest first. The forma
 
 ### Added
 
-- Project wiki: vision, roadmap, glossary, feature pages, architecture and decision records
-- Docs lint (`scripts/check-docs.mjs`) with CI
-- Release pipeline: changelog, issue forms, and a deliberate, approval-gated release workflow
+- Project wiki: vision, roadmap, glossary, feature pages, architecture and decision records (#1)
+- Agent instructions (`AGENTS.md` / `CLAUDE.md`) shared by AI coding agents and contributors (#2)
+- Docs lint (`scripts/check-docs.mjs`) with CI (#1)
+- Release pipeline: changelog, and a deliberate, approval-gated release workflow (#3)
+- Issue forms (feature, bug, chore), PR template and labels (#4)
 
 [Unreleased]: https://github.com/wardmanm/GROBS/commits/main/obs-producer

@@ -11,13 +11,13 @@ Nothing user-facing yet: this phase lays the groundwork every feature depends on
 
 - [x] Living wiki, agent instructions (`AGENTS.md` / `CLAUDE.md`), docs lint and CI
 - [x] Release pipeline: issue forms, milestones, changelog, and a deliberate release workflow ([releasing](../guides/releasing.md))
-- [ ] Scaffold the monorepo described in [ADR-0002](../decisions/0002-initial-technology-stack.md): `apps/server`, `apps/web`, `packages/shared`
-- [ ] Add the npm scripts (`dev`, `test`, `lint`, `build`, `docs:check`) and document them in `AGENTS.md`
+- [ ] Scaffold the monorepo described in [ADR-0011](../decisions/0011-technology-stack-with-yarn.md): `apps/server`, `apps/web`, `packages/shared`
+- [ ] Add the Yarn scripts (`dev`, `test`, `lint`, `build`, `docs:check`) and document them in `AGENTS.md`
 - [ ] Add path-scoped agent rules that map code areas to their doc pages (see `obs-producer/CLAUDE.md`)
-- [ ] Auth skeleton: first-run admin account, login, and server-side role checks ([users and access](../features/users-and-access.md))
 
 ## Phase 1 — Builders
 
+- Auth skeleton: first-run admin account, login, and server-side role checks ([users and access](../features/users-and-access.md))
 - [Team Builder](../features/team-builder.md)
 - [Theme Builder](../features/theme-builder.md)
 - [Import / export](../features/import-export.md) for teams and themes

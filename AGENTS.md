@@ -31,9 +31,9 @@ These must never be broken. Each one is copied word for word from the ADR in bra
 
 Details and rationale are in the [ADRs](docs/decisions/README.md).
 
-- TypeScript (strict) monorepo with npm workspaces, Node ≥ 24 LTS ([ADR-0002](docs/decisions/0002-initial-technology-stack.md))
-- Web: Vite + React SPA, React Router, Mantine for admin UI, Redux Toolkit + RTK Query ([ADR-0002](docs/decisions/0002-initial-technology-stack.md), [ADR-0003](docs/decisions/0003-client-state-with-redux-toolkit.md))
-- Server: Fastify + Socket.IO; SQLite via Drizzle ([ADR-0002](docs/decisions/0002-initial-technology-stack.md), [ADR-0004](docs/decisions/0004-server-is-the-hub.md))
+- TypeScript (strict) monorepo with Yarn 4 workspaces, Node ≥ 24 LTS ([ADR-0011](docs/decisions/0011-technology-stack-with-yarn.md))
+- Web: Vite + React SPA, React Router, Mantine for admin UI, Redux Toolkit + RTK Query ([ADR-0011](docs/decisions/0011-technology-stack-with-yarn.md), [ADR-0003](docs/decisions/0003-client-state-with-redux-toolkit.md))
+- Server: Fastify + Socket.IO; SQLite via Drizzle ([ADR-0011](docs/decisions/0011-technology-stack-with-yarn.md), [ADR-0004](docs/decisions/0004-server-is-the-hub.md))
 - Contract: Zod schemas in `packages/shared` ([ADR-0007](docs/decisions/0007-shared-zod-contract.md))
 - Tests: Vitest, React Testing Library, Playwright
 
@@ -45,7 +45,7 @@ obs-producer/
 ├── design-docs/       dated specs and plans (working papers, not maintained after use)
 ├── CHANGELOG.md       release notes; add a line under Unreleased for user-visible changes
 ├── scripts/           check-docs.mjs (docs lint), release.mjs (release helper) + tests
-│   planned after scaffold (ADR-0002):
+│   planned after scaffold (ADR-0011):
 ├── apps/server/       Fastify API, Socket.IO, OBS/CRG connections, SQLite
 ├── apps/web/          React SPA (admin + dashboards) and the overlay entry
 └── packages/shared/   Zod schemas and types shared by server and web
@@ -67,7 +67,7 @@ Run from `obs-producer/`:
 | `node scripts/release.mjs notes <version>` | Print a version's release notes |
 | `node scripts/release.mjs tag-absent\|milestone\|issues <version>` | Used by the release workflow: tag and milestone checks before and after approval, and the issue numbers to mark as released |
 
-App commands (`npm run dev`, `test`, `lint`, `build`) arrive with the scaffold in roadmap Phase 0. Add them to this table then, and wire the lint in as `npm run docs:check`.
+App commands (`yarn dev`, `yarn test`, `yarn lint`, `yarn build`) arrive with the scaffold in roadmap Phase 0. Add them to this table then, and wire the lint in as `yarn docs:check`.
 
 ## Documentation rules
 
