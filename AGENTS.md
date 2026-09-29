@@ -5,7 +5,7 @@ OBS Producer is a web app hosted on the local network for producing roller derby
 - **Live Mode** for events, games, and tracks running at the same time, with producer dashboards that preview and control what's on air.
 - **Integrations** that control OBS and *listen* to the CRG scoreboard.
 
-**Status:** pre-scaffold. The wiki, these instructions and the docs lint exist; app code does not yet. See the [roadmap](docs/product/roadmap.md).
+**Status:** pre-scaffold. The wiki, these instructions, the docs lint and the release pipeline exist; app code does not yet. See the [roadmap](docs/product/roadmap.md).
 
 These rules apply to AI agents and human contributors alike. They add to the repo-root [AGENTS.md](../AGENTS.md).
 
@@ -25,6 +25,7 @@ These must never be broken. Each one is copied word for word from the ADR in bra
 4. **Works offline at the venue.** Nothing at runtime depends on the internet: no CDNs, no hosted fonts, no cloud APIs. The server serves every asset. ([ADR-0004](docs/decisions/0004-server-is-the-hub.md))
 5. **Authorization happens on the server.** Every API route and socket event checks the caller's role. Hiding UI is not access control. ([ADR-0008](docs/decisions/0008-auth-rbac-and-overlay-access.md))
 6. **Server data lives in RTK Query, never copied into slices.** Overlay components are presentational: they get data through props and never read the admin store. ([ADR-0003](docs/decisions/0003-client-state-with-redux-toolkit.md), [ADR-0006](docs/decisions/0006-one-overlay-renderer-css-variable-theming.md))
+7. **Releases are deliberate.** A release is cut only by a person running the release workflow and approving it. Agents never create release tags or GitHub Releases, and never start the release workflow (even as a dry run), unless the user explicitly asks them to for a specific version. ([ADR-0009](docs/decisions/0009-deliberate-milestone-driven-releases.md))
 
 ## Stack
 
@@ -42,7 +43,8 @@ Details and rationale are in the [ADRs](docs/decisions/README.md).
 obs-producer/
 ├── docs/              the wiki (living pages + ADRs)
 ├── design-docs/       dated specs and plans (working papers, not maintained after use)
-├── scripts/           check-docs.mjs (docs lint) + its tests
+├── CHANGELOG.md       release notes; add a line under Unreleased for user-visible changes
+├── scripts/           check-docs.mjs (docs lint), release.mjs (release helper) + tests
 │   planned after scaffold (ADR-0002):
 ├── apps/server/       Fastify API, Socket.IO, OBS/CRG connections, SQLite
 ├── apps/web/          React SPA (admin + dashboards) and the overlay entry
@@ -59,7 +61,10 @@ Run from `obs-producer/`:
 | `node scripts/check-docs.mjs --fix` | Regenerate the feature and ADR index tables from frontmatter, then lint |
 | `node scripts/check-docs.mjs --questions` | List every open question across the wiki |
 | `node scripts/check-docs.mjs --next-adr` | Print the next free ADR number |
-| `node --test "scripts/*.test.mjs"` | Test the docs lint |
+| `node --test "scripts/*.test.mjs"` | Test the scripts (docs lint, release helper) |
+| `node scripts/release.mjs prepare <version>` | Move `Unreleased` notes under `<version>` and bump package versions ([releasing](docs/guides/releasing.md)) |
+| `node scripts/release.mjs check <version>` | Check that the changelog and versions are ready to release |
+| `node scripts/release.mjs notes <version>` | Print a version's release notes |
 
 App commands (`npm run dev`, `test`, `lint`, `build`) arrive with the scaffold in roadmap Phase 0. Add them to this table then, and wire the lint in as `npm run docs:check`.
 
@@ -79,4 +84,5 @@ The full process is in the [wiki guide](docs/wiki-guide.md).
 - Behavior matches its feature page, and the page is updated if behavior changed.
 - Tests are added or updated, and they pass.
 - `node scripts/check-docs.mjs` passes.
+- User-visible changes have a line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md), ending with the issue number.
 - Every hard rule above still holds.

@@ -18,4 +18,5 @@ To write a new one, follow [recording decisions](../wiki-guide.md#recording-deci
 | [0006](0006-one-overlay-renderer-css-variable-theming.md) | One overlay renderer, CSS-variable theming | accepted | 2026-09-28 |
 | [0007](0007-shared-zod-contract.md) | Shared Zod contract | accepted | 2026-09-28 |
 | [0008](0008-auth-rbac-and-overlay-access.md) | Auth, RBAC and overlay access | proposed | 2026-09-28 |
+| [0009](0009-deliberate-milestone-driven-releases.md) | Deliberate, milestone-driven releases | accepted | 2026-09-28 |
 <!-- /generated:decisions -->

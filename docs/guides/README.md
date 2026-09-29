@@ -5,6 +5,12 @@ title: Guides
 
 Step-by-step how-tos. A guide is written when the feature it describes exists, so that every step is accurate. Until then, planned guides are listed here rather than created as empty pages ([wiki guide](../wiki-guide.md#principles)).
 
+## For maintainers
+
+| Guide | Covers |
+|---|---|
+| [Releasing](releasing.md) | Issues and milestones, the changelog, and cutting a release |
+
 ## For operators (game day)
 
 These are for Admins, Producers and Announcers running an event.

@@ -23,3 +23,4 @@ These add to the repo-root `CLAUDE.md`. Shared rules belong in `AGENTS.md` above
   ```
 
   Editing code then brings up the page to keep in sync.
+- **Releases:** `/release <version>` (repo-root `.claude/skills/release/`) prepares a release. Only the user can start it. Never publish (hard rule 7). The process is in `docs/guides/releasing.md`.

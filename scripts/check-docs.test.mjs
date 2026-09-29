@@ -212,6 +212,12 @@ test('checks links in the root agent instruction files', () => {
   assertError(errorsFor({ 'AGENTS.md': '# Agents\n\n[wiki](docs/nope.md)\n' }), 'AGENTS.md: broken link "docs/nope.md"');
 });
 
+test('checks links in CHANGELOG.md but not its link reference definitions', () => {
+  const changelog = '# Changelog\n\nSee the [guide](docs/nope.md).\n\n## [Unreleased]\n\n[Unreleased]: https://example.com\n';
+  const errors = errorsFor({ 'CHANGELOG.md': changelog });
+  assert.deepEqual(errors, ['CHANGELOG.md: broken link "docs/nope.md"']);
+});
+
 // --- reachability ---
 
 test('reports a page that is not reachable from docs/README.md', () => {

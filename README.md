@@ -14,6 +14,7 @@ A web app for producing roller derby streams in [OBS Studio](https://obsproject.
 
 - **[Wiki](docs/README.md)**: product vision, features, architecture, decisions, and guides.
 - **[AGENTS.md](AGENTS.md)**: contributor rules, commands, and the definition of done. It's written for AI agents but applies to humans too.
+- **[CHANGELOG](CHANGELOG.md)**: what changed in each release.
 
 ## License
 

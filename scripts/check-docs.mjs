@@ -16,7 +16,7 @@ const FEATURE_STATUSES = ['planned', 'in-progress', 'shipped', 'deprecated'];
 const ADR_STATUSES = ['proposed', 'accepted', 'superseded', 'deprecated'];
 const ADR_FILENAME = /^(\d{4})-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-const ROOT_FILES = ['AGENTS.md', 'CLAUDE.md', 'README.md']; // link-checked only
+const ROOT_FILES = ['AGENTS.md', 'CLAUDE.md', 'README.md', 'CHANGELOG.md']; // link-checked only
 const EXEMPT = /^docs\/templates\//;
 const HOME = 'docs/README.md';
 

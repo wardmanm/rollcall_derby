@@ -10,6 +10,7 @@ The order we plan to build things in. Each phase links to its feature pages, and
 Nothing user-facing yet: this phase lays the groundwork every feature depends on.
 
 - [x] Living wiki, agent instructions (`AGENTS.md` / `CLAUDE.md`), docs lint and CI
+- [x] Release pipeline: issue forms, milestones, changelog, and a deliberate release workflow ([releasing](../guides/releasing.md))
 - [ ] Scaffold the monorepo described in [ADR-0002](../decisions/0002-initial-technology-stack.md): `apps/server`, `apps/web`, `packages/shared`
 - [ ] Add the npm scripts (`dev`, `test`, `lint`, `build`, `docs:check`) and document them in `AGENTS.md`
 - [ ] Add path-scoped agent rules that map code areas to their doc pages (see `obs-producer/CLAUDE.md`)
