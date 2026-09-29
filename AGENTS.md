@@ -25,7 +25,7 @@ These must never be broken. Each one is copied word for word from the ADR in bra
 4. **Works offline at the venue.** Nothing at runtime depends on the internet: no CDNs, no hosted fonts, no cloud APIs. The server serves every asset. ([ADR-0004](docs/decisions/0004-server-is-the-hub.md))
 5. **Authorization happens on the server.** Every API route and socket event checks the caller's role. Hiding UI is not access control. ([ADR-0008](docs/decisions/0008-auth-rbac-and-overlay-access.md))
 6. **Server data lives in RTK Query, never copied into slices.** Overlay components are presentational: they get data through props and never read the admin store. ([ADR-0003](docs/decisions/0003-client-state-with-redux-toolkit.md), [ADR-0006](docs/decisions/0006-one-overlay-renderer-css-variable-theming.md))
-7. **Releases are deliberate.** A release is cut only by a person running the release workflow and approving it. Agents never create release tags or GitHub Releases, and never start the release workflow (even as a dry run), unless the user explicitly asks them to for a specific version. ([ADR-0009](docs/decisions/0009-deliberate-milestone-driven-releases.md))
+7. **Releases are deliberate.** A release is cut only by a person running the release workflow and approving it. Agents never approve a release deployment, and never create release tags or GitHub Releases or start the release workflow (even as a dry run) unless the user explicitly asks them to for a specific version. ([ADR-0009](docs/decisions/0009-deliberate-milestone-driven-releases.md))
 
 ## Stack
 

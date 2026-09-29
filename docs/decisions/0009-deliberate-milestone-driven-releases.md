@@ -27,7 +27,7 @@ Options considered:
 - **Release tags are permanent.** A tag ruleset blocks moving or deleting `*-v*` tags, and GitHub immutable releases is on. A bad release is fixed by a new patch release.
 - **SemVer, `0.x` until the app is ready for general use.** A pre-release suffix (`-beta.1`) publishes a GitHub pre-release.
 
-**Hard rule:** **Releases are deliberate.** A release is cut only by a person running the release workflow and approving it. Agents never create release tags or GitHub Releases, and never start the release workflow (even as a dry run), unless the user explicitly asks them to for a specific version.
+**Hard rule:** **Releases are deliberate.** A release is cut only by a person running the release workflow and approving it. Agents never approve a release deployment, and never create release tags or GitHub Releases or start the release workflow (even as a dry run) unless the user explicitly asks them to for a specific version.
 
 ## Consequences
 

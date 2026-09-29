@@ -63,7 +63,7 @@ Set up a GitHub release pipeline for obs-producer. Mike will create GitHub issue
 5. The tag targets the exact commit the preflight checked.
 6. Release tags can't be moved or deleted: a tag ruleset on `refs/tags/*-v*` restricts updates and deletions, and GitHub **immutable releases** is enabled (confirmed available: `GET /repos/wardmanm/GROBS/immutable-releases` → `enabled: false`).
 7. **Agents never release.** Hard rule 7 in `obs-producer/AGENTS.md`, canonical in ADR-0009. Its wording:
-   > **Releases are deliberate.** A release is cut only by a person running the release workflow and approving it. Agents never create release tags or GitHub Releases, and never start the release workflow (even as a dry run), unless the user explicitly asks them to for a specific version.
+   > **Releases are deliberate.** A release is cut only by a person running the release workflow and approving it. Agents never approve a release deployment, and never create release tags or GitHub Releases or start the release workflow (even as a dry run) unless the user explicitly asks them to for a specific version.
 8. The `/release` skill is user-invocable only (`disable-model-invocation: true`).
 
 ## Files

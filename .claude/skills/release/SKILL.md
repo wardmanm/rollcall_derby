@@ -7,7 +7,7 @@ argument-hint: "<version, e.g. 0.2.0>"
 
 # Prepare an obs-producer release
 
-The user ran `/release $ARGUMENTS`. Releases are deliberate (obs-producer hard rule 7, ADR-0009): **you prepare, the user publishes.** Never push, create tags, create GitHub Releases, or start the release workflow (even as a dry run) unless the user tells you to in this conversation, for this version.
+The user ran `/release $ARGUMENTS`. Releases are deliberate (obs-producer hard rule 7, ADR-0009): **you prepare, the user publishes.** Never approve a release deployment. Never push, create tags, create GitHub Releases, or start the release workflow (even as a dry run) unless the user tells you to in this conversation, for this version.
 
 The full process is in `obs-producer/docs/guides/releasing.md`.
 

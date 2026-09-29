@@ -82,7 +82,7 @@ Run the workflow again with **Dry run** unticked. Once the checks pass, the **Pu
 
 ## AI agents and releases
 
-Agents prepare; people publish. Agents never create release tags or GitHub Releases, and never start the release workflow (not even a dry run), unless you explicitly ask them to for a specific version ([hard rule 7](../../AGENTS.md#hard-rules)). Only you can start the `/release` skill.
+Agents prepare; people publish. Agents never approve a release deployment. They also never create release tags or GitHub Releases, or start the release workflow (not even a dry run), unless you explicitly ask them to for a specific version ([hard rule 7](../../AGENTS.md#hard-rules)). Only you can start the `/release` skill.
 
 ## Repository settings the pipeline relies on
 
