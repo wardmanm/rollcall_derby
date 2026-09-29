@@ -8,6 +8,7 @@ How OBS Producer work is tracked on GitHub, and how a release is cut. Releases a
 ## Issues
 
 - File OBS Producer work with the **OBS Producer: feature** or **OBS Producer: bug** issue forms. They add the `obs-producer` label and ask which wiki page and requirement numbers the issue covers, e.g. [Team Builder](../features/team-builder.md) R3.
+- Use the **OBS Producer: chore** form for maintenance with no user-visible change: dependencies, tooling and CI, refactoring, docs upkeep. It adds the `chore` label. Chores don't need a CHANGELOG line unless users would notice.
 - **The wiki page is the spec.** If an issue changes what a feature should do, the PR that implements it updates the page. Issues link to wiki pages; wiki pages don't list issues, because that list would go stale.
 - An open question on a wiki page can get its own issue for discussion. Link back to the page; the answer goes onto the page.
 - Close issues from commits or PRs with `Closes #N`.

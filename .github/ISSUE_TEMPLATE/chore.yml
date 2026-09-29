@@ -1,0 +1,45 @@
+name: "OBS Producer: chore"
+description: Maintenance with no user-visible change, such as dependencies, tooling, CI, refactoring or docs upkeep.
+labels: ["chore", "obs-producer"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Chores don't change what users see, so they don't need a CHANGELOG line unless users would notice. If this changes how a feature behaves, use the feature or bug form instead.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - Dependencies
+        - Tooling / CI
+        - Refactor
+        - Docs / wiki
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What needs doing
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why now
+      description: Optional. What prompted this, or what it unblocks.
+  - type: input
+    id: affected
+    attributes:
+      label: Affected files or wiki pages
+      placeholder: obs-producer/scripts/check-docs.mjs, obs-producer/docs/wiki-guide.md
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: Checkable statements that say when this is done.
+      value: |
+        - [ ]
+    validations:
+      required: true
