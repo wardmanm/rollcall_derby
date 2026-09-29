@@ -4,9 +4,11 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import {
   parseVersion, versionError, compareVersions,
-  parseChangelog, formatChangelog, prepare, REPO_URL,
+  parseChangelog, formatChangelog, prepare, check, notes, REPO_URL,
 } from './release.mjs';
 
 // --- versions ---
@@ -220,4 +222,88 @@ test('prepare accepts a lowercase [unreleased] heading without duplicating its l
 
 test('prepare fails clearly when there is no CHANGELOG.md', () => {
   assert.throws(() => prepare(makeTree({}), '0.1.0'), /CHANGELOG\.md not found/);
+});
+
+// --- check ---
+
+test('check passes for a prepared changelog', () => {
+  const root = makeTree({ 'CHANGELOG.md': FIRST });
+  prepare(root, '0.1.0', { date: '2026-10-14' });
+  assert.deepEqual(check(root, '0.1.0'), []);
+});
+
+test('check reports Unreleased entries that were never prepared', () => {
+  const errors = check(makeTree({ 'CHANGELOG.md': FIRST }), '0.1.0');
+  assert.ok(errors.some((e) => e.startsWith('the Unreleased section still has entries')), errors.join('\n'));
+  assert.ok(errors.some((e) => e.startsWith('CHANGELOG.md has no section for 0.1.0')), errors.join('\n'));
+});
+
+test('check ignores empty subsection headings under Unreleased', () => {
+  const text = FIRST_PREPARED.replace('## [Unreleased]\n', '## [Unreleased]\n\n### Added\n');
+  assert.deepEqual(check(makeTree({ 'CHANGELOG.md': text }), '0.1.0'), []);
+});
+
+test('check requires a dated section with entries', () => {
+  const undated = FIRST_PREPARED.replace(' - 2026-10-14', '');
+  assert.ok(check(makeTree({ 'CHANGELOG.md': undated }), '0.1.0').some((e) => /needs a date/.test(e)));
+  const empty = FIRST_PREPARED.replace('- Team Builder (#12)', '');
+  assert.ok(check(makeTree({ 'CHANGELOG.md': empty }), '0.1.0').some((e) => /0\.1\.0 section has no entries/.test(e)));
+});
+
+test('check requires the version to be newer than every other release', () => {
+  const text = `${HEADER}\n\n## [Unreleased]\n\n## [0.1.5] - 2026-12-01\n\n- Late fix\n\n## [0.2.0] - 2026-11-01\n\n- Feature\n`;
+  const errors = check(makeTree({ 'CHANGELOG.md': text }), '0.1.5');
+  assert.ok(errors.includes('0.1.5 is not greater than the previous release 0.2.0'), errors.join('\n'));
+});
+
+test('check requires package.json versions to match', () => {
+  const root = makeTree({ 'CHANGELOG.md': FIRST_PREPARED, 'apps/web/package.json': pkg('0.0.0') });
+  assert.deepEqual(check(root, '0.1.0'), ['apps/web/package.json has version 0.0.0, expected 0.1.0']);
+});
+
+test('check rejects an unsafe version string without echoing it raw', () => {
+  const errors = check(makeTree({ 'CHANGELOG.md': FIRST_PREPARED }), '0.1.0\n::error::pwned');
+  assert.equal(errors.length, 1);
+  assert.ok(!errors[0].includes('\n'));
+});
+
+// --- notes ---
+
+test('notes returns the section body without link references', () => {
+  assert.equal(notes(makeTree({ 'CHANGELOG.md': FIRST_PREPARED }), '0.1.0'), '### Added\n\n- Team Builder (#12)');
+});
+
+test('notes fails for a version with no section', () => {
+  assert.throws(() => notes(makeTree({ 'CHANGELOG.md': FIRST_PREPARED }), '9.9.9'), /no section for 9\.9\.9/);
+});
+
+// --- CLI ---
+
+const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'release.mjs');
+const cli = (...args) => spawnSync(process.execPath, [SCRIPT, ...args], { encoding: 'utf8' });
+
+test('CLI prepare writes the changelog and exits 0', () => {
+  const root = makeTree({ 'CHANGELOG.md': FIRST });
+  const out = cli('prepare', '0.1.0', '--date', '2026-10-14', '--root', root);
+  assert.equal(out.status, 0, out.stderr);
+  assert.match(out.stdout, /prepared 0\.1\.0/);
+  assert.equal(read(root, 'CHANGELOG.md'), FIRST_PREPARED);
+});
+
+test('CLI check exits 1 and lists problems', () => {
+  const out = cli('check', '0.1.0', '--root', makeTree({ 'CHANGELOG.md': FIRST }));
+  assert.equal(out.status, 1);
+  assert.match(out.stderr, /release check failed for "0\.1\.0"/);
+});
+
+test('CLI notes prints the section body', () => {
+  const out = cli('notes', '0.1.0', '--root', makeTree({ 'CHANGELOG.md': FIRST_PREPARED }));
+  assert.equal(out.status, 0, out.stderr);
+  assert.equal(out.stdout, '### Added\n\n- Team Builder (#12)\n');
+});
+
+test('CLI without a command prints usage and exits 2', () => {
+  const out = cli();
+  assert.equal(out.status, 2);
+  assert.match(out.stderr, /usage: node scripts\/release\.mjs/);
 });

@@ -152,3 +152,84 @@ export function prepare(root, version, { date = new Date().toISOString().slice(0
   }
   return { packages };
 }
+
+// ---------- check / notes ----------
+
+export function check(root, version) {
+  const bad = versionError(version);
+  if (bad) return [bad];
+  let log;
+  try {
+    log = parseChangelog(readChangelog(root));
+  } catch (e) {
+    return [e.message];
+  }
+  const errors = [];
+  const unreleased = log.sections.find(isUnreleased);
+  if (!unreleased) errors.push('CHANGELOG.md has no "## [Unreleased]" section');
+  else if (hasEntries(unreleased.body)) {
+    errors.push(`the Unreleased section still has entries; run: node scripts/release.mjs prepare ${version}`);
+  }
+  const section = log.sections.find((s) => s.name === version);
+  if (!section) {
+    errors.push(`CHANGELOG.md has no section for ${version}; run: node scripts/release.mjs prepare ${version}`);
+  } else {
+    if (!hasEntries(section.body)) errors.push(`the ${version} section has no entries`);
+    if (!section.date || !DATE.test(section.date)) errors.push(`the ${version} section needs a date: ## [${version}] - YYYY-MM-DD`);
+  }
+  const previous = latestVersion(releasedVersions(log.sections, version));
+  if (previous && compareVersions(version, previous) <= 0) {
+    errors.push(`${version} is not greater than the previous release ${previous}`);
+  }
+  for (const file of packageFiles(root)) {
+    const { version: actual } = JSON.parse(readFileSync(join(root, file), 'utf8'));
+    if (actual !== version) errors.push(`${file} has version ${actual ?? '(none)'}, expected ${version}`);
+  }
+  return errors;
+}
+
+export function notes(root, version) {
+  const section = parseChangelog(readChangelog(root)).sections.find((s) => s.name === version);
+  if (!section) throw new Error(`CHANGELOG.md has no section for ${version}`);
+  return section.body;
+}
+
+// ---------- CLI ----------
+
+const USAGE = 'usage: node scripts/release.mjs <prepare|check|notes> <version> [--date YYYY-MM-DD] [--root dir]';
+
+function main(args) {
+  const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
+  const [command, version] = args.filter((a, i) => !a.startsWith('--') && !args[i - 1]?.startsWith('--'));
+  const root = option('--root') ? resolve(option('--root')) : resolve(dirname(fileURLToPath(import.meta.url)), '..');
+  if (!['prepare', 'check', 'notes'].includes(command) || !version) {
+    console.error(USAGE);
+    return 2;
+  }
+  try {
+    if (command === 'prepare') {
+      const { packages } = prepare(root, version, option('--date') ? { date: option('--date') } : {});
+      console.log(`prepared ${version}: CHANGELOG.md${packages.map((p) => `, ${p}`).join('')}`);
+      console.log(`review the diff, then commit: chore(obs-producer): prepare v${version}`);
+      return 0;
+    }
+    if (command === 'notes') {
+      console.log(notes(root, version));
+      return 0;
+    }
+    const errors = check(root, version);
+    if (errors.length) {
+      console.error(`release check failed for ${JSON.stringify(version)}:\n${errors.map((e) => `  - ${e}`).join('\n')}`);
+      return 1;
+    }
+    console.log(`release check OK for ${version}`);
+    return 0;
+  } catch (e) {
+    console.error(`release ${command} failed: ${e.message}`);
+    return 1;
+  }
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  process.exitCode = main(process.argv.slice(2));
+}
