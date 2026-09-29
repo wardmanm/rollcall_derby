@@ -1,0 +1,19 @@
+/* Overlay components are styled only with theme custom properties (ADR-0006). */
+.card {
+  display: inline-block;
+  padding: 0.75em 1.25em;
+  font-family: var(--theme-font-family);
+  color: var(--theme-color-text);
+  background: var(--theme-color-surface);
+  border: var(--theme-border-width) solid var(--theme-color-accent);
+  border-radius: var(--theme-radius);
+}
+
+.title {
+  font-size: 1.5em;
+  font-weight: 700;
+}
+
+.subtitle {
+  opacity: 0.8;
+}

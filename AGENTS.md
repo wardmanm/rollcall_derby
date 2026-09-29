@@ -67,7 +67,7 @@ Run from `obs-producer/`:
 | `yarn test` | Run every workspace's Vitest tests (`*.test.ts` next to the code) |
 | `yarn workspace @obs-producer/server start` | Run the server (`dev` restarts on changes). Listens on `OBS_PRODUCER_HOST`:`OBS_PRODUCER_PORT` (default `0.0.0.0:5580`), with data in `OBS_PRODUCER_DATA_DIR` (default `obs-producer/data/`, git-ignored). Serves the web build from `OBS_PRODUCER_WEB_DIR` (default `apps/web/dist/`) if it exists |
 | `yarn workspace @obs-producer/web dev` | Vite dev server on port 5173, proxying `/api` and `/socket.io` to the server at `OBS_PRODUCER_DEV_SERVER` (default `http://localhost:5580`). Run the server alongside it |
-| `yarn workspace @obs-producer/web build` | Production build to `apps/web/dist/`, which the server then serves on its own port |
+| `yarn workspace @obs-producer/web build` | Production build to `apps/web/dist/`: the admin app plus the OBS overlay page, which the server serves at `/overlay` (and `/overlay/*`) on its own port |
 | `yarn workspace @obs-producer/server db:generate --name <change>` | Generate a Drizzle migration after editing `apps/server/src/db/schema.ts`. Migrations run automatically at startup |
 | `yarn docs:check` | Same as `node scripts/check-docs.mjs` |
 | `node scripts/check-docs.mjs` | Lint the wiki: frontmatter, links, anchors, reachability, ADR numbering, generated tables |

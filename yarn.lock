@@ -935,6 +935,7 @@ __metadata:
     react-dom: "npm:^19.3.0"
     react-redux: "npm:^9.3.0"
     react-router: "npm:^8.4.0"
+    socket.io-client: "npm:^4.8.4"
     vite: "npm:^8.3.1"
   languageName: unknown
   linkType: soft

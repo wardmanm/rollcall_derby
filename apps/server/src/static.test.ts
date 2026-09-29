@@ -11,6 +11,7 @@ function webBuild() {
   const dir = mkdtempSync(join(tmpdir(), 'op-web-'));
   dirs.push(dir);
   writeFileSync(join(dir, 'index.html'), '<!doctype html><title>OBS Producer</title><div id="root"></div>');
+  writeFileSync(join(dir, 'overlay.html'), '<!doctype html><title>Overlay</title><div id="overlay"></div>');
   mkdirSync(join(dir, 'assets'));
   writeFileSync(join(dir, 'assets', 'app.js'), 'console.log("app")');
   return dir;
@@ -38,6 +39,23 @@ describe('serving the web build', () => {
     const app = buildApp({ version: '1.0.0', webDir: webBuild() });
     const res = await app.inject({ method: 'GET', url: '/teams/42' });
     expect(res.statusCode).toBe(200);
+    expect(res.body).toContain('<div id="root">');
+    await app.close();
+  });
+
+  it('serves the overlay page for /overlay and anything below it', async () => {
+    const app = buildApp({ version: '1.0.0', webDir: webBuild() });
+    for (const url of ['/overlay', '/overlay/', '/overlay/some-output-token']) {
+      const res = await app.inject({ method: 'GET', url });
+      expect(res.statusCode, url).toBe(200);
+      expect(res.body, url).toContain('<div id="overlay">');
+    }
+    await app.close();
+  });
+
+  it('does not treat look-alike paths as the overlay', async () => {
+    const app = buildApp({ version: '1.0.0', webDir: webBuild() });
+    const res = await app.inject({ method: 'GET', url: '/overlays-list' });
     expect(res.body).toContain('<div id="root">');
     await app.close();
   });

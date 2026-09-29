@@ -30,12 +30,13 @@ export function buildApp({ version, logger = false, webDir }: AppOptions): Fasti
   return app;
 }
 
-// Serves the SPA: real files as-is, and index.html for any other GET outside /api and /socket.io
-// so client-side routes such as /teams/42 load the app.
+// Serves the web build: real files as-is; /overlay and below get the OBS overlay page (ADR-0006);
+// any other GET outside /api and /socket.io gets the admin app so client-side routes like /teams/42 load.
 function serveWebBuild(app: FastifyInstance, webDir: string) {
   void app.register(fastifyStatic, { root: webDir, wildcard: false });
   app.setNotFoundHandler((request, reply) => {
     const isAppRoute = request.method === 'GET' && !/^\/(api|socket\.io)(\/|$)/.test(request.url);
+    if (isAppRoute && /^\/overlay(\/|$|\?)/.test(request.url)) return reply.type('text/html').sendFile('overlay.html');
     if (isAppRoute) return reply.type('text/html').sendFile('index.html');
     return reply.code(404).send({ message: `Route ${request.method}:${request.url} not found`, error: 'Not Found', statusCode: 404 });
   });
