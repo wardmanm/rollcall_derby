@@ -18,9 +18,10 @@ export async function startServer(
   const app = buildApp({ version, logger, webDir: config.webDir });
   const io = attachRealtime(app.server, { version });
 
-  // Drop live sockets first, or closing the HTTP server waits on them forever.
+  // Drop live connections first, or closing the HTTP server waits on them forever. Close the
+  // transports rather than calling disconnectSockets(): clients treat a server "disconnect" as a
+  // deliberate kick and never reconnect, which would leave OBS overlays stale after a restart.
   app.addHook('preClose', async () => {
-    io.disconnectSockets(true);
     io.engine.close();
   });
   app.addHook('onClose', async () => {
