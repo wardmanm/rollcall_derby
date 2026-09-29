@@ -52,3 +52,103 @@ export function compareVersions(a, b) {
   }
   return 0;
 }
+
+// ---------- CHANGELOG.md (Keep a Changelog) ----------
+// A changelog is a preamble, "## [name] - date" sections (newest first), and a footer of
+// link reference definitions. formatChangelog(parseChangelog(x)) === x for normalized files.
+
+const SECTION = /^## \[([^\]]+)\](?: - (\S+))?\s*$/;
+const LINK_REF = /^\[[^\]]+\]: \S+/;
+export const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+export const isUnreleased = (section) => section.name.toLowerCase() === 'unreleased';
+export const hasEntries = (body) => /^\s*[-*]\s+\S/m.test(body);
+const linkLabel = (line) => line.slice(1, line.indexOf(']')).toLowerCase();
+
+export function parseChangelog(text) {
+  const lines = text.replace(/\r\n/g, '\n').split('\n');
+  let end = lines.length;
+  while (end > 0 && (lines[end - 1].trim() === '' || LINK_REF.test(lines[end - 1]))) end--;
+  const footer = lines.slice(end).filter((l) => LINK_REF.test(l));
+  const preamble = [];
+  const sections = [];
+  for (const line of lines.slice(0, end)) {
+    const m = SECTION.exec(line);
+    if (m) sections.push({ name: m[1], date: m[2] ?? null, body: [] });
+    else (sections.length ? sections.at(-1).body : preamble).push(line);
+  }
+  return {
+    preamble: preamble.join('\n').trim(),
+    sections: sections.map((s) => ({ ...s, body: s.body.join('\n').trim() })),
+    footer,
+  };
+}
+
+export function formatChangelog({ preamble, sections, footer }) {
+  const parts = [preamble];
+  for (const s of sections) {
+    parts.push(`## [${s.name}]${s.date ? ` - ${s.date}` : ''}`);
+    if (s.body) parts.push(s.body);
+  }
+  if (footer.length) parts.push(footer.join('\n'));
+  return parts.join('\n\n') + '\n';
+}
+
+export function readChangelog(root) {
+  const file = join(root, 'CHANGELOG.md');
+  if (!existsSync(file)) throw new Error(`CHANGELOG.md not found in ${root}`);
+  return readFileSync(file, 'utf8');
+}
+
+export function releasedVersions(sections, except) {
+  return sections.filter((s) => !isUnreleased(s) && s.name !== except && parseVersion(s.name)).map((s) => s.name);
+}
+
+export function latestVersion(versions) {
+  return versions.reduce((best, v) => (best === null || compareVersions(v, best) > 0 ? v : best), null);
+}
+
+// package.json files that carry the app version: the root, apps/*, packages/*.
+export function packageFiles(root) {
+  const files = ['package.json'];
+  for (const dir of ['apps', 'packages']) {
+    if (!existsSync(join(root, dir))) continue;
+    const entries = readdirSync(join(root, dir), { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name));
+    for (const e of entries) if (e.isDirectory()) files.push(`${dir}/${e.name}/package.json`);
+  }
+  return files.filter((f) => existsSync(join(root, f)));
+}
+
+// ---------- prepare ----------
+
+export function prepare(root, version, { date = new Date().toISOString().slice(0, 10) } = {}) {
+  const bad = versionError(version);
+  if (bad) throw new Error(bad);
+  if (!DATE.test(date)) throw new Error(`invalid date ${JSON.stringify(date)}: use YYYY-MM-DD`);
+  const log = parseChangelog(readChangelog(root));
+  const unreleased = log.sections.find(isUnreleased);
+  if (!unreleased) throw new Error('CHANGELOG.md has no "## [Unreleased]" section');
+  if (log.sections.some((s) => s.name === version)) throw new Error(`CHANGELOG.md already has a section for ${version}`);
+  if (!hasEntries(unreleased.body)) throw new Error('the Unreleased section has no entries to release');
+  const previous = latestVersion(releasedVersions(log.sections));
+  if (previous && compareVersions(version, previous) <= 0) {
+    throw new Error(`${version} is not greater than the latest release ${previous}`);
+  }
+
+  log.sections.splice(log.sections.indexOf(unreleased) + 1, 0, { name: version, date, body: unreleased.body });
+  unreleased.body = '';
+  log.footer = [
+    `[${unreleased.name}]: ${REPO_URL}/compare/${TAG_PREFIX}${version}...HEAD`,
+    `[${version}]: ${REPO_URL}/releases/tag/${TAG_PREFIX}${version}`,
+    ...log.footer.filter((l) => !['unreleased', version.toLowerCase()].includes(linkLabel(l))),
+  ];
+  writeFileSync(join(root, 'CHANGELOG.md'), formatChangelog(log));
+
+  const packages = packageFiles(root);
+  for (const file of packages) {
+    const data = JSON.parse(readFileSync(join(root, file), 'utf8'));
+    data.version = version;
+    writeFileSync(join(root, file), JSON.stringify(data, null, 2) + '\n');
+  }
+  return { packages };
+}
