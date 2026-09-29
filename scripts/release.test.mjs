@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import {
   parseVersion, versionError, compareVersions,
   parseChangelog, formatChangelog, prepare, check, notes, REPO_URL,
-  tagStatus, milestoneCheck,
+  tagStatus, milestoneCheck, milestoneRequired, issueRefs,
 } from './release.mjs';
 
 // --- versions ---
@@ -378,4 +378,43 @@ test('CLI milestone reads the API response on stdin and prints number and url', 
   const open = spawnSync(process.execPath, [SCRIPT, 'milestone', '0.2.0'], { input: JSON.stringify(MILESTONES), encoding: 'utf8' });
   assert.equal(open.status, 1);
   assert.match(open.stderr, /still has 3 open issue\(s\)/);
+});
+
+// --- patch releases: milestones only for x.y.0, issues tracked from the notes ---
+
+test('milestoneRequired is true only for x.y.0 releases', () => {
+  assert.equal(milestoneRequired('0.2.0'), true);
+  assert.equal(milestoneRequired('1.0.0'), true);
+  assert.equal(milestoneRequired('0.1.1'), false);
+  assert.equal(milestoneRequired('0.3.0-beta.1'), false);
+});
+
+test('milestoneCheck lets patch and pre-releases go without a milestone', () => {
+  assert.deepEqual(milestoneCheck(MILESTONES, '0.1.1'), { milestone: null, errors: [] });
+  assert.deepEqual(milestoneCheck(null, '0.3.0-beta.1'), { milestone: null, errors: [] });
+});
+
+test('milestoneCheck still enforces a patch milestone that exists', () => {
+  const list = [{ title: 'obs-producer v0.1.1', number: 5, open_issues: 1, html_url: 'https://example.com/m/5' }];
+  assert.deepEqual(milestoneCheck(list, '0.1.1').errors, [
+    "milestone 'obs-producer v0.1.1' still has 1 open issue(s): https://example.com/m/5",
+  ]);
+});
+
+test('issueRefs lists each referenced issue once, in order, ignoring headings, URLs and cross-repo refs', () => {
+  const text = '### Fixed\n\n- Roster paging (#20)\n- Photo crop (#7, #20)\n- See owner/repo#99, https://example.com/page#12 and &#38;';
+  assert.deepEqual(issueRefs(text), [20, 7]);
+});
+
+test('CLI issues prints the issue numbers in a version\'s notes', () => {
+  const text = FIRST_PREPARED.replace('- Team Builder (#12)', '- Team Builder (#12)\n- Member photos (#15)');
+  const out = cli('issues', '0.1.0', '--root', makeTree({ 'CHANGELOG.md': text }));
+  assert.equal(out.status, 0, out.stderr);
+  assert.equal(out.stdout, '12\n15\n');
+});
+
+test('CLI milestone prints null for a patch release without a milestone', () => {
+  const out = spawnSync(process.execPath, [SCRIPT, 'milestone', '0.1.1'], { input: JSON.stringify(MILESTONES), encoding: 'utf8' });
+  assert.equal(out.status, 0, out.stderr);
+  assert.equal(out.stdout.trim(), 'null');
 });

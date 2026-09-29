@@ -1,4 +1,4 @@
-# Cuts an obs-producer release. Deliberate by design (ADR-0009):
+# Cuts an obs-producer release. Deliberate by design (ADR-0010):
 # manual start only, dry run by default, and publishing waits for approval
 # in the protected "release" environment.
 # Guide: obs-producer/docs/guides/releasing.md
@@ -73,7 +73,7 @@ jobs:
         working-directory: obs-producer
         run: node scripts/release.mjs check "$VERSION"
 
-      - name: Milestone exists and has no open issues
+      - name: Milestone is ready (required for x.y.0 releases)
         working-directory: obs-producer
         run: |
           gh api --paginate "repos/${GITHUB_REPOSITORY}/milestones?state=all&per_page=100" \
@@ -131,22 +131,30 @@ jobs:
           milestone=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/milestones?state=all&per_page=100" \
             | jq -s 'add' \
             | node scripts/release.mjs milestone "$VERSION")
-          echo "MILESTONE_NUMBER=$(jq -r '.number' <<< "$milestone")" >> "$GITHUB_ENV"
-          echo "MILESTONE_URL=$(jq -r '.url' <<< "$milestone")" >> "$GITHUB_ENV"
+          # Patch and pre-releases may have no milestone; then the milestone env stays unset.
+          if [ "$milestone" != "null" ]; then
+            echo "MILESTONE_NUMBER=$(jq -r '.number' <<< "$milestone")" >> "$GITHUB_ENV"
+            echo "MILESTONE_URL=$(jq -r '.url' <<< "$milestone")" >> "$GITHUB_ENV"
+          fi
 
       - name: Build the release notes
         run: |
+          : > "$RUNNER_TEMP/milestone-issues.txt"
           {
             node obs-producer/scripts/release.mjs notes "$VERSION"
-            echo
-            echo "---"
-            echo
-            echo "**Milestone:** [${MILESTONE_PREFIX}${VERSION}](${MILESTONE_URL})"
-            echo
-            echo "**Closed issues:**"
-            echo
-            gh api --paginate "repos/${GITHUB_REPOSITORY}/issues?milestone=${MILESTONE_NUMBER}&state=closed&per_page=100" \
-              | jq -r '.[] | select(.pull_request | not) | "- #\(.number) \(.title)"'
+            if [ -n "${MILESTONE_NUMBER:-}" ]; then
+              gh api --paginate "repos/${GITHUB_REPOSITORY}/issues?milestone=${MILESTONE_NUMBER}&state=closed&per_page=100" \
+                | jq -s '[add // [] | .[] | select(.pull_request | not)]' > "$RUNNER_TEMP/milestone-issues.json"
+              jq -r '.[].number' "$RUNNER_TEMP/milestone-issues.json" > "$RUNNER_TEMP/milestone-issues.txt"
+              echo
+              echo "---"
+              echo
+              echo "**Milestone:** [${MILESTONE_PREFIX}${VERSION}](${MILESTONE_URL})"
+              echo
+              echo "**Closed issues:**"
+              echo
+              jq -r '.[] | "- #\(.number) \(.title)"' "$RUNNER_TEMP/milestone-issues.json"
+            fi
           } > "$RUNNER_TEMP/notes.md"
 
       - name: Create the GitHub release
@@ -160,4 +168,18 @@ jobs:
             "${flags[@]}"
 
       - name: Close the milestone
+        if: env.MILESTONE_NUMBER != ''
         run: gh api -X PATCH "repos/${GITHUB_REPOSITORY}/milestones/${MILESTONE_NUMBER}" -f state=closed
+
+      # Record on each issue where it shipped. Best effort: the release already exists at this point,
+      # so a missing or unexpected issue number is a warning, not a failure.
+      - name: Mark issues as released
+        working-directory: obs-producer
+        run: |
+          url=$(gh release view "${TAG_PREFIX}${VERSION}" --json url --jq .url)
+          { node scripts/release.mjs issues "$VERSION"; cat "$RUNNER_TEMP/milestone-issues.txt"; } | sort -un |
+            while read -r n; do
+              gh issue comment "$n" --body "Released in OBS Producer v${VERSION}: ${url}" \
+                || echo "::warning::Could not comment on #${n}"
+              gh issue edit "$n" --remove-label patch > /dev/null 2>&1 || true
+            done

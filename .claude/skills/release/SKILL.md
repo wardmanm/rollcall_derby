@@ -7,7 +7,7 @@ argument-hint: "<version, e.g. 0.2.0>"
 
 # Prepare an obs-producer release
 
-The user ran `/release $ARGUMENTS`. Releases are deliberate (obs-producer hard rule 7, ADR-0009): **you prepare, the user publishes.** Never approve a release deployment. Never push, create tags, create GitHub Releases, or start the release workflow (even as a dry run) unless the user tells you to in this conversation, for this version.
+The user ran `/release $ARGUMENTS`. Releases are deliberate (obs-producer hard rule 7, ADR-0010): **you prepare, the user publishes.** Never approve a release deployment. Never push, create tags, create GitHub Releases, or start the release workflow (even as a dry run) unless the user tells you to in this conversation, for this version.
 
 The full process is in `obs-producer/docs/guides/releasing.md`.
 
@@ -15,7 +15,7 @@ The full process is in `obs-producer/docs/guides/releasing.md`.
 2. **Show what's shipping.** Print the `## [Unreleased]` section of `obs-producer/CHANGELOG.md`. If it has no bullet entries, stop, because there's nothing to release.
 3. **Check the milestone** (read-only):
    `gh api "repos/wardmanm/GROBS/milestones?state=all&per_page=100" --jq '.[] | select(.title == "obs-producer v<version>") | {state, open_issues, html_url}'`
-   Report it if it's missing or still has open issues. The workflow will refuse until both are fixed. Preparation can continue meanwhile.
+   For an `x.y.0` release, report a missing milestone; patch and pre-releases don't need one. For any version, report a milestone that exists but still has open issues. The workflow refuses until that's fixed. Preparation can continue meanwhile.
 4. **Branch.** If on `main`, create `release/obs-producer-v<version>`.
 5. **Prepare.** From `obs-producer/`, run:
    - `node scripts/release.mjs prepare <version>`

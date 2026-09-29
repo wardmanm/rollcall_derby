@@ -3,7 +3,7 @@ title: Releasing
 ---
 # Releasing
 
-How OBS Producer work is tracked on GitHub, and how a release is cut. Releases are **always deliberate**: nothing is released by a push, a merge, or an agent acting on its own ([ADR-0009](../decisions/0009-deliberate-milestone-driven-releases.md)).
+How OBS Producer work is tracked on GitHub, and how a release is cut. Releases are **always deliberate**: nothing is released by a push, a merge, or an agent acting on its own ([ADR-0010](../decisions/0010-deliberate-releases-patch-tracking.md)).
 
 ## Issues
 
@@ -12,12 +12,14 @@ How OBS Producer work is tracked on GitHub, and how a release is cut. Releases a
 - **The wiki page is the spec.** If an issue changes what a feature should do, the PR that implements it updates the page. Issues link to wiki pages; wiki pages don't list issues, because that list would go stale.
 - An open question on a wiki page can get its own issue for discussion. Link back to the page; the answer goes onto the page.
 - Close issues from commits or PRs with `Closes #N`.
+- Label a fix `patch` if it should ship in the next patch release. Patch releases don't have milestones (see below).
 
 ## Milestones
 
-- **One milestone per release**, titled exactly **`obs-producer v<version>`**, e.g. `obs-producer v0.2.0`. The release workflow finds the milestone by this title.
+- **Milestones are for planned releases: minor and major versions (`x.y.0`).** Title each one exactly **`obs-producer v<version>`**, e.g. `obs-producer v0.2.0`. The release workflow finds the milestone by this title and requires it for `x.y.0` releases.
+- **Patch releases (`0.2.1`) and pre-releases (`0.3.0-beta.1`) don't need a milestone.** Label the issues `patch` instead. If you do create a milestone with the exact title, the workflow enforces it the same way.
 - **Description:** name the [roadmap](../product/roadmap.md) phase it belongs to, and link to it.
-- **Assign every issue that should ship in that release.** The release can't be cut while the milestone has open issues, so move unfinished ones to the next milestone.
+- **Assign every issue that should ship in that release.** A release can't be cut while its milestone has open issues, so move unfinished ones to the next milestone.
 - **You don't close it yourself.** The release workflow closes the milestone when it publishes.
 
 ## Changelog
@@ -30,7 +32,7 @@ How OBS Producer work is tracked on GitHub, and how a release is cut. Releases a
 - Team Builder: upload a photo for each team member (#12)
 ```
 
-These lines become the release notes, so write them for the people who run the app.
+These lines become the release notes, so write them for the people who run the app. The issue number also matters for tracking: when the release is published, every issue referenced in its notes gets a comment saying which release it shipped in.
 
 ## Versions and tags
 
@@ -39,7 +41,13 @@ These lines become the release notes, so write them for the people who run the a
   - **Minor:** features. During `0.x`, breaking changes also go in a minor release.
 - **Pre-releases:** a suffix such as `0.3.0-beta.1` publishes as a GitHub pre-release.
 - **Tags:** named `obs-producer-v<version>`. Only the release workflow creates them.
-- **Permanence:** release tags and published releases can't be moved, edited or deleted. A bad release is fixed by the next patch release.
+- **Permanence:** release tags can't be moved or deleted, and a published version's tag can never be reused. A bad release is fixed by the next patch release.
+
+## Finding where an issue shipped
+
+- **On the issue:** the publish job comments `Released in OBS Producer v<version>: <link>`.
+- **Everything in one release:** search issues for `"Released in OBS Producer v0.1.1" in:comments`.
+- **In the repo:** the version's section in [`CHANGELOG.md`](../../CHANGELOG.md) lists each entry with its issue number.
 
 ## Cutting a release
 
@@ -69,7 +77,7 @@ In GitHub, go to **Actions** ▸ **obs-producer release** ▸ **Run workflow**. 
 | The version is semver without a leading `v` | Type `0.2.0`, not `v0.2.0` |
 | Tag `obs-producer-v0.2.0` doesn't exist yet | That version is out already. Use the next one |
 | CHANGELOG has a dated `[0.2.0]` section with entries, `Unreleased` is empty, and package versions match | Do step 1 |
-| Milestone `obs-producer v0.2.0` exists with no open issues | Create it, or finish or move its open issues |
+| Milestone `obs-producer v0.2.0` exists with no open issues (required for `x.y.0`; enforced for other versions only if it exists) | Create it, or finish or move its open issues |
 | Docs lint and script tests pass | Fix what they report |
 
 The run summary shows the release notes exactly as they'll be published.
@@ -78,8 +86,9 @@ The run summary shows the release notes exactly as they'll be published.
 
 Run the workflow again with **Dry run** unticked. Once the checks pass, the **Publish** job waits for approval in the `release` environment. Read the notes in the summary, then choose **Approve and deploy**. The job then:
 1. checks again that the tag doesn't exist and the milestone has no open issues, because approval can come long after the checks ran;
-2. creates the GitHub release `obs-producer-v0.2.0`, tagged on the exact commit that was checked, with the changelog notes, a milestone link and the list of closed issues;
-3. closes the milestone.
+2. creates the GitHub release `obs-producer-v0.2.0`, tagged on the exact commit that was checked. The notes are the changelog notes, plus a milestone link and the list of closed issues when the release has a milestone;
+3. closes the milestone, if there is one;
+4. comments `Released in OBS Producer v0.2.0: <link>` on each issue referenced in the notes, and removes their `patch` label.
 
 ## AI agents and releases
 
@@ -91,4 +100,4 @@ If something stops working, check that these are still in place:
 - **Environment `release`:** required reviewer `wardmanm`; deployments allowed only from `main`.
 - **Tag ruleset "Release tags are permanent":** applies to `refs/tags/*-v*` and restricts updates and deletions.
 - **Immutable releases:** enabled in the repository settings.
-- **Labels `obs-producer` and `sicc`:** these scope issues by tool.
+- **Labels:** `obs-producer` and `sicc` scope issues by tool; `chore` marks maintenance; `patch` marks fixes for the next patch release.

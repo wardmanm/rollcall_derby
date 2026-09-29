@@ -1,9 +1,12 @@
 ---
 title: Deliberate, milestone-driven releases
-status: accepted
+status: superseded
 date: 2026-09-28
+superseded_by: "0010"
 ---
 # 0009. Deliberate, milestone-driven releases
+
+> **Superseded by [ADR-0010](0010-deliberate-releases-patch-tracking.md):** milestones are now required only for `x.y.0` releases, and patch releases are tracked with a `patch` label and "Released in" comments.
 
 ## Context
 

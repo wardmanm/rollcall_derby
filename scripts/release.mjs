@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 // Release helper for obs-producer. Zero dependencies — Node built-ins only.
-// Process and rules: docs/guides/releasing.md · docs/decisions/0009-deliberate-milestone-driven-releases.md
+// Process and rules: docs/guides/releasing.md · docs/decisions/0010-deliberate-releases-patch-tracking.md
 //
 //   node scripts/release.mjs prepare <version> [--date YYYY-MM-DD]   move Unreleased → <version>, bump package.json
 //   node scripts/release.mjs check <version>                         verify CHANGELOG and package versions are ready
 //   node scripts/release.mjs notes <version>                         print the release notes for <version>
 //   node scripts/release.mjs tag-absent <version>                    exit 1 unless the release tag is absent on origin
-//   node scripts/release.mjs milestone <version> < milestones.json   exit 1 unless the milestone exists with 0 open issues
+//   node scripts/release.mjs milestone <version> < milestones.json   exit 1 unless the milestone is ready (required for x.y.0)
+//   node scripts/release.mjs issues <version>                        print the issue numbers referenced in <version>'s notes
 //   --root <dir>                                                     project root (default: this script's parent)
 
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
@@ -209,10 +210,18 @@ export function tagStatus(version, { cwd, remote = 'origin' } = {}) {
   throw new Error(`could not check tags on ${remote} (git exit ${r.status}): ${(r.stderr || '').trim()}`);
 }
 
+// Minor and major releases (x.y.0) are planned with a milestone; patch and pre-releases don't need one.
+export function milestoneRequired(version) {
+  const v = parseVersion(version);
+  return v.patch === 0 && v.prerelease.length === 0;
+}
+
 // milestones: the GitHub API's milestone list (null when the API returned nothing).
+// A milestone that exists is always enforced, even for a patch release.
 export function milestoneCheck(milestones, version) {
   const title = `${MILESTONE_PREFIX}${version}`;
   const found = (milestones ?? []).find((m) => m.title === title);
+  if (!found && !milestoneRequired(version)) return { milestone: null, errors: [] };
   if (!found) return { milestone: null, errors: [`no milestone titled '${title}'. Create it and assign this release's issues to it.`] };
   const milestone = { number: found.number, url: found.html_url };
   if (found.open_issues !== 0) {
@@ -221,15 +230,23 @@ export function milestoneCheck(milestones, version) {
   return { milestone, errors: [] };
 }
 
+// Issue numbers referenced as #N in release notes, each once, in order of appearance.
+// Skips headings, URL fragments (page#12), cross-repo refs (owner/repo#12) and HTML entities (&#38;).
+export function issueRefs(text) {
+  const seen = new Set();
+  for (const [, n] of text.matchAll(/(?<![\w/&#])#(\d+)\b/g)) seen.add(Number(n));
+  return [...seen];
+}
+
 // ---------- CLI ----------
 
-const USAGE = 'usage: node scripts/release.mjs <prepare|check|notes|tag-absent|milestone> <version> [--date YYYY-MM-DD] [--root dir]';
+const USAGE = 'usage: node scripts/release.mjs <prepare|check|notes|tag-absent|milestone|issues> <version> [--date YYYY-MM-DD] [--root dir]';
 
 function main(args) {
   const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
   const [command, version] = args.filter((a, i) => !a.startsWith('--') && !args[i - 1]?.startsWith('--'));
   const root = option('--root') ? resolve(option('--root')) : resolve(dirname(fileURLToPath(import.meta.url)), '..');
-  if (!['prepare', 'check', 'notes', 'tag-absent', 'milestone'].includes(command) || !version) {
+  if (!['prepare', 'check', 'notes', 'tag-absent', 'milestone', 'issues'].includes(command) || !version) {
     console.error(USAGE);
     return 2;
   }
@@ -244,9 +261,13 @@ function main(args) {
       console.log(notes(root, version));
       return 0;
     }
-    if (command === 'tag-absent' || command === 'milestone') {
+    if (command === 'tag-absent' || command === 'milestone' || command === 'issues') {
       const bad = versionError(version);
       if (bad) throw new Error(bad);
+    }
+    if (command === 'issues') {
+      for (const n of issueRefs(notes(root, version))) console.log(n);
+      return 0;
     }
     if (command === 'tag-absent') {
       if (tagStatus(version, { cwd: root }) === 'exists') {
