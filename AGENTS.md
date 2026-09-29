@@ -5,7 +5,7 @@ OBS Producer is a web app hosted on the local network for producing roller derby
 - **Live Mode** for events, games, and tracks running at the same time, with producer dashboards that preview and control what's on air.
 - **Integrations** that control OBS and *listen* to the CRG scoreboard.
 
-**Status:** pre-scaffold. The wiki, these instructions, the docs lint and the release pipeline exist; app code does not yet. See the [roadmap](docs/product/roadmap.md).
+**Status:** scaffolded. The Yarn 4 workspaces exist with placeholder code; the server, web app and overlay arrive with the rest of milestone `obs-producer v0.1.0`. See the [roadmap](docs/product/roadmap.md).
 
 These rules apply to AI agents and human contributors alike. They add to the repo-root [AGENTS.md](../AGENTS.md).
 
@@ -31,10 +31,11 @@ These must never be broken. Each one is copied word for word from the ADR in bra
 
 Details and rationale are in the [ADRs](docs/decisions/README.md).
 
-- TypeScript (strict) monorepo with Yarn 4 workspaces, Node ≥ 24 LTS ([ADR-0011](docs/decisions/0011-technology-stack-with-yarn.md))
-- Web: Vite + React SPA, React Router, Mantine for admin UI, Redux Toolkit + RTK Query ([ADR-0011](docs/decisions/0011-technology-stack-with-yarn.md), [ADR-0003](docs/decisions/0003-client-state-with-redux-toolkit.md))
-- Server: Fastify + Socket.IO; SQLite via Drizzle ([ADR-0011](docs/decisions/0011-technology-stack-with-yarn.md), [ADR-0004](docs/decisions/0004-server-is-the-hub.md))
+- TypeScript 7 (strict) monorepo with Yarn 4 workspaces, Node ≥ 24 LTS ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md))
+- Web: Vite + React SPA, React Router, Mantine for admin UI, Redux Toolkit + RTK Query ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md), [ADR-0003](docs/decisions/0003-client-state-with-redux-toolkit.md))
+- Server: Fastify + Socket.IO; SQLite via Drizzle ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md), [ADR-0004](docs/decisions/0004-server-is-the-hub.md))
 - Contract: Zod schemas in `packages/shared` ([ADR-0007](docs/decisions/0007-shared-zod-contract.md))
+- Lint and format: Oxlint with type-aware rules (not ESLint), Prettier ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md))
 - Tests: Vitest, React Testing Library, Playwright
 
 ## Layout
@@ -45,18 +46,24 @@ obs-producer/
 ├── design-docs/       dated specs and plans (working papers, not maintained after use)
 ├── CHANGELOG.md       release notes; add a line under Unreleased for user-visible changes
 ├── scripts/           check-docs.mjs (docs lint), release.mjs (release helper) + tests
-│   planned after scaffold (ADR-0011):
-├── apps/server/       Fastify API, Socket.IO, OBS/CRG connections, SQLite
-├── apps/web/          React SPA (admin + dashboards) and the overlay entry
-└── packages/shared/   Zod schemas and types shared by server and web
+├── apps/server/       @obs-producer/server: Fastify API, Socket.IO, OBS/CRG connections, SQLite
+├── apps/web/          @obs-producer/web: React SPA (admin + dashboards) and the overlay entry
+├── packages/shared/   @obs-producer/shared: Zod schemas and types, used as TypeScript source (no build step)
+├── package.json       Yarn 4 workspaces root (packageManager pins the Yarn version)
+└── tsconfig.base.json strict settings every workspace extends
 ```
 
 ## Commands
+
+**One-time setup:** Yarn 4 comes from Corepack, pinned by `packageManager` in `package.json`. Yarn classic (1.x) refuses to run here. Node 25+ doesn't bundle Corepack, so run `npm install -g corepack && corepack enable` (after `npm uninstall -g yarn` if Yarn classic is installed globally).
 
 Run from `obs-producer/`:
 
 | Command | What it does |
 |---|---|
+| `yarn install` | Install dependencies for all workspaces (CI uses `yarn install --immutable`) |
+| `yarn typecheck` | Type-check every workspace |
+| `yarn docs:check` | Same as `node scripts/check-docs.mjs` |
 | `node scripts/check-docs.mjs` | Lint the wiki: frontmatter, links, anchors, reachability, ADR numbering, generated tables |
 | `node scripts/check-docs.mjs --fix` | Regenerate the feature and ADR index tables from frontmatter, then lint |
 | `node scripts/check-docs.mjs --questions` | List every open question across the wiki |
@@ -67,7 +74,7 @@ Run from `obs-producer/`:
 | `node scripts/release.mjs notes <version>` | Print a version's release notes |
 | `node scripts/release.mjs tag-absent\|milestone\|issues <version>` | Used by the release workflow: tag and milestone checks before and after approval, and the issue numbers to mark as released |
 
-App commands (`yarn dev`, `yarn test`, `yarn lint`, `yarn build`) arrive with the scaffold in roadmap Phase 0. Add them to this table then, and wire the lint in as `yarn docs:check`.
+More app commands (`yarn dev`, `yarn test`, `yarn lint`, `yarn build`) arrive with #10. Add them to this table when they do.
 
 ## Documentation rules
 

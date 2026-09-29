@@ -1,0 +1,12 @@
+{
+  "name": "@obs-producer/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@obs-producer/shared": "workspace:^"
+  }
+}

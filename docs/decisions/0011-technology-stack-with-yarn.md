@@ -1,9 +1,12 @@
 ---
 title: Technology stack, with Yarn workspaces
-status: accepted
+status: superseded
 date: 2026-09-29
+superseded_by: "0012"
 ---
 # 0011. Technology stack, with Yarn workspaces
+
+> **Superseded by [ADR-0012](0012-typescript-7-and-oxlint.md):** TypeScript 7 with Oxlint (type-aware) and Prettier replaces ESLint + typescript-eslint. The rest of the stack is unchanged.
 
 Supersedes [ADR-0002](0002-initial-technology-stack.md).
 

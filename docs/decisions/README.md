@@ -20,5 +20,6 @@ To write a new one, follow [recording decisions](../wiki-guide.md#recording-deci
 | [0008](0008-auth-rbac-and-overlay-access.md) | Auth, RBAC and overlay access | proposed | 2026-09-28 |
 | [0009](0009-deliberate-milestone-driven-releases.md) | Deliberate, milestone-driven releases | superseded by [0010](0010-deliberate-releases-patch-tracking.md) | 2026-09-28 |
 | [0010](0010-deliberate-releases-patch-tracking.md) | Deliberate releases, milestones for planned versions only | accepted | 2026-09-29 |
-| [0011](0011-technology-stack-with-yarn.md) | Technology stack, with Yarn workspaces | accepted | 2026-09-29 |
+| [0011](0011-technology-stack-with-yarn.md) | Technology stack, with Yarn workspaces | superseded by [0012](0012-typescript-7-and-oxlint.md) | 2026-09-29 |
+| [0012](0012-typescript-7-and-oxlint.md) | Technology stack, TypeScript 7 and Oxlint | accepted | 2026-09-29 |
 <!-- /generated:decisions -->

@@ -1,0 +1,9 @@
+# Yarn 4 — keep shareable config, ignore install state and caches
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+node_modules/
