@@ -5,7 +5,7 @@ OBS Producer is a web app hosted on the local network for producing roller derby
 - **Live Mode** for events, games, and tracks running at the same time, with producer dashboards that preview and control what's on air.
 - **Integrations** that control OBS and *listen* to the CRG scoreboard.
 
-**Status:** scaffolded. The Yarn 4 workspaces exist with placeholder code; the server, web app and overlay arrive with the rest of milestone `obs-producer v0.1.0`. See the [roadmap](docs/product/roadmap.md).
+**Status:** foundation in place (milestone `obs-producer v0.1.0`): server, web app shell, OBS overlay page, tooling, CI and the release pipeline. Features start with Phase 1 on the [roadmap](docs/product/roadmap.md). To run it locally, see [local development](docs/guides/local-development.md).
 
 These rules apply to AI agents and human contributors alike. They add to the repo-root [AGENTS.md](../AGENTS.md).
 

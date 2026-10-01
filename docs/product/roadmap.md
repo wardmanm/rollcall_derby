@@ -7,13 +7,14 @@ The order we plan to build things in. Each phase links to its feature pages, and
 
 ## Phase 0 — Foundations
 
-Nothing user-facing yet: this phase lays the groundwork every feature depends on.
+The groundwork every feature depends on. Done in milestone `obs-producer v0.1.0`.
 
 - [x] Living wiki, agent instructions (`AGENTS.md` / `CLAUDE.md`), docs lint and CI
 - [x] Release pipeline: issue forms, milestones, changelog, and a deliberate release workflow ([releasing](../guides/releasing.md))
 - [x] Scaffold the monorepo described in [ADR-0012](../decisions/0012-typescript-7-and-oxlint.md): `apps/server`, `apps/web`, `packages/shared`
-- [ ] Add the Yarn scripts (`dev`, `test`, `lint`, `build`, `docs:check`) and document them in `AGENTS.md`
-- [ ] Add path-scoped agent rules that map code areas to their doc pages (see `obs-producer/CLAUDE.md`)
+- [x] Yarn scripts (`dev`, `build`, `start`, `lint`, `format`, `test`, `test:e2e`, `check`), Oxlint, Prettier, Playwright and CI, documented in `AGENTS.md`
+- [x] Path-scoped agent rules that map code areas to their doc pages (see `obs-producer/CLAUDE.md`)
+- [x] Developer guides: [local development](../guides/local-development.md) and [testing](../guides/testing.md)
 
 ## Phase 1 — Builders
 

@@ -23,9 +23,9 @@ These are for Admins, Producers and Announcers running an event.
 
 ## For developers
 
-| Guide | Covers | Written when |
-|---|---|---|
-| Local development setup | Prerequisites, install, running server and web together, seeding data | Monorepo scaffold (Phase 0) |
-| Testing | What to test where (Vitest, RTL, Playwright), running a local CRG and OBS for integration tests | Scaffold (Phase 0) |
+| Guide | Covers |
+|---|---|
+| [Local development](local-development.md) | Prerequisites (Node, Corepack, Yarn 4), first run, `yarn dev` and production mode, server settings, database migrations, editor setup, troubleshooting |
+| [Testing](testing.md) | Vitest, React Testing Library and Playwright: what to test where, patterns used here, architecture guards |
 
-Until those exist, the commands are in [AGENTS.md](../../AGENTS.md#commands).
+Planned: running a local CRG scoreboard and OBS for integration tests, written with the [CRG](../features/crg-automation.md) and [OBS](../features/obs-control.md) features (Phase 4).

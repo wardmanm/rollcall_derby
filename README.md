@@ -8,7 +8,7 @@ A web app for producing roller derby streams in [OBS Studio](https://obsproject.
 - **Live Mode**: set up events, games and tracks. Producer dashboards preview and control every screen, even with several games running at once.
 - **Integrations**: switch OBS scenes and fire hotkeys from the dashboard, and drive overlays from [CRG scoreboard](https://github.com/rollerderby/scoreboard) events. CRG is read-only: the app only listens to it.
 
-> **Status:** early development. The app hasn't been built yet; the design and plans are in the wiki.
+> **Status:** early development. The foundation runs (server, web app shell and a transparent OBS overlay page); the features above arrive from roadmap Phase 1. To run it, see [local development](docs/guides/local-development.md).
 
 ## Documentation
 
