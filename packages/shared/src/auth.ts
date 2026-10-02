@@ -54,7 +54,7 @@ export const UserSchema = z.strictObject({
   username: z.string(),
   role: RoleSchema,
   mustChangePassword: z.boolean(),
-  createdAt: z.string().datetime(),
+  createdAt: z.iso.datetime(),
 });
 export type User = z.infer<typeof UserSchema>;
 
