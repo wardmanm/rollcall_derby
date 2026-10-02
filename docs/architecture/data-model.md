@@ -22,6 +22,7 @@ erDiagram
   TRACK }o--o| OBS_CONNECTION : controls
   AUTOMATION_RULE }o--|| TRACK : "reacts on"
   USER }o--o{ SCREEN : "assigned (announcers)"
+  USER ||--o{ SESSION : "signs in with"
 ```
 
 | Entity | Meaning | Feature page |
@@ -38,7 +39,8 @@ erDiagram
 | CRG connection | Address of a CRG instance to listen to | [CRG automation](../features/crg-automation.md) |
 | OBS connection | Address and credentials of an OBS instance | [OBS control](../features/obs-control.md) |
 | Automation rule | A CRG trigger plus an action on components or OBS | [CRG automation](../features/crg-automation.md) |
-| User | An account with a role | [Users and access](../features/users-and-access.md) |
+| User | An account with a role (Admin, Producer, Announcer) | [Users and access](../features/users-and-access.md) |
+| Session | A login on one device: hashed token, 30-day expiry | [Users and access](../features/users-and-access.md) |
 
 ## Persisted vs live state
 

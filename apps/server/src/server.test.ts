@@ -5,6 +5,10 @@ import { join } from 'node:path';
 import { io as connect, type Socket } from 'socket.io-client';
 import { APP_NAME, SERVER_HELLO_EVENT, ServerHelloSchema } from '@obs-producer/shared';
 import { startServer, type RunningServer } from './server.ts';
+import { openDatabase } from './db.ts';
+import { sessions } from './db/schema.ts';
+import { createSession } from './auth/sessions.ts';
+import { createUser } from './auth/users.ts';
 
 let running: RunningServer | undefined;
 let client: Socket | undefined;
@@ -17,6 +21,27 @@ afterEach(async () => {
 });
 
 describe('startServer', () => {
+  it('purges expired sessions at startup and serves setup status from the data directory', async () => {
+    dataDir = mkdtempSync(join(tmpdir(), 'op-server-'));
+    const seed = openDatabase(dataDir);
+    const user = createUser(seed.db, { username: 'admin', passwordHash: 'h', role: 'admin' });
+    createSession(seed.db, user.id, new Date('2020-01-01T00:00:00Z'));
+    const current = createSession(seed.db, user.id);
+    seed.sqlite.close();
+
+    running = await startServer(
+      { host: '127.0.0.1', port: 0, dataDir, webDir: join(dataDir, 'no-web-build') },
+      { version: '1.0.0', logger: false },
+    );
+    const res = await fetch(`${running.url}/api/setup`);
+    expect(await res.json()).toEqual({ needsSetup: false, canSetupHere: true });
+
+    const check = openDatabase(dataDir);
+    const remaining = check.db.select({ expiresAt: sessions.expiresAt }).from(sessions).all();
+    check.sqlite.close();
+    expect(remaining).toEqual([{ expiresAt: current.expiresAt.toISOString() }]);
+  });
+
   it('serves HTTP and greets Socket.IO clients on the same port', async () => {
     dataDir = mkdtempSync(join(tmpdir(), 'op-server-'));
     running = await startServer(

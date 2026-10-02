@@ -1,4 +1,5 @@
 import { buildApp } from './app.ts';
+import { purgeExpiredSessions } from './auth/sessions.ts';
 import type { ServerConfig } from './config.ts';
 import { openDatabase } from './db.ts';
 import { attachRealtime } from './realtime.ts';
@@ -17,6 +18,11 @@ export async function startServer(
   const app = buildApp({ version, logger, webDir: config.webDir, db });
   const io = attachRealtime(app.server, { version });
 
+  // Expired sessions are already ignored; this just keeps the table small.
+  purgeExpiredSessions(db);
+  const purgeTimer = setInterval(() => purgeExpiredSessions(db), 60 * 60 * 1000);
+  purgeTimer.unref();
+
   // Drop live connections first, or closing the HTTP server waits on them forever. Close the
   // transports rather than calling disconnectSockets(): clients treat a server "disconnect" as a
   // deliberate kick and never reconnect, which would leave OBS overlays stale after a restart.
@@ -24,6 +30,7 @@ export async function startServer(
     io.engine.close();
   });
   app.addHook('onClose', async () => {
+    clearInterval(purgeTimer);
     sqlite.close();
   });
 
