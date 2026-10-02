@@ -494,6 +494,20 @@ test("CLI issues prints the issue numbers in a version's notes", () => {
   assert.equal(out.stdout, '12\n15\n');
 });
 
+test('CLI issues prints plain numbers even when FORCE_COLOR is set', () => {
+  // The release workflow pipes this output into `gh issue comment`; colour codes would break every comment.
+  const out = spawnSync(
+    process.execPath,
+    [SCRIPT, 'issues', '0.1.0', '--root', makeTree({ 'CHANGELOG.md': FIRST_PREPARED })],
+    {
+      encoding: 'utf8',
+      env: { ...process.env, FORCE_COLOR: '1' },
+    },
+  );
+  assert.equal(out.status, 0, out.stderr);
+  assert.equal(out.stdout, '12\n');
+});
+
 test('CLI milestone prints null for a patch release without a milestone', () => {
   const out = spawnSync(process.execPath, [SCRIPT, 'milestone', '0.1.1'], {
     input: JSON.stringify(MILESTONES),

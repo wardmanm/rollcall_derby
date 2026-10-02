@@ -290,7 +290,8 @@ function main(args) {
       if (bad) throw new Error(bad);
     }
     if (command === 'issues') {
-      for (const n of issueRefs(notes(root, version))) console.log(n);
+      // Print strings: console.log colours numbers when FORCE_COLOR is set, even into a pipe.
+      for (const n of issueRefs(notes(root, version))) console.log(String(n));
       return 0;
     }
     if (command === 'tag-absent') {
