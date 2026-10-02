@@ -160,3 +160,14 @@ describe('POST /api/auth/password', () => {
     expect((await change()).statusCode).toBe(429);
   });
 });
+
+describe('with a password change pending', () => {
+  it('still allows me and logout', async () => {
+    const { app, db } = testApp();
+    await addUser(db, 'p1', PASSWORD, 'producer', { mustChangePassword: true });
+    const cookies = { [SESSION_COOKIE]: sessionCookie(await login(app, 'p1', PASSWORD)) };
+    const me = await app.inject({ method: 'GET', url: '/api/auth/me', cookies });
+    expect(me.json()).toMatchObject({ username: 'p1', mustChangePassword: true });
+    expect((await app.inject({ method: 'POST', url: '/api/auth/logout', cookies })).statusCode).toBe(204);
+  });
+});

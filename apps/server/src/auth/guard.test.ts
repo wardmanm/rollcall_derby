@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import type { Role } from '@obs-producer/shared';
+import type { AppDatabase } from '../db.ts';
 import { createSession } from './sessions.ts';
-import { requireUser, SESSION_COOKIE } from './guard.ts';
+import { requireRole, requireSession, requireUser, SESSION_COOKIE } from './guard.ts';
 import { addUser, testApp } from '../testing.ts';
 
 // A tiny protected route registered the same way real routes are.
@@ -89,5 +91,53 @@ describe('CSRF protection', () => {
     const { app } = appWithProbe();
     const res = await app.inject({ method: 'GET', url: '/api/setup', headers: { origin: 'http://evil.example' } });
     expect(res.statusCode).toBe(200);
+  });
+});
+
+// One probe per guard, registered the same way real routes are.
+function appWithGuards() {
+  return testApp({
+    registerRoutes: (api) => {
+      api.get('/api/probe/user', { preHandler: requireUser }, async () => ({ ok: true }));
+      api.get('/api/probe/session', { preHandler: requireSession }, async () => ({ ok: true }));
+      api.get('/api/probe/admin', { preHandler: requireRole('admin') }, async () => ({ ok: true }));
+    },
+  });
+}
+
+async function cookieFor(db: AppDatabase, username: string, role: Role, mustChangePassword = false) {
+  const user = await addUser(db, username, 'correct horse', role, { mustChangePassword });
+  return { [SESSION_COOKIE]: createSession(db, user.id).token };
+}
+
+describe('a pending password change', () => {
+  it('is refused by requireUser and requireRole', async () => {
+    const { app, db } = appWithGuards();
+    const cookies = await cookieFor(db, 'admin', 'admin', true);
+    for (const url of ['/api/probe/user', '/api/probe/admin']) {
+      const res = await app.inject({ method: 'GET', url, cookies });
+      expect(res.statusCode, url).toBe(403);
+      expect(res.json()).toEqual({ error: 'password_change_required' });
+    }
+  });
+
+  it('is let through by requireSession', async () => {
+    const { app, db } = appWithGuards();
+    const cookies = await cookieFor(db, 'admin', 'admin', true);
+    expect((await app.inject({ method: 'GET', url: '/api/probe/session', cookies })).statusCode).toBe(200);
+  });
+});
+
+describe('requireRole', () => {
+  it('lets the named roles through and refuses the others', async () => {
+    const { app, db } = appWithGuards();
+    const probe = (cookies: Record<string, string>) => app.inject({ method: 'GET', url: '/api/probe/admin', cookies });
+    expect((await probe(await cookieFor(db, 'admin', 'admin'))).statusCode).toBe(200);
+    for (const role of ['producer', 'announcer'] as const) {
+      const res = await probe(await cookieFor(db, role, role));
+      expect(res.statusCode, role).toBe(403);
+      expect(res.json()).toEqual({ error: 'forbidden' });
+    }
+    expect((await probe({})).json()).toEqual({ error: 'unauthenticated' });
   });
 });

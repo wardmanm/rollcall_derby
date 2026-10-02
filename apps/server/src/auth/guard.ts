@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import type { SessionUser } from '@obs-producer/shared';
+import type { Role, SessionUser } from '@obs-producer/shared';
 import type { AppDatabase } from '../db.ts';
 import { findSession } from './sessions.ts';
 
@@ -43,9 +43,36 @@ function isSameOrigin(origin: string | undefined, host: string | undefined): boo
   }
 }
 
-export async function requireUser(request: FastifyRequest, reply: FastifyReply) {
-  if (!request.user) return reply.code(401).send({ error: 'unauthenticated' });
-  return undefined;
+interface Denial {
+  status: number;
+  error: string;
+}
+
+// Builds a preHandler. No session is always a 401; `deny` can refuse a signed-in user for another reason.
+function guard(deny: (user: SessionUser) => Denial | undefined) {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    if (!request.user) return reply.code(401).send({ error: 'unauthenticated' });
+    const denial = deny(request.user);
+    if (denial) return reply.code(denial.status).send({ error: denial.error });
+    return undefined;
+  };
+}
+
+const passwordChangePending = (user: SessionUser): Denial | undefined =>
+  user.mustChangePassword ? { status: 403, error: 'password_change_required' } : undefined;
+
+/** Signed in, even with a password change pending. Only `me`, `password` and `logout` use this. */
+export const requireSession = guard(() => undefined);
+
+/** Signed in, with no password change pending (ADR-0008). */
+export const requireUser = guard(passwordChangePending);
+
+/** Signed in with one of these roles, with no password change pending. */
+export function requireRole(...roles: readonly Role[]) {
+  return guard(
+    (user) =>
+      passwordChangePending(user) ?? (roles.includes(user.role) ? undefined : { status: 403, error: 'forbidden' }),
+  );
 }
 
 export function setSessionCookie(reply: FastifyReply, request: FastifyRequest, token: string, expiresAt: Date): void {

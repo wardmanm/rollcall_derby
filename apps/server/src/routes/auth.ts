@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { ChangePasswordRequestSchema, LoginRequestSchema, SessionUserSchema } from '@obs-producer/shared';
 import type { AppDatabase } from '../db.ts';
-import { clearSessionCookie, requireUser, setSessionCookie } from '../auth/guard.ts';
+import { clearSessionCookie, requireSession, setSessionCookie } from '../auth/guard.ts';
 import { dummyHash, hashPassword, verifyPassword } from '../auth/passwords.ts';
 import { createSession, revokeSession, revokeUserSessions } from '../auth/sessions.ts';
 import { findUserForLogin, setPassword, toSessionUser } from '../auth/users.ts';
@@ -24,17 +24,19 @@ export function registerAuthRoutes(api: FastifyInstance, db: AppDatabase): void 
     return SessionUserSchema.parse(toSessionUser(user));
   });
 
-  api.post('/api/auth/logout', { preHandler: requireUser }, async (request, reply) => {
+  // `logout`, `me` and `password` use requireSession: they must work while a password change is pending,
+  // or the user could never make it (ADR-0008).
+  api.post('/api/auth/logout', { preHandler: requireSession }, async (request, reply) => {
     if (request.sessionToken) revokeSession(db, request.sessionToken);
     clearSessionCookie(reply);
     return reply.code(204).send();
   });
 
-  api.get('/api/auth/me', { preHandler: requireUser }, async (request) => SessionUserSchema.parse(request.user));
+  api.get('/api/auth/me', { preHandler: requireSession }, async (request) => SessionUserSchema.parse(request.user));
 
   api.post(
     '/api/auth/password',
-    { preHandler: requireUser, config: { rateLimit: AUTH_RATE_LIMIT } },
+    { preHandler: requireSession, config: { rateLimit: AUTH_RATE_LIMIT } },
     async (request, reply) => {
       const body = parseBody(ChangePasswordRequestSchema, request.body, reply);
       if (!body || !request.user) return reply;
