@@ -13,8 +13,8 @@ export async function startServer(
   config: ServerConfig,
   { version, logger = true }: { version: string; logger?: boolean },
 ): Promise<RunningServer> {
-  const { sqlite } = openDatabase(config.dataDir);
-  const app = buildApp({ version, logger, webDir: config.webDir });
+  const { db, sqlite } = openDatabase(config.dataDir);
+  const app = buildApp({ version, logger, webDir: config.webDir, db });
   const io = attachRealtime(app.server, { version });
 
   // Drop live connections first, or closing the HTTP server waits on them forever. Close the

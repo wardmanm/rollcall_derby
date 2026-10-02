@@ -699,6 +699,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@fastify/cookie@npm:^11.1.2":
+  version: 11.1.2
+  resolution: "@fastify/cookie@npm:11.1.2"
+  dependencies:
+    cookie: "npm:^2.0.0"
+    fastify-plugin: "npm:^6.0.0"
+  checksum: 10c0/6fe2e18ad2387a789e4807678d20baa6926c616bfe237cf32dda0dc5de44d3d558220d445f9870444a81808c34f7599e8843b1e015e85dc761c7d5bb1b7b5235
+  languageName: node
+  linkType: hard
+
 "@fastify/error@npm:^4.0.0":
   version: 4.2.0
   resolution: "@fastify/error@npm:4.2.0"
@@ -738,6 +748,18 @@ __metadata:
     "@fastify/forwarded": "npm:^3.0.0"
     ipaddr.js: "npm:^2.1.0"
   checksum: 10c0/2ad5988f54cc0fc5e12b27b143509be14d80810cffd8a7ccd448b953b4db16dc8aa0e230a918aca7601305790a891300a75aae777df4a180743a061f88d186f0
+  languageName: node
+  linkType: hard
+
+"@fastify/rate-limit@npm:^11.2.0":
+  version: 11.2.0
+  resolution: "@fastify/rate-limit@npm:11.2.0"
+  dependencies:
+    "@lukeed/ms": "npm:^2.0.2"
+    fastify-plugin: "npm:^6.0.0"
+    ip-address: "npm:^10.2.0"
+    toad-cache: "npm:^3.7.0"
+  checksum: 10c0/f782431e2b3a1374cfb042e978789b0f2b1409c058d8ade40c8968c2728b8bcc185a808a2dad011ed9b1e746a9f9f810fa68fc01affb46cfbfc714a55c7b7f05
   languageName: node
   linkType: hard
 
@@ -900,6 +922,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@obs-producer/server@workspace:apps/server"
   dependencies:
+    "@fastify/cookie": "npm:^11.1.2"
+    "@fastify/rate-limit": "npm:^11.2.0"
     "@fastify/static": "npm:^10.1.5"
     "@obs-producer/shared": "workspace:^"
     "@types/better-sqlite3": "npm:^9.6.0"
@@ -910,6 +934,7 @@ __metadata:
     fastify: "npm:^5.12.5"
     socket.io: "npm:^4.8.4"
     socket.io-client: "npm:^4.8.4"
+    zod: "npm:^4.6.5"
   languageName: unknown
   linkType: soft
 
@@ -1843,6 +1868,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cookie@npm:^2.0.0":
+  version: 2.0.1
+  resolution: "cookie@npm:2.0.1"
+  checksum: 10c0/dcf3bd6ec9d0f4f32be7575e23242866cb53be55fc3d4cf36215638596661cec1327a3b4ca286ba15eba8f2abd443e422b8c5f708af4ea9f75b4d3dedc67ee4c
+  languageName: node
+  linkType: hard
+
 "cookie@npm:~0.7.2":
   version: 0.7.2
   resolution: "cookie@npm:0.7.2"
@@ -2604,6 +2636,13 @@ __metadata:
   version: 2.0.4
   resolution: "inherits@npm:2.0.4"
   checksum: 10c0/4e531f648b29039fb7426fb94075e6545faa1eb9fe83c29f0b6d9e7263aceb4289d2d4557db0d428188eeb449cc7c5e77b0a0b2c4e248ff2a65933a0dee49ef2
+  languageName: node
+  linkType: hard
+
+"ip-address@npm:^10.2.0":
+  version: 10.7.2
+  resolution: "ip-address@npm:10.7.2"
+  checksum: 10c0/290b9c63289b2a89a442dac19eff88d919e65cd41d1a720fa963be736e126f3b0cf4f88f6056b06abbf4a95300dc9ce5362a773e012ef30e0400074d175b9d31
   languageName: node
   linkType: hard
 

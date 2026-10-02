@@ -2,19 +2,37 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import Fastify, { type FastifyInstance } from 'fastify';
 import fastifyStatic from '@fastify/static';
+import fastifyCookie from '@fastify/cookie';
+import fastifyRateLimit from '@fastify/rate-limit';
 import { APP_NAME, HealthResponseSchema } from '@obs-producer/shared';
+import type { AppDatabase } from './db.ts';
+import { installAuth } from './auth/guard.ts';
 
 export interface AppOptions {
   version: string;
   logger?: boolean;
   /** Directory holding the web app's production build. Skipped if it doesn't exist (e.g. in development). */
   webDir?: string;
+  db: AppDatabase;
+  /** Registers routes inside the authenticated /api plugin, after cookie, rate-limit and auth are wired up (for tests). */
+  registerRoutes?: (api: FastifyInstance) => void;
 }
 
 // The HTTP API. Kept free of listening and sockets so routes can be tested with app.inject().
-export function buildApp({ version, logger = false, webDir }: AppOptions): FastifyInstance {
+export function buildApp({ version, logger = false, webDir, db, registerRoutes }: AppOptions): FastifyInstance {
   const app = Fastify({ logger });
   const startedAt = performance.now();
+
+  // JSON bodies only: removing the text/plain parser turns form-style cross-site posts into 415s.
+  app.removeContentTypeParser('text/plain');
+  void app.register(fastifyCookie);
+  void app.register(fastifyRateLimit, { global: false });
+
+  // Everything under /api that needs auth lives in one plugin, registered after cookie and rate-limit.
+  void app.register(async (api) => {
+    installAuth(api, db);
+    registerRoutes?.(api);
+  });
 
   app.get('/api/health', async () =>
     HealthResponseSchema.parse({
