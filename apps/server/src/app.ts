@@ -7,6 +7,7 @@ import fastifyRateLimit from '@fastify/rate-limit';
 import { APP_NAME, HealthResponseSchema } from '@obs-producer/shared';
 import type { AppDatabase } from './db.ts';
 import { installAuth } from './auth/guard.ts';
+import { registerAuthRoutes } from './routes/auth.ts';
 import { registerSetupRoutes } from './routes/setup.ts';
 
 export interface AppOptions {
@@ -33,6 +34,7 @@ export function buildApp({ version, logger = false, webDir, db, registerRoutes }
   void app.register(async (api) => {
     installAuth(api, db);
     registerSetupRoutes(api, db);
+    registerAuthRoutes(api, db);
     registerRoutes?.(api);
   });
 
