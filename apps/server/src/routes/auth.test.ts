@@ -123,7 +123,7 @@ describe('POST /api/auth/password', () => {
     expect(res.json()).toMatchObject({ mustChangePassword: false });
   });
 
-  it('rejects a wrong current password, a weak new one, and the username', async () => {
+  it('rejects a wrong current password and a weak new one', async () => {
     const { app } = await withAdmin();
     const cookies = { [SESSION_COOKIE]: sessionCookie(await login(app, 'admin', PASSWORD)) };
     const change = (currentPassword: string, newPassword: string) =>

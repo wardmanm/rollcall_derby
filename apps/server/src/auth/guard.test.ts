@@ -87,7 +87,7 @@ describe('CSRF protection', () => {
 
   it('leaves GET requests from other origins alone', async () => {
     const { app } = appWithProbe();
-    const res = await app.inject({ method: 'GET', url: '/api/health', headers: { origin: 'http://evil.example' } });
+    const res = await app.inject({ method: 'GET', url: '/api/setup', headers: { origin: 'http://evil.example' } });
     expect(res.statusCode).toBe(200);
   });
 });
