@@ -56,7 +56,7 @@ export function installAuth(app: FastifyInstance, db: AppDatabase): void {
 }
 
 // Browsers send Origin on cross-site and same-site writes; no Origin (curl, older clients) is allowed.
-function isSameOrigin(origin: string | undefined, host: string | undefined): boolean {
+export function isSameOrigin(origin: string | undefined, host: string | undefined): boolean {
   if (origin === undefined) return true;
   try {
     return new URL(origin).host === host;
