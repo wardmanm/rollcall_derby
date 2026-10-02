@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import Fastify, { type FastifyInstance } from 'fastify';
+import Fastify, { type FastifyInstance, type RouteOptions } from 'fastify';
 import fastifyStatic from '@fastify/static';
 import fastifyCookie from '@fastify/cookie';
 import fastifyRateLimit from '@fastify/rate-limit';
@@ -18,11 +18,22 @@ export interface AppOptions {
   db: AppDatabase;
   /** Registers routes inside the authenticated /api plugin, after cookie, rate-limit and auth are wired up (for tests). */
   registerRoutes?: (api: FastifyInstance) => void;
+  /** Called for each route as it's registered; the route inventory test uses it. */
+  onRoute?: (route: RouteOptions) => void;
 }
 
 // The HTTP API. Kept free of listening and sockets so routes can be tested with app.inject().
-export function buildApp({ version, logger = false, webDir, db, registerRoutes }: AppOptions): FastifyInstance {
+export function buildApp({
+  version,
+  logger = false,
+  webDir,
+  db,
+  registerRoutes,
+  onRoute,
+}: AppOptions): FastifyInstance {
   const app = Fastify({ logger });
+  // Added first, so it sees every route, including those inside the /api plugin.
+  if (onRoute) app.addHook('onRoute', onRoute);
   const startedAt = performance.now();
 
   // JSON bodies only: removing the text/plain parser turns form-style cross-site posts into 415s.

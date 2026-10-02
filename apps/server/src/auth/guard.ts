@@ -11,6 +11,16 @@ declare module 'fastify' {
 }
 
 export const SESSION_COOKIE = 'obs_producer_session';
+
+// The only /api routes anyone may call without a session (ADR-0008). Every other route uses requireSession,
+// requireUser or requireRole; the route inventory test (route-inventory.test.ts) fails CI otherwise.
+export const PUBLIC_API_ROUTES: ReadonlySet<string> = new Set([
+  'GET /api/health',
+  'GET /api/setup',
+  'POST /api/setup',
+  'POST /api/auth/login',
+]);
+
 export const LOCAL_ADDRESSES = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
