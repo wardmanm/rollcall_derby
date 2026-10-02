@@ -21,8 +21,20 @@ export const PUBLIC_API_ROUTES: ReadonlySet<string> = new Set([
   'POST /api/auth/login',
 ]);
 
-export const LOCAL_ADDRESSES = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+const LOCAL_ADDRESSES = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+// The server machine itself (ADR-0008): a loopback address, reached through a loopback name. Checking the name
+// too stops a web page whose domain is rebound to 127.0.0.1 from acting through the server machine's browser.
+export function isServerMachine(request: FastifyRequest): boolean {
+  if (!LOCAL_ADDRESSES.has(request.ip)) return false;
+  try {
+    return LOOPBACK_HOSTS.has(new URL(`http://${request.headers.host ?? ''}`).hostname);
+  } catch {
+    return false;
+  }
+}
 
 // Runs inside the /api plugin: CSRF checks, then the session from the cookie (if any) onto the request.
 export function installAuth(app: FastifyInstance, db: AppDatabase): void {

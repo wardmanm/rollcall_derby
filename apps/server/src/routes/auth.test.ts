@@ -171,3 +171,37 @@ describe('with a password change pending', () => {
     expect((await app.inject({ method: 'POST', url: '/api/auth/logout', cookies })).statusCode).toBe(204);
   });
 });
+
+describe('hardening', () => {
+  it('ends the session the browser already had when someone else logs in on it', async () => {
+    const { app, db } = await withAdmin();
+    await addUser(db, 'p1', PASSWORD, 'producer');
+    const first = sessionCookie(await login(app, 'admin', PASSWORD));
+    const second = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      cookies: { [SESSION_COOKIE]: first },
+      payload: { username: 'p1', password: PASSWORD },
+    });
+    expect(second.statusCode).toBe(200);
+    const me = await app.inject({ method: 'GET', url: '/api/auth/me', cookies: { [SESSION_COOKIE]: first } });
+    expect(me.statusCode).toBe(401);
+  });
+
+  it('refuses to "change" a password to itself, so a temporary password cannot be kept', async () => {
+    const { app, db } = testApp();
+    await addUser(db, 'p1', PASSWORD, 'producer', { mustChangePassword: true });
+    const cookies = { [SESSION_COOKIE]: sessionCookie(await login(app, 'p1', PASSWORD)) };
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/auth/password',
+      cookies,
+      payload: { currentPassword: PASSWORD, newPassword: PASSWORD },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json()).toMatchObject({ error: 'validation_failed' });
+    expect((await app.inject({ method: 'GET', url: '/api/auth/me', cookies })).json()).toMatchObject({
+      mustChangePassword: true,
+    });
+  });
+});

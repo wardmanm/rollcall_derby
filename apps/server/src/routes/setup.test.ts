@@ -78,4 +78,24 @@ describe('POST /api/setup', () => {
     for (let i = 0; i < 10; i++) expect((await attempt()).statusCode).toBe(400);
     expect((await attempt()).statusCode).toBe(429);
   });
+
+  it('refuses a request from this machine that arrives under another name', async () => {
+    // A web page whose domain is rebound to 127.0.0.1 would arrive like this, in the server machine's browser.
+    const { app, db } = testApp();
+    const headers = { host: 'rebind.evil.example:5580', origin: 'http://rebind.evil.example:5580' };
+    const status = await app.inject({ method: 'GET', url: '/api/setup', headers });
+    expect(status.json()).toEqual({ needsSetup: true, canSetupHere: false });
+    const res = await app.inject({ method: 'POST', url: '/api/setup', payload: admin, headers });
+    expect(res.statusCode).toBe(403);
+    expect(res.json()).toMatchObject({ error: 'setup_not_allowed' });
+    expect(countUsers(db)).toBe(0);
+  });
+
+  it('accepts the loopback names localhost, 127.0.0.1 and [::1]', async () => {
+    for (const host of ['localhost:5580', '127.0.0.1:5580', '[::1]:5580']) {
+      const { app } = testApp();
+      const res = await app.inject({ method: 'GET', url: '/api/setup', headers: { host } });
+      expect(res.json(), host).toEqual({ needsSetup: true, canSetupHere: true });
+    }
+  });
 });

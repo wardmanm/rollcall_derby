@@ -76,6 +76,11 @@ describe('ChangePasswordRequestSchema', () => {
       true,
     );
   });
+
+  it('needs a new password that differs from the current one', () => {
+    const same = { currentPassword: 'long enough!', newPassword: 'long enough!' };
+    expect(ChangePasswordRequestSchema.safeParse(same).success).toBe(false);
+  });
 });
 
 describe('SessionUserSchema', () => {

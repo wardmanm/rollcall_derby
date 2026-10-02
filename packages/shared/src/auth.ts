@@ -42,10 +42,13 @@ export const SessionUserSchema = z.strictObject({
 });
 export type SessionUser = z.infer<typeof SessionUserSchema>;
 
-export const ChangePasswordRequestSchema = z.strictObject({
-  currentPassword: z.string().min(1).max(256),
-  newPassword: PasswordSchema,
-});
+// The new password must differ from the current one, or a temporary password could be "changed" to itself.
+export const ChangePasswordRequestSchema = z
+  .strictObject({ currentPassword: z.string().min(1).max(256), newPassword: PasswordSchema })
+  .refine((data) => data.newPassword !== data.currentPassword, {
+    message: 'Choose a password that is different from your current one',
+    path: ['newPassword'],
+  });
 export type ChangePasswordRequest = z.infer<typeof ChangePasswordRequestSchema>;
 
 // User management (Admin only). A temporary password appears in exactly one response and is never stored.

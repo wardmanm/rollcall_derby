@@ -19,6 +19,9 @@ export function registerAuthRoutes(api: FastifyInstance, db: AppDatabase): void 
     const ok = await verifyPassword(password, user?.passwordHash ?? (await dummyHash()));
     if (!user || !ok) return reply.code(401).send(INVALID_CREDENTIALS);
 
+    // Whoever was signed in on this browser is signed out, so a shared tablet doesn't keep their session alive.
+    if (request.sessionToken) revokeSession(db, request.sessionToken);
+
     const session = createSession(db, user.id);
     setSessionCookie(reply, request, session.token, session.expiresAt);
     return SessionUserSchema.parse(toSessionUser(user));
