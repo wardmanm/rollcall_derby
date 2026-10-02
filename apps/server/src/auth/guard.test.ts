@@ -7,7 +7,6 @@ import { addUser, testApp } from '../testing.ts';
 function appWithProbe() {
   return testApp({
     registerRoutes: (api) => {
-      // oxlint-disable-next-line oxc/no-async-endpoint-handlers -- Fastify awaits async handlers natively; this isn't Express
       api.post('/api/probe', { preHandler: requireUser }, async (request) => ({ user: request.user?.username }));
     },
   });
@@ -39,7 +38,6 @@ describe('requireUser', () => {
     const user = await addUser(db, 'admin', 'correct horse', 'admin');
     const { token } = createSession(db, user.id, new Date('2020-01-01T00:00:00Z'));
     for (const cookie of [token, 'not-a-real-token']) {
-      // oxlint-disable-next-line eslint/no-await-in-loop -- two cheap sequential checks; order and isolation don't matter
       const res = await app.inject({
         method: 'POST',
         url: '/api/probe',
@@ -55,7 +53,6 @@ describe('CSRF protection', () => {
   it('rejects a state-changing request from another origin, including Origin: null', async () => {
     const { app } = appWithProbe();
     for (const origin of ['http://evil.example', 'null']) {
-      // oxlint-disable-next-line eslint/no-await-in-loop -- two cheap sequential checks; order and isolation don't matter
       const res = await app.inject({ method: 'POST', url: '/api/probe', payload: {}, headers: { origin } });
       expect(res.statusCode, origin).toBe(403);
       expect(res.json()).toEqual({ error: 'cross_origin' });
@@ -78,7 +75,6 @@ describe('CSRF protection', () => {
   it('refuses non-JSON bodies', async () => {
     const { app } = appWithProbe();
     for (const contentType of ['text/plain', 'application/x-www-form-urlencoded']) {
-      // oxlint-disable-next-line eslint/no-await-in-loop -- two cheap sequential checks; order and isolation don't matter
       const res = await app.inject({
         method: 'POST',
         url: '/api/probe',
