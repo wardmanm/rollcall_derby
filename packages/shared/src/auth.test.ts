@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
   ChangePasswordRequestSchema,
+  CreateUserRequestSchema,
+  CreateUserResponseSchema,
   LoginRequestSchema,
+  PasswordResetResponseSchema,
   PasswordSchema,
   ROLES,
   SessionUserSchema,
   SetupRequestSchema,
+  UpdateUserRequestSchema,
   UsernameSchema,
+  UserSchema,
 } from './auth.ts';
 
 describe('roles', () => {
@@ -79,5 +84,51 @@ describe('SessionUserSchema', () => {
     expect(SessionUserSchema.parse(user)).toEqual(user);
     expect(SessionUserSchema.safeParse({ ...user, role: 'root' }).success).toBe(false);
     expect(SessionUserSchema.safeParse({ ...user, extra: 1 }).success).toBe(false);
+  });
+});
+
+describe('user management schemas', () => {
+  const user = {
+    id: '7d0c8f8e-2f4b-4c1e-9a7a-0b6f1d2e3c4d',
+    username: 'producer1',
+    role: 'producer',
+    mustChangePassword: true,
+    createdAt: '2026-10-02T12:00:00.000Z',
+  };
+
+  it('describes a user without any password data', () => {
+    expect(UserSchema.parse(user)).toEqual(user);
+    expect(UserSchema.safeParse({ ...user, passwordHash: 'x' }).success).toBe(false);
+    expect(UserSchema.safeParse({ ...user, createdAt: 'yesterday' }).success).toBe(false);
+  });
+
+  it('creates a user from a username and role, normalizing the username', () => {
+    expect(CreateUserRequestSchema.parse({ username: ' Producer1 ', role: 'producer' })).toEqual({
+      username: 'producer1',
+      role: 'producer',
+    });
+    expect(CreateUserRequestSchema.safeParse({ username: 'ab', role: 'producer' }).success).toBe(false);
+    expect(CreateUserRequestSchema.safeParse({ username: 'producer1', role: 'owner' }).success).toBe(false);
+    expect(CreateUserRequestSchema.safeParse({ username: 'producer1', role: 'producer', password: 'x' }).success).toBe(
+      false,
+    );
+  });
+
+  it('returns the temporary password alongside the new user', () => {
+    const response = { user, temporaryPassword: 'ABCDEFGHJKLMNPQRSTUV' };
+    expect(CreateUserResponseSchema.parse(response)).toEqual(response);
+    expect(CreateUserResponseSchema.safeParse({ user }).success).toBe(false);
+  });
+
+  it('changes only the role', () => {
+    expect(UpdateUserRequestSchema.parse({ role: 'announcer' })).toEqual({ role: 'announcer' });
+    expect(UpdateUserRequestSchema.safeParse({ role: 'announcer', username: 'x' }).success).toBe(false);
+    expect(UpdateUserRequestSchema.safeParse({}).success).toBe(false);
+  });
+
+  it('returns a reset password', () => {
+    expect(PasswordResetResponseSchema.parse({ temporaryPassword: 'ABCDEFGHJKLMNPQRSTUV' })).toEqual({
+      temporaryPassword: 'ABCDEFGHJKLMNPQRSTUV',
+    });
   });
 });

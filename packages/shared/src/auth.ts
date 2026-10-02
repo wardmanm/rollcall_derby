@@ -48,6 +48,28 @@ export const ChangePasswordRequestSchema = z.strictObject({
 });
 export type ChangePasswordRequest = z.infer<typeof ChangePasswordRequestSchema>;
 
+// User management (Admin only). A temporary password appears in exactly one response and is never stored.
+export const UserSchema = z.strictObject({
+  id: z.string(),
+  username: z.string(),
+  role: RoleSchema,
+  mustChangePassword: z.boolean(),
+  createdAt: z.string().datetime(),
+});
+export type User = z.infer<typeof UserSchema>;
+
+export const CreateUserRequestSchema = z.strictObject({ username: UsernameSchema, role: RoleSchema });
+export type CreateUserRequest = z.infer<typeof CreateUserRequestSchema>;
+
+export const CreateUserResponseSchema = z.strictObject({ user: UserSchema, temporaryPassword: z.string() });
+export type CreateUserResponse = z.infer<typeof CreateUserResponseSchema>;
+
+export const UpdateUserRequestSchema = z.strictObject({ role: RoleSchema });
+export type UpdateUserRequest = z.infer<typeof UpdateUserRequestSchema>;
+
+export const PasswordResetResponseSchema = z.strictObject({ temporaryPassword: z.string() });
+export type PasswordResetResponse = z.infer<typeof PasswordResetResponseSchema>;
+
 // Error bodies: a stable code for the web app to act on, plus an optional human-readable message.
 export const ApiErrorSchema = z.object({ error: z.string(), message: z.string().optional() });
 export type ApiError = z.infer<typeof ApiErrorSchema>;
