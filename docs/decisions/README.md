@@ -17,7 +17,7 @@ To write a new one, follow [recording decisions](../wiki-guide.md#recording-deci
 | [0005](0005-crg-is-listen-only.md) | CRG is listen-only | accepted | 2026-09-28 |
 | [0006](0006-one-overlay-renderer-css-variable-theming.md) | One overlay renderer, CSS-variable theming | accepted | 2026-09-28 |
 | [0007](0007-shared-zod-contract.md) | Shared Zod contract | accepted | 2026-09-28 |
-| [0008](0008-auth-rbac-and-overlay-access.md) | Auth, RBAC and overlay access | proposed | 2026-09-28 |
+| [0008](0008-auth-rbac-and-overlay-access.md) | Auth, RBAC and overlay access | accepted | 2026-10-02 |
 | [0009](0009-deliberate-milestone-driven-releases.md) | Deliberate, milestone-driven releases | superseded by [0010](0010-deliberate-releases-patch-tracking.md) | 2026-09-28 |
 | [0010](0010-deliberate-releases-patch-tracking.md) | Deliberate releases, milestones for planned versions only | accepted | 2026-09-29 |
 | [0011](0011-technology-stack-with-yarn.md) | Technology stack, with Yarn workspaces | superseded by [0012](0012-typescript-7-and-oxlint.md) | 2026-09-29 |

@@ -66,6 +66,8 @@ These workspaces are planned in [ADR-0012](../decisions/0012-typescript-7-and-ox
 3. Outputs, dashboard previews and the builder canvas all render with the same presentational overlay components, so every view matches what's on air ([ADR-0006](../decisions/0006-one-overlay-renderer-css-variable-theming.md)).
 4. When an output reloads, whether OBS restarted it or it was hidden and shown again, it rebuilds its entire state from the server.
 
+**Socket.IO namespaces.** `/overlay` is public, so OBS outputs need no login until output token URLs arrive ([ADR-0008](../decisions/0008-auth-rbac-and-overlay-access.md)). The default namespace `/` is for signed-in clients such as dashboards. The server checks the session cookie when a client connects.
+
 ## Key decisions
 
 Summaries only. The ADRs are canonical.
@@ -75,7 +77,7 @@ Summaries only. The ADRs are canonical.
 - [ADR-0005](../decisions/0005-crg-is-listen-only.md): CRG is listen-only, and there are no score displays.
 - [ADR-0006](../decisions/0006-one-overlay-renderer-css-variable-theming.md): One overlay renderer; themes as CSS custom properties.
 - [ADR-0007](../decisions/0007-shared-zod-contract.md): Shared Zod contract; versioned import/export.
-- [ADR-0008](../decisions/0008-auth-rbac-and-overlay-access.md): Server-side sessions and RBAC; token URLs for outputs (proposed).
+- [ADR-0008](../decisions/0008-auth-rbac-and-overlay-access.md): Server-side sessions and RBAC; a public overlay until output token URLs arrive.
 
 ## More
 

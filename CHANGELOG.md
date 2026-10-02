@@ -7,6 +7,7 @@ All notable changes to OBS Producer are documented here, newest first. The forma
 ### Added
 
 - Accounts on the server: first-run Admin setup from the server machine, sign-in with 30-day sessions, sign-out and password changes (#13)
+- Admins can create users, change roles, reset passwords and sign users out. Every API route and live connection checks who's asking, and a reset-password command rescues a locked-out Admin (#14)
 
 ## [0.1.0] - 2026-10-02
 

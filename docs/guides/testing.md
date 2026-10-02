@@ -37,6 +37,12 @@ What to test, where the tests live, and how to run them. New code is written tes
 
 - **Overlay bundle (`apps/web/src/overlay/bundle.test.ts`).** It runs a real Vite build and fails if Mantine or admin-app code reaches the overlay bundle ([ADR-0006](../decisions/0006-one-overlay-renderer-css-variable-theming.md)). It also checks that Mantine *is* in the admin bundle, which proves the check works.
 - **Reconnect after restart (`apps/server/src/server.test.ts`).** It restarts the server on the same port and expects a Socket.IO client to reconnect on its own, so OBS outputs can't go stale.
+- **Route inventory (`apps/server/src/auth/route-inventory.test.ts`).** It records every `/api` route as the app registers it, then sends each one a request.
+  - **Anonymous:** every route outside `PUBLIC_API_ROUTES` (in `src/auth/guard.ts`) must answer 401.
+  - **With a password change pending:** everything except `me`, `password` and `logout` must answer 403.
+  - **Proof it works:** a deliberately unguarded route must be caught.
+
+  A new route that forgets `requireUser` or `requireRole` fails CI ([ADR-0008](../decisions/0008-auth-rbac-and-overlay-access.md)).
 
 ## Playwright
 

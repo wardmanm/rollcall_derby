@@ -11,6 +11,12 @@ paths:
 - **TypeScript runs directly on Node (ADR-0013):** `.ts` import extensions, erasable syntax only, no build step.
 - **Routes go in `buildApp()`** (`src/app.ts`) so `app.inject()` can test them. Database, Socket.IO and listening are wired in `startServer()` (`src/server.ts`).
 - **Validate every request, response and socket payload** with a schema from `@obs-producer/shared` (ADR-0007).
+- **Every `/api` route checks the caller** (hard rule 5).
+  - Give it `preHandler: requireUser` or `requireRole(...)` from `src/auth/guard.ts`.
+  - If anyone may call it, add it to `PUBLIC_API_ROUTES` in the same file instead.
+  - Only `me`, `password` and `logout` use `requireSession`.
+  - The route inventory test (`src/auth/route-inventory.test.ts`) fails CI otherwise.
+- **Socket.IO:** the default namespace `/` requires a session. `/overlay` is public until output token URLs arrive.
 - **Database changes:**
   1. Edit `src/db/schema.ts`.
   2. Run `yarn workspace @obs-producer/server db:generate --name <change>`.

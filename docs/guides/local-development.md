@@ -134,3 +134,4 @@ How tests are organized is in [Testing](testing.md).
 | `YN0016 … quarantined` during `yarn add` / `yarn up` | That version was published less than 24 hours ago. Pick the previous one for now |
 | Admin badge says **Server unreachable** in dev | Start the server too (`yarn dev` starts both), or point `OBS_PRODUCER_DEV_SERVER` at it |
 | Overlay page is blank | It stays empty until the server answers over Socket.IO. Check `/api/health` on the same host |
+| Locked out: the only Admin forgot their password | On the server machine, run `yarn workspace @obs-producer/server reset-password <username>`. It prints a temporary password; log in with it and choose a new one |
