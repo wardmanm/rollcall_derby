@@ -6,6 +6,7 @@ import fastifyCookie from '@fastify/cookie';
 import fastifyRateLimit from '@fastify/rate-limit';
 import { APP_NAME, HealthResponseSchema } from '@obs-producer/shared';
 import type { AppDatabase } from './db.ts';
+import { sendApiError } from './http.ts';
 import { installAuth } from './auth/guard.ts';
 import { registerAuthRoutes } from './routes/auth.ts';
 import { registerSetupRoutes } from './routes/setup.ts';
@@ -40,10 +41,12 @@ export function buildApp({
   // JSON bodies only: removing the text/plain parser turns form-style cross-site posts into 415s.
   app.removeContentTypeParser('text/plain');
   void app.register(fastifyCookie);
-  void app.register(fastifyRateLimit, { global: false });
+  // ipv6Subnet: 128 counts each IPv6 device on its own; by default the plugin lumps a whole /64 network together.
+  void app.register(fastifyRateLimit, { global: false, ipv6Subnet: 128 });
 
   // Everything under /api that needs auth lives in one plugin, registered after cookie and rate-limit.
   void app.register(async (api) => {
+    api.setErrorHandler(sendApiError);
     installAuth(api, db);
     registerSetupRoutes(api, db);
     registerAuthRoutes(api, db);
