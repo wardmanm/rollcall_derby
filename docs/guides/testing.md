@@ -26,7 +26,7 @@ What to test, where the tests live, and how to run them. New code is written tes
 
 ### Patterns used here
 
-- **Server routes:** `buildApp()` creates the Fastify app without listening, so `app.inject({ method: 'GET', url: '/api/health' })` tests a route in memory. Use `startServer()` with `port: 0` only when you need a real socket (see `apps/server/src/server.test.ts`).
+- **Server routes:** `testApp()` from `apps/server/src/testing.ts` builds the Fastify app on a private in-memory SQLite database without listening, so `app.inject({ method: 'GET', url: '/api/health' })` tests a route in memory. `addUser(db, username, password, role)` adds an account, and `createSession(db, userId)` gives you a token to send as the `obs_producer_session` cookie. Pass `registerRoutes` to add a throwaway route (see `apps/server/src/auth/guard.test.ts`). Use `startServer()` with `port: 0` only when you need a real socket or the on-disk data directory (see `apps/server/src/server.test.ts`).
 - **Files and databases:** create a temp directory per test (`mkdtempSync(join(tmpdir(), '…'))`) and remove it in `afterEach`. Never touch `obs-producer/data/`.
 - **RTK Query:** stub `fetch` with `vi.stubGlobal('fetch', …)` and dispatch the endpoint (`apps/web/src/store/api.test.ts`). The API's base URL is absolute so Node's `fetch` accepts it.
 - **Socket.IO in the overlay:** inject a fake socket through `makeOverlayStore(() => fakeSocket)` and emit events by hand (`apps/web/src/overlay/live.test.ts`).
