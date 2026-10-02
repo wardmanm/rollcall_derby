@@ -1,6 +1,6 @@
 # Auth skeleton: design
 
-**Date:** 2026-10-02 · **Status:** approved in conversation, awaiting spec review · **Milestone:** `obs-producer v0.2.0` (roadmap Phase 1)
+**Date:** 2026-10-02 · **Status:** approved · **Milestone:** `obs-producer v0.2.0` (roadmap Phase 1)
 
 ## Goal
 
