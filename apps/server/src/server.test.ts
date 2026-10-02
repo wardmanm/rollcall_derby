@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -88,5 +88,25 @@ describe('startServer', () => {
     await new Promise((resolve) => client!.once(SERVER_HELLO_EVENT, resolve));
     await expect(running.close()).resolves.toBeUndefined();
     running = undefined;
+  });
+
+  it('keeps the server up if the hourly session purge fails', async () => {
+    dataDir = mkdtempSync(join(tmpdir(), 'op-server-'));
+    const spy = vi.spyOn(globalThis, 'setInterval');
+    try {
+      running = await startServer(
+        { host: '127.0.0.1', port: 0, dataDir, webDir: join(dataDir, 'no-web-build') },
+        { version: '9.9.9', logger: false },
+      );
+      const purge = spy.mock.calls.find(([, ms]) => ms === 60 * 60 * 1000)?.[0];
+      expect(purge).toBeTypeOf('function');
+
+      await running.close();
+      running = undefined; // already closed; the shared afterEach must not close it again
+
+      expect(() => purge?.()).not.toThrow();
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

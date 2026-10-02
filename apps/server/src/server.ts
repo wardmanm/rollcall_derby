@@ -20,7 +20,16 @@ export async function startServer(
 
   // Expired sessions are already ignored; this just keeps the table small.
   purgeExpiredSessions(db);
-  const purgeTimer = setInterval(() => purgeExpiredSessions(db), 60 * 60 * 1000);
+  const purgeTimer = setInterval(
+    () => {
+      try {
+        purgeExpiredSessions(db);
+      } catch (error) {
+        app.log.error({ err: error }, 'Expired-session purge failed');
+      }
+    },
+    60 * 60 * 1000,
+  );
   purgeTimer.unref();
 
   // Drop live connections first, or closing the HTTP server waits on them forever. Close the
