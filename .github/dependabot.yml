@@ -1,0 +1,14 @@
+# Keeps the GitHub Actions used by our workflows current (they run on their own Node version, and
+# old majors get deprecated). Dependabot only opens pull requests; a person reviews and merges them.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
+    labels: ["chore"]
