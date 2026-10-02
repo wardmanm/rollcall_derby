@@ -9,7 +9,7 @@ How to get from a fresh clone to OBS Producer running on your machine, and how t
 
 | Tool | Version | Why |
 |---|---|---|
-| **Node.js** | ≥ 24 (LTS); `.nvmrc` says `24` | Runs the server directly from TypeScript ([ADR-0013](../decisions/0013-run-typescript-natively-on-node.md)) |
+| **Node.js** | ≥ 24.7 (LTS); `.nvmrc` says `24` | Runs the server directly from TypeScript ([ADR-0013](../decisions/0013-run-typescript-natively-on-node.md)); 24.7 added the built-in argon2 used for passwords |
 | **Corepack** | Any recent version | Supplies the exact Yarn version the project pins |
 | **Git** | Any recent version | |
 

@@ -31,7 +31,7 @@ These must never be broken. Each one is copied word for word from the ADR in bra
 
 Details and rationale are in the [ADRs](docs/decisions/README.md).
 
-- TypeScript 7 (strict) monorepo with Yarn 4 workspaces, Node ≥ 24 LTS ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md))
+- TypeScript 7 (strict) monorepo with Yarn 4 workspaces, Node ≥ 24.7 (the 24 LTS line) ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md))
 - Web: Vite + React SPA, React Router, Mantine for admin UI, Redux Toolkit + RTK Query ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md), [ADR-0003](docs/decisions/0003-client-state-with-redux-toolkit.md))
 - Server: Fastify + Socket.IO; SQLite via Drizzle ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md), [ADR-0004](docs/decisions/0004-server-is-the-hub.md))
 - Contract: Zod schemas in `packages/shared` ([ADR-0007](docs/decisions/0007-shared-zod-contract.md))
