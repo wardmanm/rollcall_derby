@@ -4,3 +4,4 @@ export const APP_NAME = 'OBS Producer';
 
 export * from './health.ts';
 export * from './realtime.ts';
+export * from './auth.ts';
