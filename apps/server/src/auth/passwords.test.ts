@@ -27,6 +27,16 @@ describe('verifyPassword', () => {
       expect(result, badHashes[index]).toBe(false);
     });
   });
+
+  it('returns false for a well-formed hash with impossible parameters', async () => {
+    expect(await verifyPassword('anything', '$argon2id$v=19$m=19456,t=2,p=1$AAAAAAAAAAAAAAAAAAAAAA$A')).toBe(false);
+    expect(
+      await verifyPassword(
+        'anything',
+        '$argon2id$v=19$m=1,t=2,p=1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+      ),
+    ).toBe(false);
+  });
 });
 
 describe('dummyHash', () => {

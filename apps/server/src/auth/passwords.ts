@@ -35,13 +35,17 @@ export async function verifyPassword(password: string, stored: string): Promise<
   if (!match) return false;
   const [, memory = '', passes = '', parallelism = '', salt = '', hash = ''] = match;
   const expected = Buffer.from(hash, 'base64');
-  const actual = await derive(password, Buffer.from(salt, 'base64'), {
-    memory: Number(memory),
-    passes: Number(passes),
-    parallelism: Number(parallelism),
-    tagLength: expected.length,
-  });
-  return actual.length === expected.length && timingSafeEqual(actual, expected);
+  try {
+    const actual = await derive(password, Buffer.from(salt, 'base64'), {
+      memory: Number(memory),
+      passes: Number(passes),
+      parallelism: Number(parallelism),
+      tagLength: expected.length,
+    });
+    return actual.length === expected.length && timingSafeEqual(actual, expected);
+  } catch {
+    return false;
+  }
 }
 
 // Verified against when a username doesn't exist, so a failed login takes the same time either way.
