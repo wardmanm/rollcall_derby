@@ -32,18 +32,22 @@ export function registerAuthRoutes(api: FastifyInstance, db: AppDatabase): void 
 
   api.get('/api/auth/me', { preHandler: requireUser }, async (request) => SessionUserSchema.parse(request.user));
 
-  api.post('/api/auth/password', { preHandler: requireUser }, async (request, reply) => {
-    const body = parseBody(ChangePasswordRequestSchema, request.body, reply);
-    if (!body || !request.user) return reply;
-    if (body.newPassword.toLowerCase() === request.user.username) {
-      return reply.code(400).send({ error: 'validation_failed', message: 'The password must not be the username' });
-    }
-    const record = findUserForLogin(db, request.user.username);
-    if (!record || !(await verifyPassword(body.currentPassword, record.passwordHash))) {
-      return reply.code(400).send({ error: 'wrong_password' });
-    }
-    setPassword(db, record.id, await hashPassword(body.newPassword), { mustChangePassword: false });
-    if (request.sessionToken) revokeUserSessions(db, record.id, { exceptToken: request.sessionToken });
-    return SessionUserSchema.parse({ ...request.user, mustChangePassword: false });
-  });
+  api.post(
+    '/api/auth/password',
+    { preHandler: requireUser, config: { rateLimit: AUTH_RATE_LIMIT } },
+    async (request, reply) => {
+      const body = parseBody(ChangePasswordRequestSchema, request.body, reply);
+      if (!body || !request.user) return reply;
+      if (body.newPassword.toLowerCase() === request.user.username) {
+        return reply.code(400).send({ error: 'validation_failed', message: 'The password must not be the username' });
+      }
+      const record = findUserForLogin(db, request.user.username);
+      if (!record || !(await verifyPassword(body.currentPassword, record.passwordHash))) {
+        return reply.code(400).send({ error: 'wrong_password' });
+      }
+      setPassword(db, record.id, await hashPassword(body.newPassword), { mustChangePassword: false });
+      if (request.sessionToken) revokeUserSessions(db, record.id, { exceptToken: request.sessionToken });
+      return SessionUserSchema.parse({ ...request.user, mustChangePassword: false });
+    },
+  );
 }

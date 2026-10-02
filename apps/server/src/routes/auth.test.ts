@@ -145,4 +145,18 @@ describe('POST /api/auth/password', () => {
     expect(res.statusCode).toBe(400);
     expect(res.json()).toMatchObject({ error: 'validation_failed' });
   });
+
+  it('allows 10 attempts a minute per address', async () => {
+    const { app } = await withAdmin();
+    const cookies = { [SESSION_COOKIE]: sessionCookie(await login(app, 'admin', PASSWORD)) };
+    const change = () =>
+      app.inject({
+        method: 'POST',
+        url: '/api/auth/password',
+        cookies,
+        payload: { currentPassword: 'nope', newPassword: 'battery staple' },
+      });
+    for (let i = 0; i < 10; i++) expect((await change()).statusCode).toBe(400);
+    expect((await change()).statusCode).toBe(429);
+  });
 });
