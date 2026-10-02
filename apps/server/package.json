@@ -7,6 +7,7 @@
     "dev": "node --watch src/main.ts",
     "start": "node src/main.ts",
     "db:generate": "drizzle-kit generate",
+    "reset-password": "node src/cli/reset-password.ts",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
