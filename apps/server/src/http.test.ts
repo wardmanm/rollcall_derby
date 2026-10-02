@@ -49,6 +49,14 @@ describe('errors raised by Fastify and its plugins', () => {
     expect(res.statusCode).toBe(500);
     expect(res.json()).toEqual({ error: 'internal_error' });
   });
+
+  it('hide the details of a server error on the health route too', async () => {
+    // A version that isn't a string makes the health response fail its own schema.
+    const { app } = testApp({ version: 42 as unknown as string });
+    const res = await app.inject({ method: 'GET', url: '/api/health' });
+    expect(res.statusCode).toBe(500);
+    expect(res.json()).toEqual({ error: 'internal_error' });
+  });
 });
 
 describe('rate limits', () => {

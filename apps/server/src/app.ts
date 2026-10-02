@@ -44,24 +44,24 @@ export function buildApp({
   // ipv6Subnet: 128 counts each IPv6 device on its own; by default the plugin lumps a whole /64 network together.
   void app.register(fastifyRateLimit, { global: false, ipv6Subnet: 128 });
 
-  // Everything under /api that needs auth lives in one plugin, registered after cookie and rate-limit.
+  // Every /api route lives in this one plugin, registered after cookie and rate-limit, so each one shares
+  // the same error handler and auth checks.
   void app.register(async (api) => {
     api.setErrorHandler(sendApiError);
     installAuth(api, db);
+    api.get('/api/health', async () =>
+      HealthResponseSchema.parse({
+        status: 'ok',
+        name: APP_NAME,
+        version,
+        uptimeSeconds: (performance.now() - startedAt) / 1000,
+      }),
+    );
     registerSetupRoutes(api, db);
     registerAuthRoutes(api, db);
     registerUserRoutes(api, db);
     registerRoutes?.(api);
   });
-
-  app.get('/api/health', async () =>
-    HealthResponseSchema.parse({
-      status: 'ok',
-      name: APP_NAME,
-      version,
-      uptimeSeconds: (performance.now() - startedAt) / 1000,
-    }),
-  );
 
   if (webDir && existsSync(join(webDir, 'index.html'))) serveWebBuild(app, webDir);
 
