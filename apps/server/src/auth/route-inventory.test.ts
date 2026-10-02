@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { HTTPMethods, InjectOptions } from 'fastify';
 import type { AppOptions } from '../app.ts';
-import { testApp } from '../testing.ts';
-import { PUBLIC_API_ROUTES } from './guard.ts';
+import { addUser, testApp } from '../testing.ts';
+import { PUBLIC_API_ROUTES, SESSION_COOKIE } from './guard.ts';
+import { createSession } from './sessions.ts';
 
 // Hard rule 5 (ADR-0008): every /api route checks the caller unless it's deliberately public.
 // The app reports each route as it's registered, so a new route that forgets its check fails here.
 
 const ANY_ID = '00000000-0000-4000-8000-000000000000';
+const PASSWORD_CHANGE_ROUTES = new Set(['GET /api/auth/me', 'POST /api/auth/password', 'POST /api/auth/logout']);
 
 interface ApiRoute {
   method: HTTPMethods;
@@ -70,5 +72,23 @@ describe('route inventory', () => {
       },
     });
     expect(open).toEqual(['POST /api/forgetful → 200']);
+  });
+
+  it('refuses everything except me, password and logout while a password change is pending', async () => {
+    const { app, db, routes, send } = await inventory();
+    const user = await addUser(db, 'p1', 'correct horse', 'producer', { mustChangePassword: true });
+    const cookies = { [SESSION_COOKIE]: createSession(db, user.id).token };
+    const gated = routes.filter((r) => !PUBLIC_API_ROUTES.has(r.key) && !PASSWORD_CHANGE_ROUTES.has(r.key));
+    const notRefused: string[] = [];
+    for (const route of gated) {
+      const res = await send(route, cookies);
+      const refused =
+        res.statusCode === 403 &&
+        (route.method === 'HEAD' || res.json<{ error: string }>().error === 'password_change_required');
+      if (!refused) notRefused.push(`${route.method} ${route.url} → ${res.statusCode}`);
+    }
+    await app.close();
+    expect(gated.map((r) => r.key)).toContain('GET /api/users');
+    expect(notRefused).toEqual([]);
   });
 });

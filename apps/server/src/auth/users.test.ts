@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { openMemoryDatabase } from '../db.ts';
-import { countUsers, createUser, findUserForLogin, setPassword, toSessionUser } from './users.ts';
+import {
+  countAdmins,
+  countUsers,
+  createUser,
+  deleteUser,
+  findUserById,
+  findUserForLogin,
+  listUsers,
+  setPassword,
+  setRole,
+  toSessionUser,
+} from './users.ts';
+import { createSession, findSession } from './sessions.ts';
 
 describe('users', () => {
   it('creates users and counts them', () => {
@@ -36,5 +48,34 @@ describe('users', () => {
     const { db } = openMemoryDatabase();
     const user = createUser(db, { username: 'a1', passwordHash: 'h', role: 'announcer' });
     expect(toSessionUser(user)).toEqual({ id: user.id, username: 'a1', role: 'announcer', mustChangePassword: false });
+  });
+
+  it('lists users by username and finds them by id', () => {
+    const { db } = openMemoryDatabase();
+    const bravo = createUser(db, { username: 'bravo', passwordHash: 'h', role: 'producer' });
+    createUser(db, { username: 'alpha', passwordHash: 'h', role: 'admin' });
+    expect(listUsers(db).map((u) => u.username)).toEqual(['alpha', 'bravo']);
+    expect(findUserById(db, bravo.id)).toEqual(bravo);
+    expect(findUserById(db, 'missing')).toBeNull();
+  });
+
+  it('changes a role, and counts Admins with or without one of them', () => {
+    const { db } = openMemoryDatabase();
+    const alpha = createUser(db, { username: 'alpha', passwordHash: 'h', role: 'admin' });
+    const bravo = createUser(db, { username: 'bravo', passwordHash: 'h', role: 'producer' });
+    expect(countAdmins(db)).toBe(1);
+    setRole(db, bravo.id, 'admin');
+    expect(findUserById(db, bravo.id)?.role).toBe('admin');
+    expect(countAdmins(db)).toBe(2);
+    expect(countAdmins(db, { excluding: alpha.id })).toBe(1);
+  });
+
+  it('deletes a user along with their sessions', () => {
+    const { db } = openMemoryDatabase();
+    const alpha = createUser(db, { username: 'alpha', passwordHash: 'h', role: 'admin' });
+    const { token } = createSession(db, alpha.id);
+    deleteUser(db, alpha.id);
+    expect(findUserById(db, alpha.id)).toBeNull();
+    expect(findSession(db, token)).toBeNull();
   });
 });

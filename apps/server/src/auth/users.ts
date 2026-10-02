@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { count, eq } from 'drizzle-orm';
+import { and, count, eq, ne } from 'drizzle-orm';
 import type { Role, SessionUser } from '@obs-producer/shared';
 import type { AppDatabase, Queryable } from '../db.ts';
 import { users } from '../db/schema.ts';
@@ -67,4 +67,28 @@ export function setPassword(
 
 export function toSessionUser(user: UserRecord): SessionUser {
   return { id: user.id, username: user.username, role: user.role, mustChangePassword: user.mustChangePassword };
+}
+
+export function listUsers(db: AppDatabase): UserRecord[] {
+  return db.select(publicColumns).from(users).orderBy(users.username).all();
+}
+
+export function findUserById(db: AppDatabase, id: string): UserRecord | null {
+  return db.select(publicColumns).from(users).where(eq(users.id, id)).get() ?? null;
+}
+
+export function setRole(db: AppDatabase, userId: string, role: Role, now = new Date()): void {
+  db.update(users).set({ role, updatedAt: now.toISOString() }).where(eq(users.id, userId)).run();
+}
+
+// The user's sessions are deleted with them (ON DELETE CASCADE).
+export function deleteUser(db: AppDatabase, userId: string): void {
+  db.delete(users).where(eq(users.id, userId)).run();
+}
+
+// For the "always at least one Admin" rule: how many Admins there are, optionally not counting one user.
+export function countAdmins(db: AppDatabase, { excluding }: { excluding?: string } = {}): number {
+  const isAdmin = eq(users.role, 'admin');
+  const where = excluding ? and(isAdmin, ne(users.id, excluding)) : isAdmin;
+  return db.select({ n: count() }).from(users).where(where).get()?.n ?? 0;
 }

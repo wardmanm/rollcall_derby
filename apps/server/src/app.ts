@@ -9,6 +9,7 @@ import type { AppDatabase } from './db.ts';
 import { installAuth } from './auth/guard.ts';
 import { registerAuthRoutes } from './routes/auth.ts';
 import { registerSetupRoutes } from './routes/setup.ts';
+import { registerUserRoutes } from './routes/users.ts';
 
 export interface AppOptions {
   version: string;
@@ -46,6 +47,7 @@ export function buildApp({
     installAuth(api, db);
     registerSetupRoutes(api, db);
     registerAuthRoutes(api, db);
+    registerUserRoutes(api, db);
     registerRoutes?.(api);
   });
 
