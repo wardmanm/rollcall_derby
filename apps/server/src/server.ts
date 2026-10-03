@@ -16,7 +16,7 @@ export async function startServer(
 ): Promise<RunningServer> {
   const { db, sqlite } = openDatabase(config.dataDir);
   const app = buildApp({ version, logger, webDir: config.webDir, db });
-  const io = attachRealtime(app.server, { version, db });
+  const io = attachRealtime(app.server, { version, db, log: app.log });
 
   // Expired sessions are already ignored; this just keeps the table small.
   purgeExpiredSessions(db);
