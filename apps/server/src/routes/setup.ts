@@ -7,7 +7,7 @@ import { createSession } from '../auth/sessions.ts';
 import { countUsers, createUser, toSessionUser, type UserRecord } from '../auth/users.ts';
 import { parseBody } from '../http.ts';
 
-// Login, setup and password changes share this brute-force limit (10 per minute per address).
+// Login, setup and password changes each allow 10 attempts per minute per address (each route keeps its own count).
 export const AUTH_RATE_LIMIT = { max: 10, timeWindow: '1 minute' };
 
 // First-run setup (ADR-0008): only while no users exist, and only from the server machine itself,

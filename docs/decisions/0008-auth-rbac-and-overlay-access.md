@@ -28,12 +28,12 @@ Options considered:
 - **There is always an Admin.** Deleting or demoting the last Admin is refused, and so is deleting your own account.
 - **A locked-out Admin** runs `yarn workspace @obs-producer/server reset-password <username>` on the server machine.
 - **Roles are enforced on the server.**
-  - Every `/api` route uses `requireUser` or `requireRole`, or is listed in `PUBLIC_API_ROUTES`. A route inventory test fails CI for any other route that lets an anonymous request through.
+  - Every `/api` route uses `requireUser` or `requireRole`, or is listed in `PUBLIC_API_ROUTES`; only `me`, `password` and `logout` use `requireSession`, which lets a pending password change through. A route inventory test fails CI for any other route that lets an anonymous request through.
   - Socket.IO's default namespace requires a session.
   - The client hides controls a role can't use, but only for convenience.
 - **Protection without HTTPS.**
   - Only JSON bodies are accepted.
-  - A state-changing request or a socket whose `Origin` doesn't match `Host` is refused.
+  - A state-changing request, or a connection to the signed-in Socket.IO namespace, whose `Origin` doesn't match `Host` is refused.
   - Login, setup and password changes allow 10 attempts a minute per address.
 - **HTTP for now.** HTTPS with your own certificate is a later decision.
 - **Outputs.** Until Live Mode, OBS outputs use the public `/overlay` page and Socket.IO namespace. Live Mode replaces this with **capability URLs**: an unguessable token per output that only allows viewing that output. That design will be recorded when it's built.

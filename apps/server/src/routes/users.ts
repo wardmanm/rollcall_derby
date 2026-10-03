@@ -36,8 +36,8 @@ interface UserParams {
 const isLastAdmin = (db: AppDatabase, user: UserRecord) =>
   user.role === 'admin' && countAdmins(db, { excluding: user.id }) === 0;
 
-// Admin user management (users-and-access R3, ADR-0008). Each handler does its checks and its write with
-// no `await` in between, so concurrent requests can't slip in between a check and the write it guards.
+// Admin user management (users-and-access R3, ADR-0008). The caller's role is checked in a preHandler. The
+// username and last-Admin checks run with no `await` before their write, so concurrent requests can't slip in between.
 export function registerUserRoutes(api: FastifyInstance, db: AppDatabase): void {
   api.get('/api/users', ADMIN_ONLY, async () => UserSchema.array().parse(listUsers(db)));
 
