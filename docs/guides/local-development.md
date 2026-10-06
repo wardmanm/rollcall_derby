@@ -46,7 +46,7 @@ yarn dev
 
 This starts two processes:
 - **the server** on port 5580, restarting when its code changes;
-- **the Vite dev server** on port 5173, reloading the browser when web code changes. It passes `/api` and `/socket.io` through to the server, so the browser only ever talks to port 5173.
+- **the Vite dev server** on port 5173, reloading the browser when web code changes. It passes `/api`, `/socket.io` and `/docs` through to the server, so the browser only ever talks to port 5173.
 
 Then open:
 - **Admin app:** `http://localhost:5173`. The header badge shows `Server v…` once the server answers.
@@ -79,7 +79,7 @@ The server reads these environment variables:
 | `OBS_PRODUCER_PORT` | `5580` | HTTP, API and Socket.IO port |
 | `OBS_PRODUCER_DATA_DIR` | `obs-producer/data/` | SQLite database and uploaded media (git-ignored) |
 | `OBS_PRODUCER_WEB_DIR` | `apps/web/dist/` | Web build to serve; skipped if it doesn't exist |
-| `OBS_PRODUCER_DEV_SERVER` | `http://localhost:5580` | Where the Vite dev server sends `/api` and `/socket.io` |
+| `OBS_PRODUCER_DEV_SERVER` | `http://localhost:5580` | Where the Vite dev server sends `/api`, `/socket.io` and `/docs` |
 | `OBS_PRODUCER_API_DOCS` | off (`yarn dev` turns it on) | Serve the API explorer at `/docs`: `1` or `true` for on, `0` or `false` for off ([ADR-0014](../decisions/0014-route-schemas-and-api-explorer.md)) |
 
 The names are prefixed because shells such as zsh already set `HOST` to the machine's name.

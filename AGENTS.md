@@ -74,7 +74,7 @@ Run from `obs-producer/`:
 | `yarn test:scripts` | Tests for the docs lint and release helper (`node --test "scripts/*.test.mjs"`) |
 | `yarn docs:check` | Docs lint (`node scripts/check-docs.mjs`); add `--fix`, `--questions` or `--next-adr` as needed |
 | `yarn workspace @obs-producer/server start` | Server alone. Listens on `OBS_PRODUCER_HOST`:`OBS_PRODUCER_PORT` (default `0.0.0.0:5580`), data in `OBS_PRODUCER_DATA_DIR` (default `obs-producer/data/`, git-ignored), web build from `OBS_PRODUCER_WEB_DIR` (default `apps/web/dist/`); set `OBS_PRODUCER_API_DOCS=1` to serve the API explorer at `/docs`; the overlay is at `/overlay` |
-| `yarn workspace @obs-producer/web dev` | Vite alone on port 5173, proxying `/api` and `/socket.io` to `OBS_PRODUCER_DEV_SERVER` (default `http://localhost:5580`) |
+| `yarn workspace @obs-producer/web dev` | Vite alone on port 5173, proxying `/api`, `/socket.io` and `/docs` to `OBS_PRODUCER_DEV_SERVER` (default `http://localhost:5580`) |
 | `yarn workspace @obs-producer/server db:generate --name <change>` | Generate a Drizzle migration after editing `apps/server/src/db/schema.ts`. Migrations run automatically at startup |
 | `yarn workspace @obs-producer/server reset-password <username>` | On the server machine: give a locked-out user (usually the only Admin) a temporary password, forcing a new one at their next login. Uses `OBS_PRODUCER_DATA_DIR` like the server |
 | `node scripts/release.mjs prepare\|check\|notes <version>` | Release helper ([releasing](docs/guides/releasing.md)); `tag-absent\|milestone\|issues` are used by the release workflow |

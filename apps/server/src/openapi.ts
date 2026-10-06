@@ -2,14 +2,19 @@ import type { FastifyInstance } from 'fastify';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import { jsonSchemaTransform } from 'fastify-type-provider-zod';
-import { SESSION_COOKIE } from './auth/guard.ts';
+import { PUBLIC_API_ROUTES, SESSION_COOKIE } from './auth/guard.ts';
+
+// Built from the allow-list, not copied by hand, so the description can't drift from the routes it describes.
+const PUBLIC_LIST = [...PUBLIC_API_ROUTES].map((route) => `\`${route}\``).join(', ');
 
 const DESCRIPTION = [
-  'The OBS Producer server API. Every route takes and returns JSON.',
+  'The OBS Producer server API. Requests and replies are JSON; `204` replies have no body.',
   '',
   '**Signing in.** Call `POST /api/auth/login` with "Try it out". Your browser keeps the `obs_producer_session` cookie and sends it with every later call, so they run as you, limited by your role. On a fresh data folder, create the first Admin with `POST /api/setup` from the server machine.',
   '',
-  '**Public routes:** `GET /api/health`, `GET /api/setup`, `POST /api/setup` and `POST /api/auth/login`. Everything else needs a session, checked in this order: no session gets `401 unauthenticated`; a pending password change gets `403 password_change_required`; the wrong role gets `403 forbidden`.',
+  `**Public routes:** ${PUBLIC_LIST}. Everything else needs a session.`,
+  '',
+  '**Checks, in order:** a state-changing request from another site gets `403 cross_origin`; no session gets `401 unauthenticated`; a pending password change gets `403 password_change_required`; the wrong role gets `403 forbidden`. Login, setup and password changes allow 10 attempts a minute, then `429 rate_limited`.',
   '',
   '**Errors** look like `{ "error": "<code>", "message"?: "…" }`. A body that fails its schema gets `400 validation_failed`.',
 ].join('\n');

@@ -20,12 +20,12 @@ Options considered:
 - **Fastify validates and serializes with them.** A request that fails its schema gets `400 validation_failed`. A reply that doesn't match its schema becomes `500 internal_error`, so an unexpected field such as a password hash can't leak.
 - **Auth checks run before validation.** `requireSession`, `requireUser` and `requireRole` are each route's `preValidation` hook, so an anonymous or wrong-role caller is refused before their body is looked at.
 - **The API explorer is Swagger UI at `/docs`,** built by `@fastify/swagger` and `@fastify/swagger-ui` from those schemas. It's on in `yarn dev`, and on a venue server only with `OBS_PRODUCER_API_DOCS=1`. It loads nothing from the internet: Swagger UI's online validator stays off.
-- **A test enforces it.** The route inventory test fails if an `/api` route has no response schema, has a path parameter without a params schema, or if the OpenAPI document and the registered routes disagree.
+- **A test enforces it.** The route inventory test fails if an `/api` route has no success (2xx) response schema, has a path parameter without a params schema, or if the OpenAPI document and the registered routes disagree.
 
 ## Consequences
 
 - The explorer can't go out of date, and the web app can trust that responses match the shared types.
 - Writing a route means declaring its schemas. In return, `request.body`, `request.params` and the reply are typed.
-- A typed route may only send the status codes its response schema declares, which is why every route lists the shared `'4xx'` error shape.
+- TypeScript only lets a typed route send the status codes its response schema declares, which is why every route lists the shared `'4xx'` error shape. At runtime a status without a schema goes out unchecked, which is why the route inventory requires a success (2xx) schema on every route.
 - Socket.IO messages aren't covered. Live Mode decides how to document them.
 - ADR-0007 stays in force; this builds on it.
