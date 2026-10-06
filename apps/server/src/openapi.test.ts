@@ -20,8 +20,8 @@ describe('API explorer', () => {
     const initializer = await app.inject({ method: 'GET', url: '/docs/static/swagger-initializer.js' });
     expect(initializer.statusCode).toBe(200);
     expect(initializer.body).toContain('validatorUrl: null');
-    // Nothing is fetched from another host: no external src/href on the page, no absolute URL as a config value.
-    // (The initializer has a stackoverflow link in a code comment, which loads nothing.)
+    // The page shell and its initializer point at no other host, and the online validator is off. Swagger UI's own
+    // bundle contains documentation links as plain strings; they load nothing (checked by reading it, not by this test).
     expect(page.body).not.toMatch(/(src|href)=["']https?:/);
     expect(initializer.body).not.toMatch(/:\s*["']https?:/);
   });
