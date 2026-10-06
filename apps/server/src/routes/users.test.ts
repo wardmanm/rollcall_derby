@@ -82,6 +82,14 @@ describe('POST /api/users', () => {
       expect(res.json()).toMatchObject({ error: 'validation_failed' });
     }
   });
+
+  it('refuses a non-Admin before looking at the body', async () => {
+    const { app, db } = await withAdmin();
+    const { cookies } = await signIn(db, 'producer1', 'producer');
+    const res = await app.inject({ method: 'POST', url: '/api/users', cookies, payload: {} });
+    expect(res.statusCode).toBe(403);
+    expect(res.json()).toEqual({ error: 'forbidden' });
+  });
 });
 
 describe('PATCH /api/users/:id', () => {

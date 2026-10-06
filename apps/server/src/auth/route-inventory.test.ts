@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { HTTPMethods, InjectOptions } from 'fastify';
+import type { FastifySchema, HTTPMethods, InjectOptions } from 'fastify';
 import type { AppOptions } from '../app.ts';
 import { addUser, testApp } from '../testing.ts';
-import { PUBLIC_API_ROUTES, SESSION_COOKIE } from './guard.ts';
+import { PUBLIC_API_ROUTES, requireUser, SESSION_COOKIE } from './guard.ts';
 import { createSession } from './sessions.ts';
 
 // Hard rule 5 (ADR-0008): every /api route checks the caller unless it's deliberately public.
@@ -16,6 +16,7 @@ interface ApiRoute {
   url: string;
   /** "METHOD /path". HEAD counts as GET: Fastify adds a HEAD route for every GET route, with the same checks. */
   key: string;
+  schema: FastifySchema | undefined;
 }
 
 async function inventory(options: Partial<AppOptions> = {}) {
@@ -25,7 +26,12 @@ async function inventory(options: Partial<AppOptions> = {}) {
     onRoute: (route) => {
       if (!route.url.startsWith('/api')) return;
       for (const method of [route.method].flat()) {
-        routes.push({ method, url: route.url, key: `${method === 'HEAD' ? 'GET' : method} ${route.url}` });
+        routes.push({
+          method,
+          url: route.url,
+          key: `${method === 'HEAD' ? 'GET' : method} ${route.url}`,
+          schema: route.schema,
+        });
       }
     },
   });
@@ -50,6 +56,19 @@ async function routesOpenToAnonymous(options: Partial<AppOptions> = {}) {
   }
   await app.close();
   return open;
+}
+
+// Every /api route must declare a response schema, and a params schema when its path has a parameter (ADR-0014).
+async function routesMissingSchemas(options: Partial<AppOptions> = {}) {
+  const { app, routes } = await inventory(options);
+  await app.close();
+  return routes.flatMap((r) => {
+    if (r.method === 'HEAD') return [];
+    const missing: string[] = [];
+    if (!r.schema?.response) missing.push(`${r.key} has no response schema`);
+    if (r.url.includes(':') && !r.schema?.params) missing.push(`${r.key} has no params schema`);
+    return missing;
+  });
 }
 
 describe('route inventory', () => {
@@ -90,5 +109,21 @@ describe('route inventory', () => {
     await app.close();
     expect(gated.map((r) => r.key)).toContain('GET /api/users');
     expect(notRefused).toEqual([]);
+  });
+
+  it('gives every /api route a response schema, and a params schema when its path has parameters', async () => {
+    expect(await routesMissingSchemas()).toEqual([]);
+  });
+
+  it('catches a route without schemas', async () => {
+    const missing = await routesMissingSchemas({
+      registerRoutes: (api) => {
+        api.get('/api/schemaless/:id', { preValidation: requireUser }, async () => ({ ok: true }));
+      },
+    });
+    expect(missing).toEqual([
+      'GET /api/schemaless/:id has no response schema',
+      'GET /api/schemaless/:id has no params schema',
+    ]);
   });
 });
