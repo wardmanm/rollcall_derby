@@ -529,7 +529,7 @@ Append inside `describe('POST /api/users', …)` in `apps/server/src/routes/user
 Run: `yarn vitest run apps/server/src/auth/route-inventory.test.ts apps/server/src/routes/users.test.ts`
 Expected:
 - "gives every /api route a response schema…" **FAILS**, listing the six `/api/users` routes.
-- "catches a route without schemas" **passes**.
+- "catches a route without schemas" **FAILS** too: besides the probe route, its list also contains the six `/api/users` routes that aren't converted yet. Both pass once Step 3 is done.
 - The new users test **passes**. It pins that the role check stays ahead of validation.
 
 - [ ] **Step 3: Convert the user routes.** In `apps/server/src/routes/users.ts`:
