@@ -9,6 +9,7 @@ import { APP_NAME, HealthResponseSchema, type HealthResponse } from '@obs-produc
 import type { AppDatabase } from './db.ts';
 import { ERROR_RESPONSES, sendApiError } from './http.ts';
 import { installAuth } from './auth/guard.ts';
+import { registerApiDocs } from './openapi.ts';
 import { registerAuthRoutes } from './routes/auth.ts';
 import { registerSetupRoutes } from './routes/setup.ts';
 import { registerUserRoutes } from './routes/users.ts';
@@ -23,6 +24,8 @@ export interface AppOptions {
   registerRoutes?: (api: FastifyInstance) => void;
   /** Called for each route as it's registered; the route inventory test uses it. */
   onRoute?: (route: RouteOptions) => void;
+  /** Serve the API explorer (Swagger UI) at /docs (ADR-0014). Off unless asked for. */
+  apiDocs?: boolean;
 }
 
 // The HTTP API. Kept free of listening and sockets so routes can be tested with app.inject().
@@ -33,6 +36,7 @@ export function buildApp({
   db,
   registerRoutes,
   onRoute,
+  apiDocs = false,
 }: AppOptions): FastifyInstance {
   const app = Fastify({ logger });
   // Added first, so it sees every route, including those inside the /api plugin.
@@ -40,6 +44,7 @@ export function buildApp({
   // Routes validate requests and serialize replies with the shared Zod schemas they declare (ADR-0007, ADR-0014).
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+  registerApiDocs(app, { version, apiDocs });
   const startedAt = performance.now();
 
   // JSON bodies only: removing the text/plain parser turns form-style cross-site posts into 415s.

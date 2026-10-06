@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/main.ts",
+    "dev": "OBS_PRODUCER_API_DOCS=1 node --watch src/main.ts",
     "start": "node src/main.ts",
     "db:generate": "drizzle-kit generate",
     "reset-password": "node src/cli/reset-password.ts",
@@ -15,6 +15,7 @@
     "@fastify/rate-limit": "^11.2.0",
     "@fastify/static": "^10.1.5",
     "@fastify/swagger": "^9.9.1",
+    "@fastify/swagger-ui": "^6.1.1",
     "@obs-producer/shared": "workspace:^",
     "better-sqlite3": "^13.0.3",
     "cookie": "^2.0.1",

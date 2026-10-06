@@ -6,6 +6,8 @@ export interface ServerConfig {
   port: number;
   dataDir: string;
   webDir: string;
+  /** Serve the API explorer (Swagger UI) at /docs (ADR-0014). */
+  apiDocs?: boolean;
 }
 
 // obs-producer/data (git-ignored), resolved from this file so it doesn't depend on the working directory.
@@ -25,5 +27,15 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     port,
     dataDir: env.OBS_PRODUCER_DATA_DIR ? resolve(env.OBS_PRODUCER_DATA_DIR) : DEFAULT_DATA_DIR,
     webDir: env.OBS_PRODUCER_WEB_DIR ? resolve(env.OBS_PRODUCER_WEB_DIR) : DEFAULT_WEB_DIR,
+    apiDocs: parseSwitch('OBS_PRODUCER_API_DOCS', env.OBS_PRODUCER_API_DOCS),
   };
+}
+
+// On/off settings: 1 or true turn them on; 0, false, empty or unset leave them off. Anything else is probably a
+// typo, so the server stops rather than guess.
+function parseSwitch(name: string, raw: string | undefined): boolean {
+  const value = raw?.trim().toLowerCase() ?? '';
+  if (value === '1' || value === 'true') return true;
+  if (value === '' || value === '0' || value === 'false') return false;
+  throw new Error(`${name} must be 1, true, 0 or false, got ${JSON.stringify(raw)}`);
 }

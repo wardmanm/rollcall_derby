@@ -2,8 +2,8 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// In development the Vite dev server proxies API and Socket.IO traffic to the obs-producer server,
-// so the browser only ever talks to one origin (ADR-0004).
+// In development the Vite dev server proxies API, Socket.IO and API explorer (/docs) traffic to the
+// obs-producer server, so the browser only ever talks to one origin (ADR-0004).
 const server = process.env.OBS_PRODUCER_DEV_SERVER ?? 'http://localhost:5580';
 
 // Two pages: the admin app (index.html) and the lean OBS overlay (overlay.html, ADR-0006).
@@ -25,6 +25,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': server,
+      '/docs': server,
       '/socket.io': { target: server, ws: true },
     },
   },

@@ -10,6 +10,7 @@ import { createSession } from './sessions.ts';
 
 const ANY_ID = '00000000-0000-4000-8000-000000000000';
 const PASSWORD_CHANGE_ROUTES = new Set(['GET /api/auth/me', 'POST /api/auth/password', 'POST /api/auth/logout']);
+const byName = (a: string, b: string) => a.localeCompare(b);
 
 interface ApiRoute {
   method: HTTPMethods;
@@ -125,5 +126,20 @@ describe('route inventory', () => {
       'GET /api/schemaless/:id has no response schema',
       'GET /api/schemaless/:id has no params schema',
     ]);
+  });
+
+  it('matches the OpenAPI document, route for route', async () => {
+    const { app, routes } = await inventory();
+    const { paths } = app.swagger() as { paths: Record<string, Record<string, unknown>> };
+    await app.close();
+    const documented = Object.entries(paths)
+      .filter(([path]) => path.startsWith('/api'))
+      .flatMap(([path, operations]) =>
+        Object.keys(operations)
+          .filter((method) => method !== 'head')
+          .map((method) => `${method.toUpperCase()} ${path.replaceAll(/\{(\w+)\}/g, ':$1')}`),
+      );
+    const registered = [...new Set(routes.filter((r) => r.method !== 'HEAD').map((r) => r.key))];
+    expect(documented.toSorted(byName)).toEqual(registered.toSorted(byName));
   });
 });
