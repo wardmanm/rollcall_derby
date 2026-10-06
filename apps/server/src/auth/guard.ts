@@ -70,7 +70,9 @@ interface Denial {
   error: string;
 }
 
-// Builds a preHandler. No session is always a 401; `deny` can refuse a signed-in user for another reason.
+// Builds a guard hook. Routes use it as their `preValidation`, so the caller is checked before the body is: an
+// anonymous or wrong-role request is refused, never told what a valid body looks like. No session is always a 401;
+// `deny` can refuse a signed-in user for another reason.
 function guard(deny: (user: SessionUser) => Denial | undefined) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     if (!request.user) return reply.code(401).send({ error: 'unauthenticated' });
