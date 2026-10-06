@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { FastifySchema, HTTPMethods, InjectOptions } from 'fastify';
+import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import type { AppOptions } from '../app.ts';
+import { ERROR_RESPONSES } from '../http.ts';
 import { addUser, testApp } from '../testing.ts';
 import { PUBLIC_API_ROUTES, requireUser, SESSION_COOKIE } from './guard.ts';
 import { createSession } from './sessions.ts';
@@ -59,14 +61,21 @@ async function routesOpenToAnonymous(options: Partial<AppOptions> = {}) {
   return open;
 }
 
-// Every /api route must declare a response schema, and a params schema when its path has a parameter (ADR-0014).
+const SUCCESS_STATUS = /^2(\d\d|xx)$/i;
+
+// Every /api route must declare a response schema for a success status, and a params schema when its path has a
+// parameter (ADR-0014). A route that declares only error responses (ERROR_RESPONSES) would otherwise pass: Fastify
+// then sends its 2xx reply through plain JSON.stringify, unchecked.
 async function routesMissingSchemas(options: Partial<AppOptions> = {}) {
   const { app, routes } = await inventory(options);
   await app.close();
   return routes.flatMap((r) => {
     if (r.method === 'HEAD') return [];
     const missing: string[] = [];
-    if (!r.schema?.response) missing.push(`${r.key} has no response schema`);
+    const responseKeys = Object.keys((r.schema?.response as Record<string, unknown> | undefined) ?? {});
+    if (!responseKeys.some((key) => SUCCESS_STATUS.test(key))) {
+      missing.push(`${r.key} has no success (2xx) response schema`);
+    }
     if (r.url.includes(':') && !r.schema?.params) missing.push(`${r.key} has no params schema`);
     return missing;
   });
@@ -120,11 +129,18 @@ describe('route inventory', () => {
     const missing = await routesMissingSchemas({
       registerRoutes: (api) => {
         api.get('/api/schemaless/:id', { preValidation: requireUser }, async () => ({ ok: true }));
+        api.withTypeProvider<ZodTypeProvider>().get(
+          '/api/errors-only',
+          { preValidation: requireUser, schema: { response: { ...ERROR_RESPONSES } } },
+          // No success status is declared, so nothing but void type-checks here; the handler is never invoked.
+          async () => undefined,
+        );
       },
     });
     expect(missing).toEqual([
-      'GET /api/schemaless/:id has no response schema',
+      'GET /api/schemaless/:id has no success (2xx) response schema',
       'GET /api/schemaless/:id has no params schema',
+      'GET /api/errors-only has no success (2xx) response schema',
     ]);
   });
 
