@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import type { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { SessionUserSchema } from '@obs-producer/shared';
 import { testApp } from './testing.ts';
 
 const login = (app: ReturnType<typeof testApp>['app'], remoteAddress = '127.0.0.1') =>
@@ -65,5 +67,30 @@ describe('rate limits', () => {
     for (let i = 0; i < 10; i++) await login(app, 'fd00::1');
     expect((await login(app, 'fd00::1')).statusCode).toBe(429);
     expect((await login(app, 'fd00::2')).statusCode).toBe(401);
+  });
+});
+
+describe('route schemas', () => {
+  it('turn a reply with a field outside its schema into internal_error, so the field never leaks', async () => {
+    const { app } = testApp({
+      registerRoutes: (fastify) => {
+        fastify
+          .withTypeProvider<ZodTypeProvider>()
+          .get('/api/leaky', { schema: { response: { 200: SessionUserSchema } } }, async () => {
+            const user = {
+              id: 'u1',
+              username: 'admin',
+              role: 'admin' as const,
+              mustChangePassword: false,
+              passwordHash: 'secret-hash',
+            };
+            return user;
+          });
+      },
+    });
+    const res = await app.inject({ method: 'GET', url: '/api/leaky' });
+    expect(res.statusCode).toBe(500);
+    expect(res.json()).toEqual({ error: 'internal_error' });
+    expect(res.body).not.toContain('secret-hash');
   });
 });

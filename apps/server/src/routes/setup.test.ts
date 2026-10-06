@@ -98,4 +98,19 @@ describe('POST /api/setup', () => {
       expect(res.json(), host).toEqual({ needsSetup: true, canSetupHere: true });
     }
   });
+
+  it('refuses another machine before looking at the body', async () => {
+    const { app } = testApp();
+    const res = await app.inject({ method: 'POST', url: '/api/setup', payload: {}, remoteAddress: LAN });
+    expect(res.statusCode).toBe(403);
+    expect(res.json()).toMatchObject({ error: 'setup_not_allowed' });
+  });
+
+  it('refuses once set up before looking at the body', async () => {
+    const { app } = testApp();
+    await app.inject({ method: 'POST', url: '/api/setup', payload: admin });
+    const res = await app.inject({ method: 'POST', url: '/api/setup', payload: {} });
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toEqual({ error: 'already_set_up' });
+  });
 });

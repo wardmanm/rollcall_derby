@@ -1,5 +1,6 @@
 import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import { ApiErrorSchema } from '@obs-producer/shared';
 
 // Validates a request body against a shared Zod schema (ADR-0007). On failure it sends a 400 and
 // returns undefined, so handlers can do: `const body = parseBody(...); if (!body) return reply;`
@@ -9,6 +10,10 @@ export function parseBody<T>(schema: z.ZodType<T>, body: unknown, reply: Fastify
   void reply.code(400).send({ error: 'validation_failed', message: z.prettifyError(result.error) });
   return undefined;
 }
+
+// Every /api route lists this in its response schemas. It documents the error shape, and lets the route send 4xx
+// replies: Fastify only lets a typed route send the status codes its response schema declares.
+export const ERROR_RESPONSES = { '4xx': ApiErrorSchema };
 
 const ERROR_CODES: Partial<Record<number, string>> = {
   400: 'bad_request',
@@ -22,6 +27,8 @@ const ERROR_CODES: Partial<Record<number, string>> = {
 // same { error, message? } shape as our own replies. Server errors are logged, never echoed: their text can hold
 // SQL or file paths.
 export function sendApiError(error: FastifyError, request: FastifyRequest, reply: FastifyReply) {
+  // A body, path or query that fails its route schema (ADR-0014). Same reply as before route schemas existed.
+  if (error.validation) return reply.code(400).send({ error: 'validation_failed', message: error.message });
   const status = error.statusCode !== undefined && error.statusCode >= 400 ? error.statusCode : 500;
   if (status >= 500) {
     request.log.error({ err: error }, 'Request failed');

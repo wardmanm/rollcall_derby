@@ -4,9 +4,10 @@ import Fastify, { type FastifyInstance, type RouteOptions } from 'fastify';
 import fastifyStatic from '@fastify/static';
 import fastifyCookie from '@fastify/cookie';
 import fastifyRateLimit from '@fastify/rate-limit';
-import { APP_NAME, HealthResponseSchema } from '@obs-producer/shared';
+import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fastify-type-provider-zod';
+import { APP_NAME, HealthResponseSchema, type HealthResponse } from '@obs-producer/shared';
 import type { AppDatabase } from './db.ts';
-import { sendApiError } from './http.ts';
+import { ERROR_RESPONSES, sendApiError } from './http.ts';
 import { installAuth } from './auth/guard.ts';
 import { registerAuthRoutes } from './routes/auth.ts';
 import { registerSetupRoutes } from './routes/setup.ts';
@@ -36,6 +37,9 @@ export function buildApp({
   const app = Fastify({ logger });
   // Added first, so it sees every route, including those inside the /api plugin.
   if (onRoute) app.addHook('onRoute', onRoute);
+  // Routes validate requests and serialize replies with the shared Zod schemas they declare (ADR-0007, ADR-0014).
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
   const startedAt = performance.now();
 
   // JSON bodies only: removing the text/plain parser turns form-style cross-site posts into 415s.
@@ -49,13 +53,22 @@ export function buildApp({
   void app.register(async (api) => {
     api.setErrorHandler(sendApiError);
     installAuth(api, db);
-    api.get('/api/health', async () =>
-      HealthResponseSchema.parse({
-        status: 'ok',
-        name: APP_NAME,
-        version,
-        uptimeSeconds: (performance.now() - startedAt) / 1000,
-      }),
+    api.withTypeProvider<ZodTypeProvider>().get(
+      '/api/health',
+      {
+        schema: {
+          tags: ['health'],
+          summary: 'Check that the server is up',
+          response: { 200: HealthResponseSchema, ...ERROR_RESPONSES },
+        },
+      },
+      async () =>
+        ({
+          status: 'ok',
+          name: APP_NAME,
+          version,
+          uptimeSeconds: (performance.now() - startedAt) / 1000,
+        }) satisfies HealthResponse,
     );
     registerSetupRoutes(api, db);
     registerAuthRoutes(api, db);
