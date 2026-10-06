@@ -64,7 +64,7 @@ Run from `obs-producer/`:
 |---|---|
 | `yarn install` | Install dependencies for all workspaces (CI uses `yarn install --immutable`) |
 | `yarn check` | **Run before every commit:** typecheck, lint, format check, unit tests, script tests and docs lint |
-| `yarn dev` | Server (restarts on changes) and Vite dev server together; open `http://localhost:5173` |
+| `yarn dev` | Server (restarts on changes) and Vite dev server together; open `http://localhost:5173`. The API explorer is at `/docs` ([ADR-0014](docs/decisions/0014-route-schemas-and-api-explorer.md)) |
 | `yarn build` / `yarn start` | Production build of the web app (admin app + OBS overlay), then run the server that serves it |
 | `yarn typecheck` | Type-check every workspace with TypeScript 7 |
 | `yarn lint` | Oxlint with type-aware rules, React hooks and jsx-a11y rules ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md)). Config: `.oxlintrc.json` |
@@ -73,7 +73,7 @@ Run from `obs-producer/`:
 | `yarn test:e2e` | Playwright end-to-end tests in `e2e/tests/`: builds the app and runs the real server on port 5590 |
 | `yarn test:scripts` | Tests for the docs lint and release helper (`node --test "scripts/*.test.mjs"`) |
 | `yarn docs:check` | Docs lint (`node scripts/check-docs.mjs`); add `--fix`, `--questions` or `--next-adr` as needed |
-| `yarn workspace @obs-producer/server start` | Server alone. Listens on `OBS_PRODUCER_HOST`:`OBS_PRODUCER_PORT` (default `0.0.0.0:5580`), data in `OBS_PRODUCER_DATA_DIR` (default `obs-producer/data/`, git-ignored), web build from `OBS_PRODUCER_WEB_DIR` (default `apps/web/dist/`); the overlay is at `/overlay` |
+| `yarn workspace @obs-producer/server start` | Server alone. Listens on `OBS_PRODUCER_HOST`:`OBS_PRODUCER_PORT` (default `0.0.0.0:5580`), data in `OBS_PRODUCER_DATA_DIR` (default `obs-producer/data/`, git-ignored), web build from `OBS_PRODUCER_WEB_DIR` (default `apps/web/dist/`); set `OBS_PRODUCER_API_DOCS=1` to serve the API explorer at `/docs`; the overlay is at `/overlay` |
 | `yarn workspace @obs-producer/web dev` | Vite alone on port 5173, proxying `/api` and `/socket.io` to `OBS_PRODUCER_DEV_SERVER` (default `http://localhost:5580`) |
 | `yarn workspace @obs-producer/server db:generate --name <change>` | Generate a Drizzle migration after editing `apps/server/src/db/schema.ts`. Migrations run automatically at startup |
 | `yarn workspace @obs-producer/server reset-password <username>` | On the server machine: give a locked-out user (usually the only Admin) a temporary password, forcing a new one at their next login. Uses `OBS_PRODUCER_DATA_DIR` like the server |

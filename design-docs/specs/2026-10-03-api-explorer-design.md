@@ -1,6 +1,6 @@
 # API explorer (Swagger): design
 
-**Date:** 2026-10-03 · **Status:** approved in chat, written for review · **Milestone:** `obs-producer v0.2.0` (proposed)
+**Date:** 2026-10-03 · **Status:** approved · **Milestone:** `obs-producer v0.2.0` · **Issue:** #16
 
 ## Goal
 

@@ -43,6 +43,7 @@ What to test, where the tests live, and how to run them. New code is written tes
   - **Proof it works:** a deliberately unguarded route must be caught.
 
   A new route that forgets `requireUser` or `requireRole` fails CI ([ADR-0008](../decisions/0008-auth-rbac-and-overlay-access.md)).
+  It also checks that every `/api` route declares a response schema (and a params schema when its path has parameters), and that the OpenAPI document behind `/docs` lists exactly the registered routes ([ADR-0014](../decisions/0014-route-schemas-and-api-explorer.md)).
 
 ## Playwright
 

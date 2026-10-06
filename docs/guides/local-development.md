@@ -51,6 +51,7 @@ This starts two processes:
 Then open:
 - **Admin app:** `http://localhost:5173`. The header badge shows `Server v…` once the server answers.
 - **OBS overlay:** `http://localhost:5173/overlay`. A small card appears over a transparent page.
+- **API explorer:** `http://localhost:5173/docs`. See [Trying the API](#trying-the-api).
 
 Stop both with Ctrl-C.
 
@@ -79,8 +80,18 @@ The server reads these environment variables:
 | `OBS_PRODUCER_DATA_DIR` | `obs-producer/data/` | SQLite database and uploaded media (git-ignored) |
 | `OBS_PRODUCER_WEB_DIR` | `apps/web/dist/` | Web build to serve; skipped if it doesn't exist |
 | `OBS_PRODUCER_DEV_SERVER` | `http://localhost:5580` | Where the Vite dev server sends `/api` and `/socket.io` |
+| `OBS_PRODUCER_API_DOCS` | off (`yarn dev` turns it on) | Serve the API explorer at `/docs`: `1` or `true` for on, `0` or `false` for off ([ADR-0014](../decisions/0014-route-schemas-and-api-explorer.md)) |
 
 The names are prefixed because shells such as zsh already set `HOST` to the machine's name.
+
+### Trying the API
+
+`yarn dev` also serves an API explorer (Swagger UI) at `http://localhost:5173/docs`. It lists every `/api` route with its request and response shapes, generated from the shared schemas, so it's always current ([ADR-0014](../decisions/0014-route-schemas-and-api-explorer.md)).
+
+1. Open `POST /api/auth/login`, choose **Try it out**, and log in. On a fresh data folder, create the first Admin with `POST /api/setup` first.
+2. Your browser keeps the session cookie, so every later call runs as you, limited by your role.
+
+On a venue server the explorer is off. To turn it on, start the server with `OBS_PRODUCER_API_DOCS=1` and open `http://<server>:5580/docs`.
 
 ## Working on the code
 

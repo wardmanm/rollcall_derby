@@ -8,6 +8,7 @@ All notable changes to OBS Producer are documented here, newest first. The forma
 
 - Accounts on the server: first-run Admin setup from the server machine, sign-in with 30-day sessions, sign-out and password changes (#13)
 - Admins can create users, change roles, reset passwords and sign users out. Every API route and live connection checks who's asking, and a reset-password command rescues a locked-out Admin (#14)
+- API explorer for developers: Swagger UI at `/docs`, generated from the shared schemas. It's on in `yarn dev`, and on a venue server only with `OBS_PRODUCER_API_DOCS=1` (#16)
 
 ### Changed
 

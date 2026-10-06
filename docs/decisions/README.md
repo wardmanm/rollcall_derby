@@ -23,4 +23,5 @@ To write a new one, follow [recording decisions](../wiki-guide.md#recording-deci
 | [0011](0011-technology-stack-with-yarn.md) | Technology stack, with Yarn workspaces | superseded by [0012](0012-typescript-7-and-oxlint.md) | 2026-09-29 |
 | [0012](0012-typescript-7-and-oxlint.md) | Technology stack, TypeScript 7 and Oxlint | accepted | 2026-09-29 |
 | [0013](0013-run-typescript-natively-on-node.md) | Run TypeScript natively on Node | accepted | 2026-09-29 |
+| [0014](0014-route-schemas-and-api-explorer.md) | Route schemas from the shared contract, with an API explorer | accepted | 2026-10-06 |
 <!-- /generated:decisions -->
