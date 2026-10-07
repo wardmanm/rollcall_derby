@@ -8,6 +8,8 @@ const config: StorybookConfig = {
   addons: ['@storybook/addon-docs', '@storybook/addon-a11y', '@storybook/addon-vitest'],
   framework: { name: '@storybook/react-vite', options: {} },
   core: { disableTelemetry: true, disableWhatsNewNotifications: true, enableCrashReports: false },
+  // The overlay Storybook runs on its own (port 6007) and appears here as its own section (ADR-0015).
+  refs: { overlay: { title: 'Overlay', url: 'http://localhost:6007' } },
 };
 
 export default config;

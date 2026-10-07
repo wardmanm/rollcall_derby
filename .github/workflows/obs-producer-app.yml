@@ -41,6 +41,7 @@ jobs:
       - name: Install Playwright's Chromium
         run: yarn workspace @obs-producer/e2e playwright install --with-deps chromium
 
+      - run: yarn test:stories
       - run: yarn test:e2e
 
       - name: Upload the Playwright report

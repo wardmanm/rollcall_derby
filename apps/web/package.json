@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json"
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
+    "storybook": "storybook dev -c .storybook/overlay -p 6007 --host localhost --exact-port --no-open --no-version-updates & storybook dev -c .storybook/admin -p 6006 --host localhost --exact-port --no-version-updates"
   },
   "dependencies": {
     "@mantine/core": "^9.6.3",

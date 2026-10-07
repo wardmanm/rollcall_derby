@@ -24,6 +24,7 @@
     "test:e2e": "yarn workspace @obs-producer/e2e test",
     "test:scripts": "node --test \"scripts/*.test.mjs\"",
     "docs:check": "node scripts/check-docs.mjs",
+    "storybook": "yarn workspace @obs-producer/web storybook",
     "check": "yarn typecheck && yarn lint && yarn format:check && yarn test && yarn test:scripts && yarn docs:check"
   },
   "devDependencies": {
