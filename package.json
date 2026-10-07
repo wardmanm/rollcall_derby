@@ -19,19 +19,23 @@
     "lint": "oxlint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest run",
+    "test": "vitest run --project node --project web",
+    "test:stories": "vitest run --project storybook-admin",
     "test:e2e": "yarn workspace @obs-producer/e2e test",
     "test:scripts": "node --test \"scripts/*.test.mjs\"",
     "docs:check": "node scripts/check-docs.mjs",
     "check": "yarn typecheck && yarn lint && yarn format:check && yarn test && yarn test:scripts && yarn docs:check"
   },
   "devDependencies": {
+    "@storybook/addon-vitest": "^10.6.1",
+    "@vitest/browser-playwright": "^5.0.3",
     "oxlint": "^1.86.0",
     "oxlint-tsgolint": "^7.0.2003",
+    "playwright": "^1.63.0",
     "prettier": "^3.9.9",
     "typescript": "^7.0.2",
     "vite": "^8.3.1",
-    "vitest": "^5.0.2"
+    "vitest": "^5.0.3"
   },
   "packageManager": "yarn@4.18.1+sha512.b2e1e7524f654f2749d32b4ebcb4622473cb5bcbc485df2007e12a154e50162a4d795526768bc5f5b8f81717bfd79deb2472813d86fb5ae2eb551fa9c872b08f"
 }

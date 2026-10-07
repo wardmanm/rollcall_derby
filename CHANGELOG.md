@@ -14,6 +14,10 @@ All notable changes to OBS Producer are documented here, newest first. The forma
 
 - The OBS overlay now uses its own public live connection. After upgrading, refresh each OBS browser source (right-click ▸ Refresh) so it picks up the change (#14)
 
+### Fixed
+
+- The header's server badge has enough contrast to read (#17)
+
 ## [0.1.0] - 2026-10-02
 
 ### Added
