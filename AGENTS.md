@@ -71,6 +71,8 @@ Run from `obs-producer/`:
 | `yarn format` / `yarn format:check` | Prettier (Markdown is excluded; the docs lint covers it) |
 | `yarn test` | Vitest: every workspace's `*.test.ts(x)` next to the code (Node for server/shared, jsdom for web) |
 | `yarn test:e2e` | Playwright end-to-end tests in `e2e/tests/`: builds the app and runs the real server on port 5590 |
+| `yarn test:stories` | Story tests: every Storybook story rendered in Chromium, with accessibility checks ([ADR-0015](docs/decisions/0015-storybook-admin-and-overlay-kept-apart.md)) |
+| `yarn storybook` | Both Storybooks in one window at `http://localhost:6006` (admin), with the overlay section from port 6007 |
 | `yarn test:scripts` | Tests for the docs lint and release helper (`node --test "scripts/*.test.mjs"`) |
 | `yarn docs:check` | Docs lint (`node scripts/check-docs.mjs`); add `--fix`, `--questions` or `--next-adr` as needed |
 | `yarn workspace @obs-producer/server start` | Server alone. Listens on `OBS_PRODUCER_HOST`:`OBS_PRODUCER_PORT` (default `0.0.0.0:5580`), data in `OBS_PRODUCER_DATA_DIR` (default `obs-producer/data/`, git-ignored), web build from `OBS_PRODUCER_WEB_DIR` (default `apps/web/dist/`); set `OBS_PRODUCER_API_DOCS=1` to serve the API explorer at `/docs`; the overlay is at `/overlay` |
@@ -96,5 +98,6 @@ The full process is in the [wiki guide](docs/wiki-guide.md).
 
 - Behavior matches its feature page, and the page is updated if behavior changed.
 - Tests are added or updated, and `yarn check` passes. Changes to what users see also pass `yarn test:e2e`.
+- New shared components have a story, and `yarn test:stories` passes.
 - User-visible changes have a line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md), ending with the issue number.
 - Every hard rule above still holds.

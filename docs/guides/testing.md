@@ -11,10 +11,11 @@ What to test, where the tests live, and how to run them. New code is written tes
 |---|---|---|---|
 | Unit and integration | [Vitest](https://vitest.dev/) | `*.test.ts(x)` next to the code, in every workspace | `yarn test` |
 | React components | Vitest + React Testing Library, jsdom | `apps/web/src/**/*.test.tsx` | `yarn test` |
+| Stories | Storybook + Vitest browser mode (Playwright's Chromium) | `apps/web/src/**/*.stories.tsx` | `yarn test:stories` |
 | End to end | [Playwright](https://playwright.dev/) | `e2e/tests/*.spec.ts` | `yarn test:e2e` |
 | Repo scripts | Node's built-in test runner | `scripts/*.test.mjs` | `yarn test:scripts` |
 
-`yarn check` runs everything except end-to-end. CI runs all of it on every push that touches `obs-producer/`, via `.github/workflows/obs-producer-app.yml` and `obs-producer-docs.yml`. The release workflow runs it again before anyone can approve a release.
+`yarn check` runs everything except end-to-end. CI runs all of it, plus `yarn test:stories`, on every push that touches `obs-producer/`, via `.github/workflows/obs-producer-app.yml` and `obs-producer-docs.yml`. The release workflow runs it again before anyone can approve a release.
 
 ## Vitest
 
@@ -44,6 +45,15 @@ What to test, where the tests live, and how to run them. New code is written tes
 
   A new route that forgets `requireUser` or `requireRole` fails CI ([ADR-0008](../decisions/0008-auth-rbac-and-overlay-access.md)).
   It also checks that every `/api` route declares a response schema (and a params schema when its path has parameters), and that the OpenAPI document behind `/docs` lists exactly the registered routes ([ADR-0014](../decisions/0014-route-schemas-and-api-explorer.md)).
+
+## Stories
+
+Shared components get a story next to them (`Component.stories.tsx`), and every story is also a test, run through its own Vitest config, `vitest.stories.config.ts` ([ADR-0015](../decisions/0015-storybook-admin-and-overlay-kept-apart.md)). `yarn test:stories` renders each one in Chromium and fails on a render error, a failed `play` check, or an accessibility violation.
+
+- **Which Storybook:** admin components (anywhere under `src/` outside `src/overlay`, such as `src/components`) go in the admin Storybook; overlay components (`src/overlay`) in the overlay one.
+- **Server data:** give each story its own answer with a `beforeEach` that stubs `fetch` and restores it (see `ServerStatus.stories.tsx`). A fresh `makeStore()` per story keeps RTK Query empty.
+- **Themes in CI:** a story pinned to a sample theme with `globals: { overlayTheme: 'light' }` is checked for contrast like any other.
+- **Isolation:** every overlay story checks for no Mantine variables or stylesheet on the page, and that theme variables reach it, the same check the e2e test makes on the real overlay page.
 
 ## Playwright
 

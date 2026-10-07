@@ -1,6 +1,6 @@
 # Storybook for shared components and themes: design
 
-**Date:** 2026-10-07 · **Status:** approved in chat, written for review · **Milestone:** `obs-producer v0.2.0` · **Issue:** #17
+**Date:** 2026-10-07 · **Status:** approved · **Milestone:** `obs-producer v0.2.0` · **Issue:** #17
 
 ## Goal
 

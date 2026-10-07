@@ -93,6 +93,14 @@ The names are prefixed because shells such as zsh already set `HOST` to the mach
 
 On a venue server the explorer is off. To turn it on, start the server with `OBS_PRODUCER_API_DOCS=1` and open `http://<server>:5580/docs`.
 
+### Storybook
+
+`yarn storybook` shows the web app's shared components, one at a time, outside the app ([ADR-0015](../decisions/0015-storybook-admin-and-overlay-kept-apart.md)). It opens `http://localhost:6006`, the admin components. The overlay components appear in the same window under **Overlay**, served from port 6007.
+
+- **Admin stories:** switch light and dark from the toolbar.
+- **Overlay stories:** switch the **Theme** (sample themes until the Theme Builder) and the **Backdrop** behind the transparent overlay.
+- Ctrl-C stops both. If a port is still in use, stop that process: `lsof -nP -iTCP:6007 -sTCP:LISTEN`.
+
 ## Working on the code
 
 ### Where things live

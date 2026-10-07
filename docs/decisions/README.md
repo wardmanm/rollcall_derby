@@ -24,4 +24,5 @@ To write a new one, follow [recording decisions](../wiki-guide.md#recording-deci
 | [0012](0012-typescript-7-and-oxlint.md) | Technology stack, TypeScript 7 and Oxlint | accepted | 2026-09-29 |
 | [0013](0013-run-typescript-natively-on-node.md) | Run TypeScript natively on Node | accepted | 2026-09-29 |
 | [0014](0014-route-schemas-and-api-explorer.md) | Route schemas from the shared contract, with an API explorer | accepted | 2026-10-06 |
+| [0015](0015-storybook-admin-and-overlay-kept-apart.md) | Storybook for shared components, admin and overlay kept apart | accepted | 2026-10-07 |
 <!-- /generated:decisions -->
