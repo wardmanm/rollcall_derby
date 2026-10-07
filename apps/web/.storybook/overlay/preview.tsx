@@ -66,6 +66,11 @@ const preview: Preview = {
   // ADR-0006 in Storybook: no Mantine on the page, and theme variables reach the story's root.
   afterEach: async ({ canvasElement }) => {
     await expect(getComputedStyle(document.documentElement).getPropertyValue('--mantine-color-body')).toBe('');
+    // A Mantine stylesheet on the page leaks global styles even without MantineProvider, so look for one too.
+    const mantineCss = [...document.querySelectorAll('style')].some((style) =>
+      style.textContent?.includes('--mantine-'),
+    );
+    await expect(mantineCss).toBe(false);
     const root = canvasElement.querySelector('[data-overlay-root]');
     await expect(root).not.toBeNull();
     if (root) await expect(getComputedStyle(root).getPropertyValue('--theme-color-text').trim()).not.toBe('');
