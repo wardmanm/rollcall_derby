@@ -19,8 +19,8 @@
     "lint": "oxlint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest run --project node --project web",
-    "test:stories": "vitest run --project storybook-admin",
+    "test": "vitest run",
+    "test:stories": "vitest run --config vitest.stories.config.ts",
     "test:e2e": "yarn workspace @obs-producer/e2e test",
     "test:scripts": "node --test \"scripts/*.test.mjs\"",
     "docs:check": "node scripts/check-docs.mjs",
@@ -33,6 +33,7 @@
     "oxlint-tsgolint": "^7.0.2003",
     "playwright": "^1.63.0",
     "prettier": "^3.9.9",
+    "storybook": "^10.6.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.1",
     "vitest": "^5.0.3"
