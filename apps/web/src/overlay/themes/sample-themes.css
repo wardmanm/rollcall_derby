@@ -1,0 +1,15 @@
+/* Sample themes for the overlay Storybook, until the Theme Builder makes real ones (ADR-0015).
+   They set only the --theme-* variables overlay components use. "Default" sets nothing: theme-defaults.css applies. */
+.sample-theme-light {
+  --theme-color-text: #14171f;
+  --theme-color-surface: rgb(255 255 255 / 0.94);
+  --theme-color-accent: #1864ab;
+}
+
+.sample-theme-high-contrast {
+  --theme-color-text: #ffe600;
+  --theme-color-surface: #000000;
+  --theme-color-accent: #ffe600;
+  --theme-radius: 0;
+  --theme-border-width: 4px;
+}

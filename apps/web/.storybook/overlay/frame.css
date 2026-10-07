@@ -1,0 +1,18 @@
+/* What sits behind the transparent overlay, to check legibility the way it will look on stream (ADR-0015). */
+.overlay-frame {
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.backdrop-checkerboard {
+  background: repeating-conic-gradient(#d0d4da 0% 25%, #ffffff 0% 50%) 0 0 / 24px 24px;
+}
+
+.backdrop-dark {
+  background: #16191f;
+}
+
+.backdrop-bright {
+  background: #f4f1ea;
+}

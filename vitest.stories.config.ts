@@ -23,6 +23,6 @@ const storybookProject = (name: 'admin' | 'overlay') => ({
 
 export default defineConfig({
   test: {
-    projects: [storybookProject('admin')],
+    projects: [storybookProject('admin'), storybookProject('overlay')],
   },
 });
