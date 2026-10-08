@@ -1,4 +1,4 @@
-name: 'OBS Producer: chore'
+name: 'Rollcall: chore'
 description: Maintenance with no user-visible change, such as dependencies, tooling, CI, refactoring or docs upkeep.
 labels: ['chore']
 body:

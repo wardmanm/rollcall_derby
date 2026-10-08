@@ -10,7 +10,7 @@ afterEach(() => dirs.splice(0).forEach((d) => rmSync(d, { recursive: true, force
 function webBuild() {
   const dir = mkdtempSync(join(tmpdir(), 'op-web-'));
   dirs.push(dir);
-  writeFileSync(join(dir, 'index.html'), '<!doctype html><title>OBS Producer</title><div id="root"></div>');
+  writeFileSync(join(dir, 'index.html'), '<!doctype html><title>Rollcall</title><div id="root"></div>');
   writeFileSync(join(dir, 'overlay.html'), '<!doctype html><title>Overlay</title><div id="overlay"></div>');
   mkdirSync(join(dir, 'assets'));
   writeFileSync(join(dir, 'assets', 'app.js'), 'console.log("app")');

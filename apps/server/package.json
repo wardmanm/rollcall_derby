@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "OBS_PRODUCER_API_DOCS=1 node --watch src/main.ts",
+    "dev": "ROLLCALL_API_DOCS=1 node --watch src/main.ts",
     "start": "node src/main.ts",
     "db:generate": "drizzle-kit generate",
     "reset-password": "node src/cli/reset-password.ts",

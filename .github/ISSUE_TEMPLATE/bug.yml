@@ -1,5 +1,5 @@
-name: 'OBS Producer: bug'
-description: Something in OBS Producer doesn't behave the way its wiki page says.
+name: 'Rollcall: bug'
+description: Something in Rollcall doesn't behave the way its wiki page says.
 labels: ['bug']
 body:
   - type: input

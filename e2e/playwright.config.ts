@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 
-// End-to-end tests run against the real production setup: the web build served by the obs-producer server.
+// End-to-end tests run against the real production setup: the web build served by the Rollcall server.
 const port = 5590; // separate from the dev server's 5580
 const projectRoot = fileURLToPath(new URL('..', import.meta.url));
 
@@ -25,9 +25,9 @@ export default defineConfig({
     reuseExistingServer: false,
     timeout: 120_000,
     env: {
-      OBS_PRODUCER_HOST: '127.0.0.1',
-      OBS_PRODUCER_PORT: String(port),
-      OBS_PRODUCER_DATA_DIR: join(tmpdir(), 'obs-producer-e2e-data'),
+      ROLLCALL_HOST: '127.0.0.1',
+      ROLLCALL_PORT: String(port),
+      ROLLCALL_DATA_DIR: join(tmpdir(), 'rollcall-e2e-data'),
     },
   },
 });

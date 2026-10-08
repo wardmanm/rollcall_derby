@@ -30,12 +30,12 @@ describe('API explorer', () => {
     const { app } = testApp({ apiDocs: true });
     const doc = (await app.inject({ method: 'GET', url: '/docs/json' })).json<unknown>();
     expect(at(doc, 'openapi')).toMatch(/^3\./);
-    expect(at(doc, 'info', 'title')).toBe('OBS Producer API');
+    expect(at(doc, 'info', 'title')).toBe('Rollcall API');
     expect(at(doc, 'info', 'version')).toBe('1.0.0');
     expect(at(doc, 'components', 'securitySchemes', 'session')).toMatchObject({
       type: 'apiKey',
       in: 'cookie',
-      name: 'obs_producer_session',
+      name: 'rollcall_session',
     });
     const json = 'application/json';
     expect(at(doc, 'paths', '/api/users', 'post', 'requestBody', 'content', json, 'schema', 'required')).toEqual(

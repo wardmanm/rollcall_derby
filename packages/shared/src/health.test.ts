@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { HealthResponseSchema } from './health.ts';
 
-const valid = { status: 'ok', name: 'OBS Producer', version: '0.1.0', uptimeSeconds: 12.5 };
+const valid = { status: 'ok', name: 'Rollcall', version: '0.1.0', uptimeSeconds: 12.5 };
 
 describe('HealthResponseSchema', () => {
   it('accepts a healthy response', () => {

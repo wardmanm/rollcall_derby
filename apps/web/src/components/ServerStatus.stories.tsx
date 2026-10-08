@@ -4,7 +4,7 @@ import { expect } from 'storybook/test';
 import { makeStore } from '../store/store.ts';
 import { ServerStatus } from './ServerStatus.tsx';
 
-const HEALTH = { status: 'ok', name: 'OBS Producer', version: '0.2.0', uptimeSeconds: 42 };
+const HEALTH = { status: 'ok', name: 'Rollcall', version: '0.2.0', uptimeSeconds: 42 };
 
 // Stories run without a server: each one answers the app's requests itself, then puts the real fetch back.
 function answerRequests(respond: () => Promise<Response>) {

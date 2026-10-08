@@ -8,10 +8,10 @@ import * as schema from './db/schema.ts';
 
 const MIGRATIONS_DIR = fileURLToPath(new URL('../drizzle', import.meta.url));
 
-// Opens (creating if needed) <dataDir>/obs-producer.db and applies any pending migrations.
+// Opens (creating if needed) <dataDir>/rollcall.db and applies any pending migrations.
 export function openDatabase(dataDir: string) {
   mkdirSync(dataDir, { recursive: true });
-  return connect(join(dataDir, 'obs-producer.db'));
+  return connect(join(dataDir, 'rollcall.db'));
 }
 
 // A private, empty, fully migrated database for tests.

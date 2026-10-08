@@ -1,9 +1,9 @@
 ---
-title: OBS Producer wiki
+title: Rollcall wiki
 ---
-# OBS Producer wiki
+# Rollcall wiki
 
-OBS Producer is a web app, hosted on the local network, for producing roller derby streams. You build teams, themes and overlay screens ahead of time. On game day you run them live from producer dashboards, while OBS shows the screens as browser sources and the CRG scoreboard feeds live game data in.
+Rollcall is a suite of apps, hosted on the local network, for producing roller derby streams. You build teams, themes and overlay screens ahead of time. On game day you run them live from producer dashboards, while OBS shows the screens as browser sources and the CRG scoreboard feeds live game data in. The apps are **rcl-core** (the server, accounts and shared data) and **rcl-producer** (themes, screens, Live Mode and dashboards); see [ADR-0016](decisions/0016-obs-producer-becomes-rollcall.md).
 
 This wiki is the source of truth for what the app does, how it's built, and why. Humans and AI agents both maintain it, following the [wiki guide](wiki-guide.md).
 

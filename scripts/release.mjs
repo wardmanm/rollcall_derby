@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Release helper for obs-producer. Zero dependencies — Node built-ins only.
+// Release helper for Rollcall. Zero dependencies — Node built-ins only.
 // Process and rules: docs/guides/releasing.md · docs/decisions/0010-deliberate-releases-patch-tracking.md
 //
 //   node scripts/release.mjs prepare <version> [--date YYYY-MM-DD]   move Unreleased → <version>, bump package.json

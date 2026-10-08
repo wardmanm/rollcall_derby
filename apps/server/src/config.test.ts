@@ -18,13 +18,13 @@ describe('loadConfig', () => {
     expect(config.apiDocs).toBe(false);
   });
 
-  it('reads OBS_PRODUCER_* overrides', () => {
+  it('reads ROLLCALL_* overrides', () => {
     const config = loadConfig({
-      OBS_PRODUCER_HOST: '127.0.0.1',
-      OBS_PRODUCER_PORT: '6000',
-      OBS_PRODUCER_DATA_DIR: '/tmp/op-data',
-      OBS_PRODUCER_WEB_DIR: '/tmp/op-web',
-      OBS_PRODUCER_API_DOCS: '1',
+      ROLLCALL_HOST: '127.0.0.1',
+      ROLLCALL_PORT: '6000',
+      ROLLCALL_DATA_DIR: '/tmp/op-data',
+      ROLLCALL_WEB_DIR: '/tmp/op-web',
+      ROLLCALL_API_DOCS: '1',
     });
     expect(config).toEqual({
       host: '127.0.0.1',
@@ -41,18 +41,25 @@ describe('loadConfig', () => {
 
   it('rejects a port that is not a whole number from 1 to 65535', () => {
     for (const bad of ['0', '65536', 'abc', '80.5', '']) {
-      expect(() => loadConfig({ OBS_PRODUCER_PORT: bad }), bad).toThrow(/OBS_PRODUCER_PORT/);
+      expect(() => loadConfig({ ROLLCALL_PORT: bad }), bad).toThrow(/ROLLCALL_PORT/);
     }
   });
 
   it('turns the API explorer on with 1 or true, and off with 0, false or nothing', () => {
-    for (const on of ['1', 'true', 'TRUE']) expect(loadConfig({ OBS_PRODUCER_API_DOCS: on }).apiDocs, on).toBe(true);
-    for (const off of ['0', 'false', '']) expect(loadConfig({ OBS_PRODUCER_API_DOCS: off }).apiDocs, off).toBe(false);
+    for (const on of ['1', 'true', 'TRUE']) expect(loadConfig({ ROLLCALL_API_DOCS: on }).apiDocs, on).toBe(true);
+    for (const off of ['0', 'false', '']) expect(loadConfig({ ROLLCALL_API_DOCS: off }).apiDocs, off).toBe(false);
   });
 
-  it('rejects any other value for OBS_PRODUCER_API_DOCS', () => {
+  it('rejects any other value for ROLLCALL_API_DOCS', () => {
     for (const bad of ['yes', 'on', '2']) {
-      expect(() => loadConfig({ OBS_PRODUCER_API_DOCS: bad }), bad).toThrow(/OBS_PRODUCER_API_DOCS/);
+      expect(() => loadConfig({ ROLLCALL_API_DOCS: bad }), bad).toThrow(/ROLLCALL_API_DOCS/);
     }
+  });
+
+  it('refuses to start while an old OBS_PRODUCER_* setting is present, naming its replacement', () => {
+    expect(() => loadConfig({ OBS_PRODUCER_PORT: '6000' })).toThrow(
+      'OBS_PRODUCER_PORT was renamed to ROLLCALL_PORT (ADR-0016). Rename it and start again.',
+    );
+    expect(() => loadConfig({ ROLLCALL_PORT: '6000', OBS_PRODUCER_API_DOCS: '' })).toThrow(/OBS_PRODUCER_API_DOCS/);
   });
 });

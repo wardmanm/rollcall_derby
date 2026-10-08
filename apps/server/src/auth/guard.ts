@@ -10,7 +10,7 @@ declare module 'fastify' {
   }
 }
 
-export const SESSION_COOKIE = 'obs_producer_session';
+export const SESSION_COOKIE = 'rollcall_session';
 
 // The only /api routes anyone may call without a session (ADR-0008). Every other route uses requireSession,
 // requireUser or requireRole; the route inventory test (route-inventory.test.ts) fails CI otherwise.

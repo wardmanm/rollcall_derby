@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { api } from './api.ts';
 import { makeStore } from './store.ts';
 
-const health = { status: 'ok', name: 'OBS Producer', version: '0.1.0', uptimeSeconds: 5 };
+const health = { status: 'ok', name: 'Rollcall', version: '0.1.0', uptimeSeconds: 5 };
 afterEach(() => vi.unstubAllGlobals());
 
 describe('api.getHealth', () => {

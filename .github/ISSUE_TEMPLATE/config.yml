@@ -1,5 +1,5 @@
 blank_issues_enabled: true
 contact_links:
-  - name: OBS Producer wiki
+  - name: Rollcall wiki
     url: https://github.com/wardmanm/rollcall_derby/blob/main/docs/README.md
     about: Features, decisions and guides. Check the feature page before filing.

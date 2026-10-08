@@ -62,11 +62,11 @@ describe('reset-password', () => {
     expect(await run(['admin', 'extra'], dir)).toEqual({ code: 2, lines: [USAGE] });
   });
 
-  it('runs as a script against OBS_PRODUCER_DATA_DIR', async () => {
+  it('runs as a script against ROLLCALL_DATA_DIR', async () => {
     const { dir } = await seed();
     const script = fileURLToPath(new URL('reset-password.ts', import.meta.url));
     const output = execFileSync(process.execPath, [script, 'admin'], {
-      env: { ...process.env, OBS_PRODUCER_DATA_DIR: dir },
+      env: { ...process.env, ROLLCALL_DATA_DIR: dir },
       encoding: 'utf8',
       stdio: 'pipe',
     });

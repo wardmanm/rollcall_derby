@@ -18,7 +18,7 @@ describe('openDatabase', () => {
   it('creates the data dir and database file, and runs migrations', () => {
     const dataDir = tempDir();
     const { sqlite } = openDatabase(dataDir);
-    expect(existsSync(join(dataDir, 'obs-producer.db'))).toBe(true);
+    expect(existsSync(join(dataDir, 'rollcall.db'))).toBe(true);
     const table = sqlite.prepare("select name from sqlite_master where type = 'table' and name = 'app_meta'").get();
     expect(table).toEqual({ name: 'app_meta' });
     sqlite.close();

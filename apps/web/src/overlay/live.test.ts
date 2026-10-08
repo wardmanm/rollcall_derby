@@ -16,7 +16,7 @@ class FakeSocket implements LiveSocket {
   }
 }
 
-const hello = { name: 'OBS Producer', version: '0.1.0' };
+const hello = { name: 'Rollcall', version: '0.1.0' };
 
 async function subscribe(socket: FakeSocket) {
   const store = makeOverlayStore(() => socket);
@@ -48,7 +48,7 @@ describe('overlay live state', () => {
   it('ignores messages that break the shared contract', async () => {
     const socket = new FakeSocket();
     const { state } = await subscribe(socket);
-    socket.emit('server:hello', { name: 'OBS Producer' });
+    socket.emit('server:hello', { name: 'Rollcall' });
     expect(state()?.server).toBeNull();
   });
 

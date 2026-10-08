@@ -1,11 +1,10 @@
-# OBS Producer — agent instructions
+# Rollcall — agent instructions
 
-OBS Producer is a web app hosted on the local network for producing roller derby streams:
-- **Builders** for teams, themes, and overlay screens. Each screen is loaded into OBS as a browser source.
-- **Live Mode** for events, games, and tracks running at the same time, with producer dashboards that preview and control what's on air.
-- **Integrations** that control OBS and *listen* to the CRG scoreboard.
+Rollcall is a suite of apps for producing roller derby events and streams, hosted on the venue's local network ([ADR-0016](docs/decisions/0016-obs-producer-becomes-rollcall.md)):
+- **rcl-core** is the server: accounts, shared data such as teams, the CRG and OBS connections, and an admin GUI for that data.
+- **rcl-producer** builds and runs overlays: themes, screens, Live Mode and producer dashboards. Each screen is loaded into OBS as a browser source.
 
-**Status:** foundation in place (milestone `obs-producer v0.1.0`): server, web app shell, OBS overlay page, tooling, CI and the release pipeline. Features start with Phase 1 on the [roadmap](docs/product/roadmap.md). To run it locally, see [local development](docs/guides/local-development.md).
+**Status:** moved from GROBS, where it was OBS Producer, and being split into rcl-core and rcl-producer ([spec](design-docs/specs/2026-10-07-rollcall-split-design.md)). Until the split, all code is one app. Features start with Phase 1 on the [roadmap](docs/product/roadmap.md). To run it locally, see [local development](docs/guides/local-development.md).
 
 These rules apply to AI agents and human contributors alike.
 
@@ -75,10 +74,10 @@ Run from the repo root:
 | `yarn storybook` | Both Storybooks in one window at `http://localhost:6006` (admin), with the overlay section from port 6007 |
 | `yarn test:scripts` | Tests for the docs lint and release helper (`node --test "scripts/*.test.mjs"`) |
 | `yarn docs:check` | Docs lint (`node scripts/check-docs.mjs`); add `--fix`, `--questions` or `--next-adr` as needed |
-| `yarn workspace @obs-producer/server start` | Server alone. Listens on `OBS_PRODUCER_HOST`:`OBS_PRODUCER_PORT` (default `0.0.0.0:5580`), data in `OBS_PRODUCER_DATA_DIR` (default `data/`, git-ignored), web build from `OBS_PRODUCER_WEB_DIR` (default `apps/web/dist/`); set `OBS_PRODUCER_API_DOCS=1` to serve the API explorer at `/docs`; the overlay is at `/overlay` |
-| `yarn workspace @obs-producer/web dev` | Vite alone on port 5173, proxying `/api`, `/socket.io` and `/docs` to `OBS_PRODUCER_DEV_SERVER` (default `http://localhost:5580`) |
+| `yarn workspace @obs-producer/server start` | Server alone. Listens on `ROLLCALL_HOST`:`ROLLCALL_PORT` (default `0.0.0.0:5580`), data in `ROLLCALL_DATA_DIR` (default `data/`, git-ignored), web build from `ROLLCALL_WEB_DIR` (default `apps/web/dist/`); set `ROLLCALL_API_DOCS=1` to serve the API explorer at `/docs`; the overlay is at `/overlay` |
+| `yarn workspace @obs-producer/web dev` | Vite alone on port 5173, proxying `/api`, `/socket.io` and `/docs` to `ROLLCALL_DEV_SERVER` (default `http://localhost:5580`) |
 | `yarn workspace @obs-producer/server db:generate --name <change>` | Generate a Drizzle migration after editing `apps/server/src/db/schema.ts`. Migrations run automatically at startup |
-| `yarn workspace @obs-producer/server reset-password <username>` | On the server machine: give a locked-out user (usually the only Admin) a temporary password, forcing a new one at their next login. Uses `OBS_PRODUCER_DATA_DIR` like the server |
+| `yarn workspace @obs-producer/server reset-password <username>` | On the server machine: give a locked-out user (usually the only Admin) a temporary password, forcing a new one at their next login. Uses `ROLLCALL_DATA_DIR` like the server |
 | `node scripts/release.mjs prepare\|check\|notes <version>` | Release helper ([releasing](docs/guides/releasing.md)); `tag-absent\|milestone\|issues` are used by the release workflow |
 
 **Upgrading TypeScript:** `oxlint-tsgolint` embeds its own TypeScript 7.x. Upgrade it together with `typescript` so linting and `tsc` agree on the types.

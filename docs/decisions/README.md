@@ -3,7 +3,7 @@ title: Decisions (ADRs)
 ---
 # Decisions (ADRs)
 
-Architecture Decision Records explain **why** OBS Producer is built the way it is. Each one records a single decision, with the context it was made in and its consequences. Accepted ADRs are never rewritten. A later ADR supersedes them instead ([ADR-0001](0001-record-decisions-as-adrs.md)).
+Architecture Decision Records explain **why** Rollcall is built the way it is. Each one records a single decision, with the context it was made in and its consequences. Accepted ADRs are never rewritten. A later ADR supersedes them instead ([ADR-0001](0001-record-decisions-as-adrs.md)).
 
 To write a new one, follow [recording decisions](../wiki-guide.md#recording-decisions-adrs) and start from the [ADR template](../templates/adr.md). The table below is **generated** from frontmatter; run `node scripts/check-docs.mjs --fix` after adding or changing an ADR.
 
@@ -25,4 +25,5 @@ To write a new one, follow [recording decisions](../wiki-guide.md#recording-deci
 | [0013](0013-run-typescript-natively-on-node.md) | Run TypeScript natively on Node | accepted | 2026-09-29 |
 | [0014](0014-route-schemas-and-api-explorer.md) | Route schemas from the shared contract, with an API explorer | accepted | 2026-10-06 |
 | [0015](0015-storybook-admin-and-overlay-kept-apart.md) | Storybook for shared components, admin and overlay kept apart | accepted | 2026-10-07 |
+| [0016](0016-obs-producer-becomes-rollcall.md) | OBS Producer becomes Rollcall, a suite of rcl apps | accepted | 2026-10-08 |
 <!-- /generated:decisions -->

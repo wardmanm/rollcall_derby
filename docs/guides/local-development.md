@@ -3,7 +3,7 @@ title: Local development
 ---
 # Local development
 
-How to get from a fresh clone to OBS Producer running on your machine, and how to work on it day to day. Commands run from the repo root unless a step says otherwise. Every command is also listed in [AGENTS.md](../../AGENTS.md#commands).
+How to get from a fresh clone to Rollcall running on your machine, and how to work on it day to day. Commands run from the repo root unless a step says otherwise. Every command is also listed in [AGENTS.md](../../AGENTS.md#commands).
 
 ## Prerequisites
 
@@ -75,12 +75,12 @@ The server reads these environment variables:
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `OBS_PRODUCER_HOST` | `0.0.0.0` | Interface to listen on (`127.0.0.1` keeps it to this machine) |
-| `OBS_PRODUCER_PORT` | `5580` | HTTP, API and Socket.IO port |
-| `OBS_PRODUCER_DATA_DIR` | `data/` | SQLite database and uploaded media (git-ignored) |
-| `OBS_PRODUCER_WEB_DIR` | `apps/web/dist/` | Web build to serve; skipped if it doesn't exist |
-| `OBS_PRODUCER_DEV_SERVER` | `http://localhost:5580` | Where the Vite dev server sends `/api`, `/socket.io` and `/docs` |
-| `OBS_PRODUCER_API_DOCS` | off (`yarn dev` turns it on) | Serve the API explorer at `/docs`: `1` or `true` for on, `0` or `false` for off ([ADR-0014](../decisions/0014-route-schemas-and-api-explorer.md)) |
+| `ROLLCALL_HOST` | `0.0.0.0` | Interface to listen on (`127.0.0.1` keeps it to this machine) |
+| `ROLLCALL_PORT` | `5580` | HTTP, API and Socket.IO port |
+| `ROLLCALL_DATA_DIR` | `data/` | SQLite database and uploaded media (git-ignored) |
+| `ROLLCALL_WEB_DIR` | `apps/web/dist/` | Web build to serve; skipped if it doesn't exist |
+| `ROLLCALL_DEV_SERVER` | `http://localhost:5580` | Where the Vite dev server sends `/api`, `/socket.io` and `/docs` |
+| `ROLLCALL_API_DOCS` | off (`yarn dev` turns it on) | Serve the API explorer at `/docs`: `1` or `true` for on, `0` or `false` for off ([ADR-0014](../decisions/0014-route-schemas-and-api-explorer.md)) |
 
 The names are prefixed because shells such as zsh already set `HOST` to the machine's name.
 
@@ -91,7 +91,7 @@ The names are prefixed because shells such as zsh already set `HOST` to the mach
 1. Open `POST /api/auth/login`, choose **Try it out**, and log in. On a fresh data folder, create the first Admin with `POST /api/setup` first.
 2. Your browser keeps the session cookie, so every later call runs as you, limited by your role.
 
-On a venue server the explorer is off. To turn it on, start the server with `OBS_PRODUCER_API_DOCS=1` and open `http://<server>:5580/docs`.
+On a venue server the explorer is off. To turn it on, start the server with `ROLLCALL_API_DOCS=1` and open `http://<server>:5580/docs`.
 
 ### Storybook
 
@@ -151,6 +151,6 @@ How tests are organized is in [Testing](testing.md).
 | `This project's package.json defines "packageManager": "yarn@4…". However the current global version of Yarn is 1.22…` | Yarn classic is answering. Follow the Corepack steps in [Prerequisites](#prerequisites) |
 | `EADDRINUSE` on 5580 or 5173 | Another copy is still running. Find it with `lsof -nP -iTCP:5580 -sTCP:LISTEN` and stop it |
 | `YN0016 … quarantined` during `yarn add` / `yarn up` | That version was published less than 24 hours ago. Pick the previous one for now |
-| Admin badge says **Server unreachable** in dev | Start the server too (`yarn dev` starts both), or point `OBS_PRODUCER_DEV_SERVER` at it |
+| Admin badge says **Server unreachable** in dev | Start the server too (`yarn dev` starts both), or point `ROLLCALL_DEV_SERVER` at it |
 | Overlay page is blank | It stays empty until the server answers over Socket.IO. Check `/api/health` on the same host |
 | Locked out: the only Admin forgot their password | On the server machine, run `yarn workspace @obs-producer/server reset-password <username>`. It prints a temporary password; log in with it and choose a new one |

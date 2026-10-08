@@ -1,7 +1,7 @@
 import { Badge, Loader } from '@mantine/core';
 import { useGetHealthQuery } from '../store/api.ts';
 
-// Header badge showing whether the obs-producer server answers, re-checked every 10 seconds.
+// Header badge showing whether the Rollcall server answers, re-checked every 10 seconds.
 export function ServerStatus() {
   const { data, isLoading, isError } = useGetHealthQuery(undefined, { pollingInterval: 10_000 });
   // `<output>` carries the "Checking server" name: Mantine's Loader renders a plain span, which can't take

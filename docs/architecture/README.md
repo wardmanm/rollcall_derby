@@ -3,7 +3,7 @@ title: Architecture overview
 ---
 # Architecture overview
 
-How OBS Producer fits together. This page describes the **intended** architecture, set out in the [ADRs](../decisions/README.md). Once code exists, update this page to match the code, and record any change of direction in a new ADR.
+How Rollcall fits together. This page describes the **intended** architecture, set out in the [ADRs](../decisions/README.md). Once code exists, update this page to match the code, and record any change of direction in a new ADR.
 
 ## System at a glance
 
@@ -18,7 +18,7 @@ flowchart LR
   subgraph obs["OBS Studio (one or more)"]
     out["Outputs<br/>(browser sources)"]
   end
-  subgraph server["obs-producer server (Node)"]
+  subgraph server["rcl-core server (Node)"]
     api["REST API<br/>(Fastify)"]
     hub["Real-time hub<br/>(Socket.IO)"]
     store[("SQLite +<br/>media files")]

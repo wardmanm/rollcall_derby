@@ -1,5 +1,5 @@
-name: 'OBS Producer: feature'
-description: Work on OBS Producer, linked to the wiki page that specifies it.
+name: 'Rollcall: feature'
+description: Work on Rollcall, linked to the wiki page that specifies it.
 labels: ['enhancement']
 body:
   - type: markdown

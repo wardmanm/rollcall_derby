@@ -24,7 +24,7 @@ Everything else is forbidden, including:
 ## Connecting
 
 - CRG serves HTTP on port **8000** by default (`--port=<n>`, `--host=<h>`), on all interfaces. Its built-in overlay is at `/views/overlay/`.
-- The WebSocket endpoint is **`ws://<host>:8000/WS/`**. The official client adds `?source=<page>&platform=<…>` to label itself on CRG's Devices screen. We should connect with `?source=obs-producer` so operators can identify us.
+- The WebSocket endpoint is **`ws://<host>:8000/WS/`**. The official client adds `?source=<page>&platform=<…>` to label itself on CRG's Devices screen. We should connect with `?source=rollcall` so operators can identify us.
 - There is no login. CRG tracks each device with a `CRG_SCOREBOARD` session cookie, and **new devices get write access by default**. As a second guard, operators should turn off write access for new devices in CRG's client settings (`NewDeviceWrite`, `AllLocalDevicesWrite`). *The exact setting key paths are unverified.*
 - A client without the cookie becomes a new "device" on every connection. CRG clears out inactive devices hourly.
 

@@ -43,7 +43,7 @@ describe('errors raised by Fastify and its plugins', () => {
     const { app } = testApp({
       registerRoutes: (api) => {
         api.get('/api/boom', async () => {
-          throw new Error('SQLITE_CORRUPT in /data/obs-producer.db');
+          throw new Error('SQLITE_CORRUPT in /data/rollcall.db');
         });
       },
     });

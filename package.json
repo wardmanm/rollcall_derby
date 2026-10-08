@@ -1,5 +1,5 @@
 {
-  "name": "obs-producer",
+  "name": "rollcall",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,10 +12,10 @@
     "e2e"
   ],
   "scripts": {
-    "dev": "yarn workspaces foreach --all --exclude obs-producer --parallel --interlaced run dev",
+    "dev": "yarn workspaces foreach --all --exclude rollcall --parallel --interlaced run dev",
     "build": "yarn workspace @obs-producer/web build",
     "start": "yarn workspace @obs-producer/server start",
-    "typecheck": "yarn workspaces foreach --all --exclude obs-producer --parallel run typecheck",
+    "typecheck": "yarn workspaces foreach --all --exclude rollcall --parallel run typecheck",
     "lint": "oxlint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

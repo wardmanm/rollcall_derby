@@ -5,7 +5,7 @@ import { App } from './App.tsx';
 import { routes } from './routes.tsx';
 import { makeStore } from './store/store.ts';
 
-const health = { status: 'ok', name: 'OBS Producer', version: '0.1.0', uptimeSeconds: 5 };
+const health = { status: 'ok', name: 'Rollcall', version: '0.1.0', uptimeSeconds: 5 };
 afterEach(() => vi.unstubAllGlobals());
 
 const renderApp = () => render(<App router={createMemoryRouter(routes)} store={makeStore()} />);
@@ -17,7 +17,7 @@ describe('App', () => {
       vi.fn(async () => Response.json(health)),
     );
     renderApp();
-    expect(await screen.findByRole('heading', { name: 'OBS Producer' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Rollcall' })).toBeTruthy();
     expect(await screen.findByText('Server v0.1.0')).toBeTruthy();
   });
 

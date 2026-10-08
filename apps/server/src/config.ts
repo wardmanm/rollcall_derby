@@ -15,19 +15,31 @@ const DEFAULT_DATA_DIR = fileURLToPath(new URL('../../../data', import.meta.url)
 // The web app's production build (`yarn workspace @obs-producer/web build`).
 const DEFAULT_WEB_DIR = fileURLToPath(new URL('../../web/dist', import.meta.url));
 
+// The prefix settings had before the rename to Rollcall (ADR-0016). A leftover old name would be silently ignored,
+// so the server stops instead.
+const OLD_PREFIX = 'OBS_PRODUCER_';
+
 // Variables are prefixed because shells such as zsh set HOST to the machine name.
 export function loadConfig(env: Record<string, string | undefined> = process.env): ServerConfig {
-  const rawPort = env.OBS_PRODUCER_PORT ?? '5580';
+  const old = Object.keys(env)
+    .filter((key) => key.startsWith(OLD_PREFIX) && env[key] !== undefined)
+    .toSorted()[0];
+  if (old) {
+    throw new Error(
+      `${old} was renamed to ROLLCALL_${old.slice(OLD_PREFIX.length)} (ADR-0016). Rename it and start again.`,
+    );
+  }
+  const rawPort = env.ROLLCALL_PORT ?? '5580';
   const port = Number(rawPort);
   if (!/^\d+$/.test(rawPort) || port < 1 || port > 65535) {
-    throw new Error(`OBS_PRODUCER_PORT must be a whole number from 1 to 65535, got ${JSON.stringify(rawPort)}`);
+    throw new Error(`ROLLCALL_PORT must be a whole number from 1 to 65535, got ${JSON.stringify(rawPort)}`);
   }
   return {
-    host: env.OBS_PRODUCER_HOST ?? '0.0.0.0',
+    host: env.ROLLCALL_HOST ?? '0.0.0.0',
     port,
-    dataDir: env.OBS_PRODUCER_DATA_DIR ? resolve(env.OBS_PRODUCER_DATA_DIR) : DEFAULT_DATA_DIR,
-    webDir: env.OBS_PRODUCER_WEB_DIR ? resolve(env.OBS_PRODUCER_WEB_DIR) : DEFAULT_WEB_DIR,
-    apiDocs: parseSwitch('OBS_PRODUCER_API_DOCS', env.OBS_PRODUCER_API_DOCS),
+    dataDir: env.ROLLCALL_DATA_DIR ? resolve(env.ROLLCALL_DATA_DIR) : DEFAULT_DATA_DIR,
+    webDir: env.ROLLCALL_WEB_DIR ? resolve(env.ROLLCALL_WEB_DIR) : DEFAULT_WEB_DIR,
+    apiDocs: parseSwitch('ROLLCALL_API_DOCS', env.ROLLCALL_API_DOCS),
   };
 }
 

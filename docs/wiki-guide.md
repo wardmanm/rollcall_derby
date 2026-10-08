@@ -89,6 +89,8 @@ Write an ADR when a choice is hard to reverse, affects more than one feature, or
 - On the old ADR, change only `status: superseded`, add `superseded_by: "MMMM"`, and add a one-line note under its title pointing to the new ADR.
 - If the old ADR defined a hard rule, update [AGENTS.md](../AGENTS.md#hard-rules) in the same change.
 
+Older ADRs use the names of their time. ADR-0016 and later ADRs map them to today's names.
+
 ## Specs and plans
 
 Brainstorm specs and implementation plans are working papers. They live in `design-docs/`, outside this wiki, and aren't maintained after their work is done. Whatever durable knowledge they produce must land in the wiki as a feature page, an architecture page or an ADR, in the same change as the implementation.

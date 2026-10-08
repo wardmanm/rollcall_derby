@@ -3,17 +3,19 @@ title: Vision
 ---
 # Vision
 
-Why OBS Producer exists, who it's for, and just as importantly, what it will never do.
+Why Rollcall exists, who it's for, and just as importantly, what it will never do.
 
 ## Why
 
 Streaming a roller derby [game](glossary.md#game) takes more than a scoreboard. Viewers want to see rosters, matchups, skater spotlights and event information. The CRG scoreboard already handles scoring and its own scoreboard overlay. Everything else tends to be built by hand in OBS, event by event.
 
-OBS Producer makes those custom overlays:
+Rollcall makes those custom overlays:
 - **reusable:** teams, themes and screens are built once and saved;
 - **themeable:** one theme restyles every overlay;
 - **data-driven:** CRG events and game setup feed the overlays;
 - **controllable live:** a small crew runs them from producer dashboards, including events where several [tracks](glossary.md#track) run at once.
+
+Rollcall is a suite of apps. **rcl-core** holds accounts, shared data such as teams, and the CRG and OBS connections. **rcl-producer** builds and runs the overlays. More rcl apps can join later, each hosted by rcl-core.
 
 ## Who uses it
 

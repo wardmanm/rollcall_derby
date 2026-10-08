@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Docs lint for the obs-producer wiki. Zero dependencies — Node built-ins only.
+// Docs lint for the Rollcall wiki. Zero dependencies — Node built-ins only.
 // What it checks and why: docs/wiki-guide.md#the-docs-lint
 //
 //   node scripts/check-docs.mjs              run all checks (exit 1 on problems)

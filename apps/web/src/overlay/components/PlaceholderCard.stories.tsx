@@ -4,7 +4,7 @@ import { PlaceholderCard } from './PlaceholderCard.tsx';
 const meta = {
   title: 'Components/PlaceholderCard',
   component: PlaceholderCard,
-  args: { title: 'OBS Producer', subtitle: 'v0.2.0' },
+  args: { title: 'Rollcall', subtitle: 'v0.2.0' },
 } satisfies Meta<typeof PlaceholderCard>;
 
 export default meta;
