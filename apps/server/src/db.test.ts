@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtempSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ROLES } from '@obs-producer/shared';
-import { openDatabase, openMemoryDatabase } from './db.ts';
+import { openDatabase, openMemoryDatabase, oldDatabaseProblem } from './db.ts';
 import { sessions, users } from './db/schema.ts';
 
 const dirs: string[] = [];
@@ -33,6 +33,25 @@ describe('openDatabase', () => {
     const reapplied = sqlite.prepare<[], { n: number }>('select count(*) as n from __drizzle_migrations').get()?.n;
     expect(reapplied).toBe(applied);
     sqlite.close();
+  });
+
+  it('refuses a data dir that holds only the old obs-producer.db, and creates nothing', () => {
+    const dataDir = tempDir();
+    mkdirSync(dataDir, { recursive: true });
+    writeFileSync(join(dataDir, 'obs-producer.db'), '');
+    expect(() => openDatabase(dataDir)).toThrow(
+      `${join(dataDir, 'obs-producer.db')} is from before the rename to Rollcall. Stop the server, then rename it ` +
+        '(and any -wal and -shm files next to it) to rollcall.db to keep your accounts, or delete it to start fresh.',
+    );
+    expect(existsSync(join(dataDir, 'rollcall.db'))).toBe(false);
+  });
+
+  it('opens rollcall.db even when an old obs-producer.db is still next to it', () => {
+    const dataDir = tempDir();
+    openDatabase(dataDir).sqlite.close();
+    writeFileSync(join(dataDir, 'obs-producer.db'), '');
+    expect(oldDatabaseProblem(dataDir)).toBeNull();
+    openDatabase(dataDir).sqlite.close();
   });
 });
 

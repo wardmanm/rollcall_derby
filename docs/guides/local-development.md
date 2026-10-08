@@ -123,6 +123,8 @@ These follow from running TypeScript directly on Node ([ADR-0013](../decisions/0
 
 Migrations run automatically when the server starts. To start from an empty database, stop the server and delete `data/`.
 
+Upgrading from OBS Producer? The server refuses to start while `data/` holds only `obs-producer.db`. Stop it and rename that file, plus any `-wal` and `-shm` files next to it, to `rollcall.db`. Or delete it to start fresh.
+
 ### Adding dependencies
 
 - **Add to the workspace that uses the package:** `yarn workspace @obs-producer/web add <pkg>`, or `add -D` for development-only tools.

@@ -46,7 +46,7 @@ How accounts work is decided in [ADR-0008](../decisions/0008-auth-rbac-and-overl
 - **Changing your password** signs you out on every other device. The new password must differ from the current one.
 - **Signing someone out.** An Admin can sign a user out on every device.
 - **There's always an Admin.** The app refuses to delete or demote the last Admin, and an Admin can't delete their own account.
-- **Locked out?** If the only Admin forgets their password, run `yarn workspace @obs-producer/server reset-password <username>` on the server machine. It prints a temporary password.
+- **Locked out?** If the only Admin forgets their password, run `yarn workspace @obs-producer/server reset-password <username>` on the server machine. It prints a temporary password. It refuses if `ROLLCALL_DATA_DIR` has no `rollcall.db`, and prints the path it checked.
 - **Plain HTTP.** The app runs over HTTP on the venue network for now. HTTPS with your own certificate is planned.
 - **OBS outputs** don't log in. `/overlay` is public until output token URLs arrive (R5).
 

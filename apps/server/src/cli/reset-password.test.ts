@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -53,13 +53,36 @@ describe('reset-password', () => {
 
   it('reports an unknown user', async () => {
     const { dir } = await seed();
-    expect(await run(['nobody'], dir)).toEqual({ code: 1, lines: ['No user named "nobody".'] });
+    expect(await run(['nobody'], dir)).toEqual({
+      code: 1,
+      lines: [`No user named "nobody" in ${join(dir, 'rollcall.db')}.`],
+    });
   });
 
   it('explains how to call it', async () => {
     const { dir } = await seed();
     expect(await run([], dir)).toEqual({ code: 2, lines: [USAGE] });
     expect(await run(['admin', 'extra'], dir)).toEqual({ code: 2, lines: [USAGE] });
+  });
+
+  it('refuses a data folder with no database, says where it looked, and creates nothing', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'rcl-reset-empty-'));
+    dataDir = dir;
+    const file = join(dir, 'rollcall.db');
+    expect(await run(['admin'], dir)).toEqual({
+      code: 1,
+      lines: [`No Rollcall database at ${file}. Set ROLLCALL_DATA_DIR to the server's data folder.`],
+    });
+    expect(existsSync(file)).toBe(false);
+  });
+
+  it('explains how to keep an old obs-producer.db', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'rcl-reset-old-'));
+    dataDir = dir;
+    writeFileSync(join(dir, 'obs-producer.db'), '');
+    const { code, lines } = await run(['admin'], dir);
+    expect(code).toBe(1);
+    expect(lines).toEqual([expect.stringContaining('is from before the rename to Rollcall')]);
   });
 
   it('runs as a script against ROLLCALL_DATA_DIR', async () => {
