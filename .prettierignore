@@ -3,7 +3,7 @@ yarn.lock
 .yarn/
 **/dist/
 data/
-apps/server/drizzle/
+rcl-core/server/drizzle/
 
 # Markdown (the wiki and working papers) keeps its hand-written layout; check-docs lints it instead.
 *.md

@@ -7,24 +7,23 @@
     "node": ">=24.7"
   },
   "workspaces": [
-    "apps/*",
-    "packages/*",
+    "rcl-core/*",
     "e2e"
   ],
   "scripts": {
     "dev": "yarn workspaces foreach --all --exclude rollcall --parallel --interlaced run dev",
-    "build": "yarn workspace @obs-producer/web build",
-    "start": "yarn workspace @obs-producer/server start",
+    "build": "yarn workspace @rollcall/core-web build",
+    "start": "yarn workspace @rollcall/core-server start",
     "typecheck": "yarn workspaces foreach --all --exclude rollcall --parallel run typecheck",
     "lint": "oxlint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:stories": "vitest run --config vitest.stories.config.ts",
-    "test:e2e": "yarn workspace @obs-producer/e2e test",
+    "test:e2e": "yarn workspace @rollcall/e2e test",
     "test:scripts": "node --test \"scripts/*.test.mjs\"",
     "docs:check": "node scripts/check-docs.mjs",
-    "storybook": "yarn workspace @obs-producer/web storybook",
+    "storybook": "yarn workspace @rollcall/core-web storybook",
     "check": "yarn typecheck && yarn lint && yarn format:check && yarn test && yarn test:scripts && yarn docs:check"
   },
   "devDependencies": {

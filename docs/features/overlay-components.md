@@ -49,4 +49,4 @@ Not built yet.
 - Which components ship first? The roadmap suggests the team roster (Phase 2).
 - Do we generate options forms automatically from Zod schemas, or hand-build them per component?
 - Long rosters: page through them automatically on a timer, or on a manual "next page" control?
-- Do we need a plugin model so new component types can be added without touching core code, or is a registry in `apps/web` enough?
+- Do we need a plugin model so new component types can be added without touching core code, or is a registry in `rcl-core/web` enough?

@@ -1,5 +1,5 @@
 {
-  "name": "@obs-producer/e2e",
+  "name": "@rollcall/e2e",
   "version": "0.1.0",
   "private": true,
   "type": "module",

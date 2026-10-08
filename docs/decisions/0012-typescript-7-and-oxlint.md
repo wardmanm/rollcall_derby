@@ -1,9 +1,12 @@
 ---
 title: Technology stack, TypeScript 7 and Oxlint
-status: accepted
+status: superseded
+superseded_by: "0017"
 date: 2026-09-29
 ---
 # 0012. Technology stack, TypeScript 7 and Oxlint
+
+> **Superseded by [ADR-0017](0017-rcl-app-workspace-layout.md):** the workspaces move into rcl app folders (`rcl-core/server`, `rcl-core/web`, `rcl-core/contract`) under the `@rollcall/` scope. The rest of the stack is unchanged.
 
 Supersedes [ADR-0011](0011-technology-stack-with-yarn.md).
 

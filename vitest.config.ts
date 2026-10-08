@@ -8,15 +8,15 @@ export default defineConfig({
       {
         test: {
           name: 'node',
-          include: ['packages/*/src/**/*.test.ts', 'apps/server/src/**/*.test.ts'],
+          include: ['rcl-core/contract/src/**/*.test.ts', 'rcl-core/server/src/**/*.test.ts'],
           environment: 'node',
         },
       },
       {
-        extends: './apps/web/vite.config.ts',
+        extends: './rcl-core/web/vite.config.ts',
         test: {
           name: 'web',
-          root: './apps/web',
+          root: './rcl-core/web',
           include: ['src/**/*.test.{ts,tsx}'],
           environment: 'jsdom',
           setupFiles: ['src/test/setup.ts'],

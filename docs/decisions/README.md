@@ -21,9 +21,10 @@ To write a new one, follow [recording decisions](../wiki-guide.md#recording-deci
 | [0009](0009-deliberate-milestone-driven-releases.md) | Deliberate, milestone-driven releases | superseded by [0010](0010-deliberate-releases-patch-tracking.md) | 2026-09-28 |
 | [0010](0010-deliberate-releases-patch-tracking.md) | Deliberate releases, milestones for planned versions only | accepted | 2026-09-29 |
 | [0011](0011-technology-stack-with-yarn.md) | Technology stack, with Yarn workspaces | superseded by [0012](0012-typescript-7-and-oxlint.md) | 2026-09-29 |
-| [0012](0012-typescript-7-and-oxlint.md) | Technology stack, TypeScript 7 and Oxlint | accepted | 2026-09-29 |
+| [0012](0012-typescript-7-and-oxlint.md) | Technology stack, TypeScript 7 and Oxlint | superseded by [0017](0017-rcl-app-workspace-layout.md) | 2026-09-29 |
 | [0013](0013-run-typescript-natively-on-node.md) | Run TypeScript natively on Node | accepted | 2026-09-29 |
 | [0014](0014-route-schemas-and-api-explorer.md) | Route schemas from the shared contract, with an API explorer | accepted | 2026-10-06 |
 | [0015](0015-storybook-admin-and-overlay-kept-apart.md) | Storybook for shared components, admin and overlay kept apart | accepted | 2026-10-07 |
 | [0016](0016-obs-producer-becomes-rollcall.md) | OBS Producer becomes Rollcall, a suite of rcl apps | accepted | 2026-10-08 |
+| [0017](0017-rcl-app-workspace-layout.md) | Technology stack, with rcl apps in one workspace | accepted | 2026-10-08 |
 <!-- /generated:decisions -->

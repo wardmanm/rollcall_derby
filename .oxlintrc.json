@@ -34,7 +34,7 @@
       }
     ]
   },
-  "ignorePatterns": ["**/dist/**", "data/**", "design-docs/**", "apps/server/drizzle/**"],
+  "ignorePatterns": ["**/dist/**", "data/**", "design-docs/**", "rcl-core/server/drizzle/**"],
   "overrides": [
     {
       "files": ["scripts/**/*.test.mjs"],

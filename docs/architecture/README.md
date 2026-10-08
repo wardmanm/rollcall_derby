@@ -44,9 +44,9 @@ These workspaces are planned in [ADR-0012](../decisions/0012-typescript-7-and-ox
 
 | Workspace | Responsibility |
 |---|---|
-| `apps/server` | REST API, Socket.IO hub, authentication and role checks, SQLite, media storage, one connection per OBS and CRG instance, automation engine, live state |
-| `apps/web` | React SPA for builders, Live Mode and dashboards. A separate lightweight **overlay entry** renders outputs for OBS |
-| `packages/shared` | Zod schemas and TypeScript types used by both server and web: API, socket messages, import/export formats |
+| `rcl-core/server` | REST API, Socket.IO hub, authentication and role checks, SQLite, media storage, one connection per OBS and CRG instance, automation engine, live state |
+| `rcl-core/web` | React SPA for builders, Live Mode and dashboards. A separate lightweight **overlay entry** renders outputs for OBS |
+| `rcl-core/contract` | Zod schemas and TypeScript types used by both server and web: API, socket messages, import/export formats |
 
 ## How data flows
 

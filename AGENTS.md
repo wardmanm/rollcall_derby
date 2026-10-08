@@ -4,7 +4,7 @@ Rollcall is a suite of apps for producing roller derby events and streams, hoste
 - **rcl-core** is the server: accounts, shared data such as teams, the CRG and OBS connections, and an admin GUI for that data.
 - **rcl-producer** builds and runs overlays: themes, screens, Live Mode and producer dashboards. Each screen is loaded into OBS as a browser source.
 
-**Status:** moved from GROBS, where it was OBS Producer, and being split into rcl-core and rcl-producer ([spec](design-docs/specs/2026-10-07-rollcall-split-design.md)). Until the split, all code is one app. Features start with Phase 1 on the [roadmap](docs/product/roadmap.md). To run it locally, see [local development](docs/guides/local-development.md).
+**Status:** moved from GROBS, where it was OBS Producer, and being split into rcl-core and rcl-producer ([spec](design-docs/specs/2026-10-07-rollcall-split-design.md)). Until the split, all code is in [rcl-core](rcl-core/AGENTS.md). Features start with Phase 1 on the [roadmap](docs/product/roadmap.md). To run it locally, see [local development](docs/guides/local-development.md).
 
 These rules apply to AI agents and human contributors alike.
 
@@ -30,12 +30,12 @@ These must never be broken. Each one is copied word for word from the ADR in bra
 
 Details and rationale are in the [ADRs](docs/decisions/README.md).
 
-- TypeScript 7 (strict) monorepo with Yarn 4 workspaces, Node ≥ 24.7 (the 24 LTS line) ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md))
-- Web: Vite + React SPA, React Router, Mantine for admin UI, Redux Toolkit + RTK Query ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md), [ADR-0003](docs/decisions/0003-client-state-with-redux-toolkit.md))
-- Server: Fastify + Socket.IO; SQLite via Drizzle ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md), [ADR-0004](docs/decisions/0004-server-is-the-hub.md))
-- Contract: Zod schemas in `packages/shared` ([ADR-0007](docs/decisions/0007-shared-zod-contract.md))
+- TypeScript 7 (strict) monorepo with Yarn 4 workspaces, Node ≥ 24.7 (the 24 LTS line) ([ADR-0017](docs/decisions/0017-rcl-app-workspace-layout.md))
+- Web: Vite + React SPA, React Router, Mantine for admin UI, Redux Toolkit + RTK Query ([ADR-0017](docs/decisions/0017-rcl-app-workspace-layout.md), [ADR-0003](docs/decisions/0003-client-state-with-redux-toolkit.md))
+- Server: Fastify + Socket.IO; SQLite via Drizzle ([ADR-0017](docs/decisions/0017-rcl-app-workspace-layout.md), [ADR-0004](docs/decisions/0004-server-is-the-hub.md))
+- Contract: Zod schemas in `rcl-core/contract` ([ADR-0007](docs/decisions/0007-shared-zod-contract.md))
 - TypeScript runs natively on Node with no build step: erasable syntax only (no `enum`/`namespace`), `.ts` extensions on relative imports ([ADR-0013](docs/decisions/0013-run-typescript-natively-on-node.md))
-- Lint and format: Oxlint with type-aware rules (not ESLint), Prettier ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md))
+- Lint and format: Oxlint with type-aware rules (not ESLint), Prettier ([ADR-0017](docs/decisions/0017-rcl-app-workspace-layout.md))
 - Tests: Vitest, React Testing Library, Playwright
 
 ## Layout
@@ -46,16 +46,15 @@ rollcall_derby/
 ├── design-docs/       dated specs and plans (working papers, not maintained after use)
 ├── CHANGELOG.md       release notes; add a line under Unreleased for user-visible changes
 ├── scripts/           check-docs.mjs (docs lint), release.mjs (release helper) + tests
-├── apps/server/       @obs-producer/server: Fastify API, Socket.IO, OBS/CRG connections, SQLite
-├── apps/web/          @obs-producer/web: React SPA (admin + dashboards) and the overlay entry
-├── packages/shared/   @obs-producer/shared: Zod schemas and types, used as TypeScript source (no build step)
+├── rcl-core/          the host app: server, admin web app and contract (see rcl-core/AGENTS.md)
+├── e2e/               @rollcall/e2e: Playwright tests against the real production build
 ├── package.json       Yarn 4 workspaces root (packageManager pins the Yarn version)
 └── tsconfig.base.json strict settings every workspace extends
 ```
 
 ## Commands
 
-**One-time setup:** Yarn 4 comes from Corepack, pinned by `packageManager` in `package.json`. Yarn classic (1.x) refuses to run here. Node 25+ doesn't bundle Corepack, so run `npm install -g corepack && corepack enable` (after `npm uninstall -g yarn` if Yarn classic is installed globally). For end-to-end tests, also run `yarn workspace @obs-producer/e2e playwright install chromium` once.
+**One-time setup:** Yarn 4 comes from Corepack, pinned by `packageManager` in `package.json`. Yarn classic (1.x) refuses to run here. Node 25+ doesn't bundle Corepack, so run `npm install -g corepack && corepack enable` (after `npm uninstall -g yarn` if Yarn classic is installed globally). For end-to-end tests, also run `yarn workspace @rollcall/e2e playwright install chromium` once.
 
 Run from the repo root:
 
@@ -66,7 +65,7 @@ Run from the repo root:
 | `yarn dev` | Server (restarts on changes) and Vite dev server together; open `http://localhost:5173`. The API explorer is at `/docs` ([ADR-0014](docs/decisions/0014-route-schemas-and-api-explorer.md)) |
 | `yarn build` / `yarn start` | Production build of the web app (admin app + OBS overlay), then run the server that serves it |
 | `yarn typecheck` | Type-check every workspace with TypeScript 7 |
-| `yarn lint` | Oxlint with type-aware rules, React hooks and jsx-a11y rules ([ADR-0012](docs/decisions/0012-typescript-7-and-oxlint.md)). Config: `.oxlintrc.json` |
+| `yarn lint` | Oxlint with type-aware rules, React hooks and jsx-a11y rules ([ADR-0017](docs/decisions/0017-rcl-app-workspace-layout.md)). Config: `.oxlintrc.json` |
 | `yarn format` / `yarn format:check` | Prettier (Markdown is excluded; the docs lint covers it) |
 | `yarn test` | Vitest: every workspace's `*.test.ts(x)` next to the code (Node for server/shared, jsdom for web) |
 | `yarn test:e2e` | Playwright end-to-end tests in `e2e/tests/`: builds the app and runs the real server on port 5590 |
@@ -74,11 +73,9 @@ Run from the repo root:
 | `yarn storybook` | Both Storybooks in one window at `http://localhost:6006` (admin), with the overlay section from port 6007 |
 | `yarn test:scripts` | Tests for the docs lint and release helper (`node --test "scripts/*.test.mjs"`) |
 | `yarn docs:check` | Docs lint (`node scripts/check-docs.mjs`); add `--fix`, `--questions` or `--next-adr` as needed |
-| `yarn workspace @obs-producer/server start` | Server alone. Listens on `ROLLCALL_HOST`:`ROLLCALL_PORT` (default `0.0.0.0:5580`), data in `ROLLCALL_DATA_DIR` (default `data/`, git-ignored), web build from `ROLLCALL_WEB_DIR` (default `apps/web/dist/`); set `ROLLCALL_API_DOCS=1` to serve the API explorer at `/docs`; the overlay is at `/overlay` |
-| `yarn workspace @obs-producer/web dev` | Vite alone on port 5173, proxying `/api`, `/socket.io` and `/docs` to `ROLLCALL_DEV_SERVER` (default `http://localhost:5580`) |
-| `yarn workspace @obs-producer/server db:generate --name <change>` | Generate a Drizzle migration after editing `apps/server/src/db/schema.ts`. Migrations run automatically at startup |
-| `yarn workspace @obs-producer/server reset-password <username>` | On the server machine: give a locked-out user (usually the only Admin) a temporary password, forcing a new one at their next login. Uses `ROLLCALL_DATA_DIR` like the server |
 | `node scripts/release.mjs prepare\|check\|notes <version>` | Release helper ([releasing](docs/guides/releasing.md)); `tag-absent\|milestone\|issues` are used by the release workflow |
+
+App-specific commands (the server alone, migrations, reset-password) are in each app's AGENTS.md, e.g. [rcl-core](rcl-core/AGENTS.md#commands).
 
 **Upgrading TypeScript:** `oxlint-tsgolint` embeds its own TypeScript 7.x. Upgrade it together with `typescript` so linting and `tsc` agree on the types.
 

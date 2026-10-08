@@ -92,7 +92,7 @@ jobs:
 
       - name: End-to-end tests
         run: |
-          yarn workspace @obs-producer/e2e playwright install --with-deps chromium
+          yarn workspace @rollcall/e2e playwright install --with-deps chromium
           yarn test:e2e
 
       - name: Show the release notes

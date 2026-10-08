@@ -32,7 +32,7 @@ git clone git@github.com:wardmanm/rollcall_derby.git
 cd rollcall_derby
 yarn --version                                            # should print 4.x; if it prints 1.x, see Prerequisites
 yarn install                                              # all workspaces
-yarn workspace @obs-producer/e2e playwright install chromium   # once per machine, for the end-to-end tests
+yarn workspace @rollcall/e2e playwright install chromium   # once per machine, for the end-to-end tests
 yarn check                                                # everything should pass on a fresh clone
 ```
 
@@ -58,7 +58,7 @@ Stop both with Ctrl-C.
 ### Production (what runs at a venue)
 
 ```bash
-yarn build    # web app + overlay into apps/web/dist/
+yarn build    # web app + overlay into rcl-core/web/dist/
 yarn start    # the server, which also serves the build
 ```
 
@@ -78,7 +78,7 @@ The server reads these environment variables:
 | `ROLLCALL_HOST` | `0.0.0.0` | Interface to listen on (`127.0.0.1` keeps it to this machine) |
 | `ROLLCALL_PORT` | `5580` | HTTP, API and Socket.IO port |
 | `ROLLCALL_DATA_DIR` | `data/` | SQLite database and uploaded media (git-ignored) |
-| `ROLLCALL_WEB_DIR` | `apps/web/dist/` | Web build to serve; skipped if it doesn't exist |
+| `ROLLCALL_WEB_DIR` | `rcl-core/web/dist/` | Web build to serve; skipped if it doesn't exist |
 | `ROLLCALL_DEV_SERVER` | `http://localhost:5580` | Where the Vite dev server sends `/api`, `/socket.io` and `/docs` |
 | `ROLLCALL_API_DOCS` | off (`yarn dev` turns it on) | Serve the API explorer at `/docs`: `1` or `true` for on, `0` or `false` for off ([ADR-0014](../decisions/0014-route-schemas-and-api-explorer.md)) |
 
@@ -113,13 +113,13 @@ These follow from running TypeScript directly on Node ([ADR-0013](../decisions/0
 - **No build step for the server.**
 - **Relative imports end in `.ts` or `.tsx`:** `import { x } from './health.ts'`.
 - **No `enum`, `namespace` or constructor parameter properties.** Use `as const` objects and unions.
-- **Workspace packages are imported by name:** `import { APP_NAME } from '@obs-producer/shared'`.
+- **Workspace packages are imported by name:** `import { APP_NAME } from '@rollcall/core-contract'`.
 
 ### Database changes
 
-1. Edit `apps/server/src/db/schema.ts`.
-2. Run `yarn workspace @obs-producer/server db:generate --name <short-change-name>`.
-3. Commit the generated SQL in `apps/server/drizzle/` with the schema change.
+1. Edit `rcl-core/server/src/db/schema.ts`.
+2. Run `yarn workspace @rollcall/core-server db:generate --name <short-change-name>`.
+3. Commit the generated SQL in `rcl-core/server/drizzle/` with the schema change.
 
 Migrations run automatically when the server starts. To start from an empty database, stop the server and delete `data/`.
 
@@ -127,7 +127,7 @@ Upgrading from OBS Producer? The server refuses to start while `data/` holds onl
 
 ### Adding dependencies
 
-- **Add to the workspace that uses the package:** `yarn workspace @obs-producer/web add <pkg>`, or `add -D` for development-only tools.
+- **Add to the workspace that uses the package:** `yarn workspace @rollcall/core-web add <pkg>`, or `add -D` for development-only tools.
 - **Check the version first:** we use the latest stable versions. Run `npm view <pkg> version`.
 - **New releases are held for 24 hours:** Yarn quarantines versions published in the last day, as a guard against compromised packages. An install that fails with `YN0016 … quarantined` means that version is too new. Use the newest version outside that window and `yarn up` once it clears.
 - **TypeScript and Oxlint's type checker move together:** `typescript` and `oxlint-tsgolint` must be on the same TypeScript 7.x. Upgrade them together.
@@ -155,4 +155,4 @@ How tests are organized is in [Testing](testing.md).
 | `YN0016 … quarantined` during `yarn add` / `yarn up` | That version was published less than 24 hours ago. Pick the previous one for now |
 | Admin badge says **Server unreachable** in dev | Start the server too (`yarn dev` starts both), or point `ROLLCALL_DEV_SERVER` at it |
 | Overlay page is blank | It stays empty until the server answers over Socket.IO. Check `/api/health` on the same host |
-| Locked out: the only Admin forgot their password | On the server machine, run `yarn workspace @obs-producer/server reset-password <username>`. It prints a temporary password; log in with it and choose a new one |
+| Locked out: the only Admin forgot their password | On the server machine, run `yarn workspace @rollcall/core-server reset-password <username>`. It prints a temporary password; log in with it and choose a new one |

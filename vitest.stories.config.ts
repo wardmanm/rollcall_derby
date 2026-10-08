@@ -5,13 +5,13 @@ import { defineConfig } from 'vitest/config';
 
 // Story tests (ADR-0015): every story of one Storybook renders in Playwright's Chromium, with accessibility
 // checks. Kept out of vitest.config.ts so `yarn test`/`yarn check` never load Storybook's plugin.
-// `yarn test:stories` runs this file. Task 2 adds `storybookProject('overlay')` to the projects list.
+// `yarn test:stories` runs this file.
 const storybookProject = (name: 'admin' | 'overlay') => ({
-  extends: './apps/web/vite.config.ts',
-  plugins: [storybookTest({ configDir: fileURLToPath(new URL(`./apps/web/.storybook/${name}`, import.meta.url)) })],
+  extends: './rcl-core/web/vite.config.ts',
+  plugins: [storybookTest({ configDir: fileURLToPath(new URL(`./rcl-core/web/.storybook/${name}`, import.meta.url)) })],
   test: {
     name: `storybook-${name}`,
-    root: './apps/web',
+    root: './rcl-core/web',
     browser: {
       enabled: true,
       headless: true,

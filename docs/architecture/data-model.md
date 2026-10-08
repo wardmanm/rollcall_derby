@@ -3,7 +3,7 @@ title: Data model
 ---
 # Data model
 
-This page covers the domain entities and how they relate. It deliberately lists no columns. The Drizzle schema in [`apps/server/src/db/schema.ts`](../../apps/server/src/db/schema.ts) is the source of truth for tables and fields, with migrations in `apps/server/drizzle/`. This page stays a map of the concepts.
+This page covers the domain entities and how they relate. It deliberately lists no columns. The Drizzle schema in [`rcl-core/server/src/db/schema.ts`](../../rcl-core/server/src/db/schema.ts) is the source of truth for tables and fields, with migrations in `rcl-core/server/drizzle/`. This page stays a map of the concepts.
 
 ## Entities
 
