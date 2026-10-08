@@ -67,7 +67,7 @@ Run from the repo root:
 | `yarn typecheck` | Type-check every workspace with TypeScript 7 |
 | `yarn lint` | Oxlint with type-aware rules, React hooks and jsx-a11y rules ([ADR-0017](docs/decisions/0017-rcl-app-workspace-layout.md)). Config: `.oxlintrc.json` |
 | `yarn format` / `yarn format:check` | Prettier (Markdown is excluded; the docs lint covers it) |
-| `yarn test` | Vitest: every workspace's `*.test.ts(x)` next to the code (Node for server/shared, jsdom for web) |
+| `yarn test` | Vitest: every workspace's `*.test.ts(x)` next to the code (Node for server and contract, jsdom for web) |
 | `yarn test:e2e` | Playwright end-to-end tests in `e2e/tests/`: builds the app and runs the real server on port 5590 |
 | `yarn test:stories` | Story tests: every Storybook story rendered in Chromium, with accessibility checks ([ADR-0015](docs/decisions/0015-storybook-admin-and-overlay-kept-apart.md)) |
 | `yarn storybook` | Both Storybooks in one window at `http://localhost:6006` (admin), with the overlay section from port 6007 |

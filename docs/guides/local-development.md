@@ -3,7 +3,7 @@ title: Local development
 ---
 # Local development
 
-How to get from a fresh clone to Rollcall running on your machine, and how to work on it day to day. Commands run from the repo root unless a step says otherwise. Every command is also listed in [AGENTS.md](../../AGENTS.md#commands).
+How to get from a fresh clone to Rollcall running on your machine, and how to work on it day to day. Commands run from the repo root unless a step says otherwise. Every command is also listed in [AGENTS.md](../../AGENTS.md#commands) and each app's AGENTS.md, e.g. [rcl-core/AGENTS.md](../../rcl-core/AGENTS.md#commands).
 
 ## Prerequisites
 
@@ -123,7 +123,7 @@ These follow from running TypeScript directly on Node ([ADR-0013](../decisions/0
 
 Migrations run automatically when the server starts. To start from an empty database, stop the server and delete `data/`.
 
-Upgrading from OBS Producer? The server refuses to start while `data/` holds only `obs-producer.db`. Stop it and rename that file, plus any `-wal` and `-shm` files next to it, to `rollcall.db`. Or delete it to start fresh.
+Upgrading from OBS Producer? Rollcall is a new clone, so copy your old checkout's `obs-producer/data/` folder to `data/` here (or point `ROLLCALL_DATA_DIR` at it). The server then refuses to start while `data/` holds only `obs-producer.db`: stop it and rename that file, plus any `-wal` and `-shm` files next to it, to `rollcall.db`, or delete it to start fresh.
 
 ### Adding dependencies
 

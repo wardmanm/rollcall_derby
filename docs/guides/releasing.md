@@ -3,7 +3,7 @@ title: Releasing
 ---
 # Releasing
 
-How OBS Producer work is tracked on GitHub, and how a release is cut. Releases are **always deliberate**: nothing is released by a push, a merge, or an agent acting on its own ([ADR-0010](../decisions/0010-deliberate-releases-patch-tracking.md)).
+How Rollcall work is tracked on GitHub, and how a release is cut. Releases are **always deliberate**: nothing is released by a push, a merge, or an agent acting on its own ([ADR-0010](../decisions/0010-deliberate-releases-patch-tracking.md)).
 
 ## Issues
 
@@ -58,7 +58,6 @@ It takes three deliberate steps. Nothing happens until you do each one.
 Either run `/release <version>` in Claude Code, which walks through this for you, or do it by hand on a branch:
 
 ```bash
-cd obs-producer
 node scripts/release.mjs prepare 0.2.0   # Unreleased → [0.2.0] - today; bumps package.json versions
 node scripts/release.mjs check 0.2.0     # confirms the changelog and versions are ready
 git diff                                 # read the notes the way users will
@@ -100,4 +99,4 @@ If something stops working, check that these are still in place:
 - **Environment `release`:** required reviewer `wardmanm`; deployments allowed only from `main`.
 - **Tag ruleset "Release tags are permanent":** applies to `refs/tags/*-v*` and restricts updates and deletions.
 - **Immutable releases:** enabled in the repository settings.
-- **Labels:** `obs-producer` and `sicc` scope issues by tool; `chore` marks maintenance; `patch` marks fixes for the next patch release.
+- **Labels:** `rcl-core` and `rcl-producer` put issues on boards #6 and #8; `chore` marks maintenance; `patch` marks fixes for the next patch release.

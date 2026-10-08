@@ -40,7 +40,7 @@ flowchart LR
 
 ## Pieces
 
-These workspaces are planned in [ADR-0012](../decisions/0012-typescript-7-and-oxlint.md).
+These workspaces are planned in [ADR-0017](../decisions/0017-rcl-app-workspace-layout.md).
 
 | Workspace | Responsibility |
 |---|---|
