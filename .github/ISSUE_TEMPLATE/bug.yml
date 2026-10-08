@@ -1,6 +1,6 @@
 name: "OBS Producer: bug"
 description: Something in OBS Producer doesn't behave the way its wiki page says.
-labels: ["bug", "obs-producer"]
+labels: ["bug"]
 body:
   - type: input
     id: version
@@ -14,7 +14,7 @@ body:
     attributes:
       label: Expected behavior is specified in
       description: Wiki page and requirement number, if there is one.
-      placeholder: obs-producer/docs/features/live-mode.md R6
+      placeholder: docs/features/live-mode.md R6
   - type: textarea
     id: steps
     attributes:

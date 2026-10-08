@@ -1,16 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { isAbsolute } from 'node:path';
+import { isAbsolute, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { loadConfig } from './config.ts';
 
+// The repo root, whatever the clone's folder is called.
+const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
+
 describe('loadConfig', () => {
-  it('listens on every interface on port 5580 by default, with an absolute data dir', () => {
+  it('listens on every interface on port 5580 by default, with data and web dirs under the repo root', () => {
     const config = loadConfig({});
     expect(config.host).toBe('0.0.0.0');
     expect(config.port).toBe(5580);
     expect(isAbsolute(config.dataDir)).toBe(true);
-    expect(config.dataDir.endsWith('obs-producer/data')).toBe(true);
+    expect(config.dataDir).toBe(join(repoRoot, 'data'));
     expect(isAbsolute(config.webDir)).toBe(true);
-    expect(config.webDir.endsWith('obs-producer/apps/web/dist')).toBe(true);
+    expect(config.webDir).toBe(join(repoRoot, 'apps/web/dist'));
     expect(config.apiDocs).toBe(false);
   });
 

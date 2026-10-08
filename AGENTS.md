@@ -7,7 +7,7 @@ OBS Producer is a web app hosted on the local network for producing roller derby
 
 **Status:** foundation in place (milestone `obs-producer v0.1.0`): server, web app shell, OBS overlay page, tooling, CI and the release pipeline. Features start with Phase 1 on the [roadmap](docs/product/roadmap.md). To run it locally, see [local development](docs/guides/local-development.md).
 
-These rules apply to AI agents and human contributors alike. They add to the repo-root [AGENTS.md](../AGENTS.md).
+These rules apply to AI agents and human contributors alike.
 
 ## Start here
 
@@ -42,7 +42,7 @@ Details and rationale are in the [ADRs](docs/decisions/README.md).
 ## Layout
 
 ```
-obs-producer/
+rollcall_derby/
 ├── docs/              the wiki (living pages + ADRs)
 ├── design-docs/       dated specs and plans (working papers, not maintained after use)
 ├── CHANGELOG.md       release notes; add a line under Unreleased for user-visible changes
@@ -58,7 +58,7 @@ obs-producer/
 
 **One-time setup:** Yarn 4 comes from Corepack, pinned by `packageManager` in `package.json`. Yarn classic (1.x) refuses to run here. Node 25+ doesn't bundle Corepack, so run `npm install -g corepack && corepack enable` (after `npm uninstall -g yarn` if Yarn classic is installed globally). For end-to-end tests, also run `yarn workspace @obs-producer/e2e playwright install chromium` once.
 
-Run from `obs-producer/`:
+Run from the repo root:
 
 | Command | What it does |
 |---|---|
@@ -75,13 +75,22 @@ Run from `obs-producer/`:
 | `yarn storybook` | Both Storybooks in one window at `http://localhost:6006` (admin), with the overlay section from port 6007 |
 | `yarn test:scripts` | Tests for the docs lint and release helper (`node --test "scripts/*.test.mjs"`) |
 | `yarn docs:check` | Docs lint (`node scripts/check-docs.mjs`); add `--fix`, `--questions` or `--next-adr` as needed |
-| `yarn workspace @obs-producer/server start` | Server alone. Listens on `OBS_PRODUCER_HOST`:`OBS_PRODUCER_PORT` (default `0.0.0.0:5580`), data in `OBS_PRODUCER_DATA_DIR` (default `obs-producer/data/`, git-ignored), web build from `OBS_PRODUCER_WEB_DIR` (default `apps/web/dist/`); set `OBS_PRODUCER_API_DOCS=1` to serve the API explorer at `/docs`; the overlay is at `/overlay` |
+| `yarn workspace @obs-producer/server start` | Server alone. Listens on `OBS_PRODUCER_HOST`:`OBS_PRODUCER_PORT` (default `0.0.0.0:5580`), data in `OBS_PRODUCER_DATA_DIR` (default `data/`, git-ignored), web build from `OBS_PRODUCER_WEB_DIR` (default `apps/web/dist/`); set `OBS_PRODUCER_API_DOCS=1` to serve the API explorer at `/docs`; the overlay is at `/overlay` |
 | `yarn workspace @obs-producer/web dev` | Vite alone on port 5173, proxying `/api`, `/socket.io` and `/docs` to `OBS_PRODUCER_DEV_SERVER` (default `http://localhost:5580`) |
 | `yarn workspace @obs-producer/server db:generate --name <change>` | Generate a Drizzle migration after editing `apps/server/src/db/schema.ts`. Migrations run automatically at startup |
 | `yarn workspace @obs-producer/server reset-password <username>` | On the server machine: give a locked-out user (usually the only Admin) a temporary password, forcing a new one at their next login. Uses `OBS_PRODUCER_DATA_DIR` like the server |
 | `node scripts/release.mjs prepare\|check\|notes <version>` | Release helper ([releasing](docs/guides/releasing.md)); `tag-absent\|milestone\|issues` are used by the release workflow |
 
 **Upgrading TypeScript:** `oxlint-tsgolint` embeds its own TypeScript 7.x. Upgrade it together with `typescript` so linting and `tsc` agree on the types.
+
+## Git workflow
+
+- Work on a branch; don't commit directly to `main`. Name branches `<type>/<short-topic>`, e.g. `feat/team-builder`, `docs/data-model`.
+- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) with a scope: the app (`rcl-core`, `rcl-producer`), `sdk` for shared packages, or `repo` for repo-wide work, e.g. `feat(rcl-core): API keys`.
+- Reference issues in the commit or PR that completes them: `Closes #12`. Issue numbers belong to this repo; history imported from GROBS refers to its issues as `wardmanm/GROBS#N`.
+- Only the release workflow creates release tags. Releases are always deliberate; see the [releasing guide](docs/guides/releasing.md).
+- GitHub Actions in `.github/workflows/` use the current major version of every action (e.g. `actions/checkout@v7`). Dependabot (`.github/dependabot.yml`) opens a weekly `ci:` PR when a new version is out; review and merge it like any other change.
+- Don't push, open PRs, or rewrite published history unless asked.
 
 ## Documentation rules
 

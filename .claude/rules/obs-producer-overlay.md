@@ -1,7 +1,7 @@
 ---
 paths:
-  - "obs-producer/apps/web/src/overlay/**"
-  - "obs-producer/apps/web/overlay.html"
+  - "apps/web/src/overlay/**"
+  - "apps/web/overlay.html"
 ---
 # obs-producer OBS overlay (`apps/web/src/overlay/`, ADR-0006)
 
@@ -17,5 +17,5 @@ paths:
   - Render nothing until the server has spoken.
 - **`html` and `body` stay transparent.**
 - **Docs:**
-  - component catalog and options: `obs-producer/docs/features/overlay-components.md`
-  - renderer and theming: `obs-producer/docs/decisions/0006-one-overlay-renderer-css-variable-theming.md`
+  - component catalog and options: `docs/features/overlay-components.md`
+  - renderer and theming: `docs/decisions/0006-one-overlay-renderer-css-variable-theming.md`

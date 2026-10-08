@@ -13,7 +13,7 @@ The groundwork every feature depends on. Done in milestone `obs-producer v0.1.0`
 - [x] Release pipeline: issue forms, milestones, changelog, and a deliberate release workflow ([releasing](../guides/releasing.md))
 - [x] Scaffold the monorepo described in [ADR-0012](../decisions/0012-typescript-7-and-oxlint.md): `apps/server`, `apps/web`, `packages/shared`
 - [x] Yarn scripts (`dev`, `build`, `start`, `lint`, `format`, `test`, `test:e2e`, `check`), Oxlint, Prettier, Playwright and CI, documented in `AGENTS.md`
-- [x] Path-scoped agent rules that map code areas to their doc pages (see `obs-producer/CLAUDE.md`)
+- [x] Path-scoped agent rules that map code areas to their doc pages (see `CLAUDE.md`)
 - [x] Developer guides: [local development](../guides/local-development.md) and [testing](../guides/testing.md)
 
 ## Phase 1 — Builders

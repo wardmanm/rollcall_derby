@@ -91,11 +91,11 @@ Write an ADR when a choice is hard to reverse, affects more than one feature, or
 
 ## Specs and plans
 
-Brainstorm specs and implementation plans are working papers. They live in `obs-producer/design-docs/`, outside this wiki, and aren't maintained after their work is done. Whatever durable knowledge they produce must land in the wiki as a feature page, an architecture page or an ADR, in the same change as the implementation.
+Brainstorm specs and implementation plans are working papers. They live in `design-docs/`, outside this wiki, and aren't maintained after their work is done. Whatever durable knowledge they produce must land in the wiki as a feature page, an architecture page or an ADR, in the same change as the implementation.
 
 ## The docs lint
 
-`scripts/check-docs.mjs` has no dependencies. Run it from `obs-producer/`.
+`scripts/check-docs.mjs` has no dependencies. Run it from the repo root.
 
 | Command | Purpose |
 |---|---|
@@ -111,7 +111,7 @@ It checks:
 4. **ADR numbering.** ADR filenames and numbers are well formed, unique and sequential.
 5. **Generated tables.** The generated index tables are up to date.
 
-`templates/` is exempt from these checks. The lint's own tests are in `scripts/check-docs.test.mjs`; run them with `node --test "scripts/*.test.mjs"`. CI runs both on every push that touches `obs-producer/` (`.github/workflows/obs-producer-docs.yml`).
+`templates/` is exempt from these checks. The lint's own tests are in `scripts/check-docs.test.mjs`; run them with `node --test "scripts/*.test.mjs"`. CI runs both on every push and pull request (`.github/workflows/docs.yml`).
 
 ## Agent instructions
 

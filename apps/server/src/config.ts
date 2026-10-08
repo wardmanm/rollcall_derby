@@ -10,7 +10,7 @@ export interface ServerConfig {
   apiDocs?: boolean;
 }
 
-// obs-producer/data (git-ignored), resolved from this file so it doesn't depend on the working directory.
+// data/ at the repo root (git-ignored), resolved from this file so it doesn't depend on the working directory.
 const DEFAULT_DATA_DIR = fileURLToPath(new URL('../../../data', import.meta.url));
 // The web app's production build (`yarn workspace @obs-producer/web build`).
 const DEFAULT_WEB_DIR = fileURLToPath(new URL('../../web/dist', import.meta.url));

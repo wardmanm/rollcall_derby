@@ -1,6 +1,6 @@
 name: "OBS Producer: chore"
 description: Maintenance with no user-visible change, such as dependencies, tooling, CI, refactoring or docs upkeep.
-labels: ["chore", "obs-producer"]
+labels: ["chore"]
 body:
   - type: markdown
     attributes:
@@ -33,7 +33,7 @@ body:
     id: affected
     attributes:
       label: Affected files or wiki pages
-      placeholder: obs-producer/scripts/check-docs.mjs, obs-producer/docs/wiki-guide.md
+      placeholder: scripts/check-docs.mjs, docs/wiki-guide.md
   - type: textarea
     id: done
     attributes:

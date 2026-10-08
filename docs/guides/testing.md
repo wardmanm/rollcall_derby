@@ -15,7 +15,7 @@ What to test, where the tests live, and how to run them. New code is written tes
 | End to end | [Playwright](https://playwright.dev/) | `e2e/tests/*.spec.ts` | `yarn test:e2e` |
 | Repo scripts | Node's built-in test runner | `scripts/*.test.mjs` | `yarn test:scripts` |
 
-`yarn check` runs everything except end-to-end. CI runs all of it, plus `yarn test:stories`, on every push that touches `obs-producer/`, via `.github/workflows/obs-producer-app.yml` and `obs-producer-docs.yml`. The release workflow runs it again before anyone can approve a release.
+`yarn check` runs everything except end-to-end. CI runs all of it, plus `yarn test:stories`, on every push and pull request, via `.github/workflows/app.yml` and `docs.yml`. The release workflow runs it again before anyone can approve a release.
 
 ## Vitest
 
@@ -28,7 +28,7 @@ What to test, where the tests live, and how to run them. New code is written tes
 ### Patterns used here
 
 - **Server routes:** `testApp()` from `apps/server/src/testing.ts` builds the Fastify app on a private in-memory SQLite database without listening, so `app.inject({ method: 'GET', url: '/api/health' })` tests a route in memory. `addUser(db, username, password, role)` adds an account, and `createSession(db, userId)` gives you a token to send as the `obs_producer_session` cookie. Pass `registerRoutes` to add a throwaway route (see `apps/server/src/auth/guard.test.ts`). Use `startServer()` with `port: 0` only when you need a real socket or the on-disk data directory (see `apps/server/src/server.test.ts`).
-- **Files and databases:** create a temp directory per test (`mkdtempSync(join(tmpdir(), '…'))`) and remove it in `afterEach`. Never touch `obs-producer/data/`.
+- **Files and databases:** create a temp directory per test (`mkdtempSync(join(tmpdir(), '…'))`) and remove it in `afterEach`. Never touch `data/`.
 - **RTK Query:** stub `fetch` with `vi.stubGlobal('fetch', …)` and dispatch the endpoint (`apps/web/src/store/api.test.ts`). The API's base URL is absolute so Node's `fetch` accepts it.
 - **Socket.IO in the overlay:** inject a fake socket through `makeOverlayStore(() => fakeSocket)` and emit events by hand (`apps/web/src/overlay/live.test.ts`).
 - **Components:** render with React Testing Library and query by role or text, as a user would. Wrap anything that uses Mantine in `MantineProvider`; the full `App` already does.

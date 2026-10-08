@@ -15,7 +15,7 @@ import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
-export const REPO_URL = 'https://github.com/wardmanm/GROBS';
+export const REPO_URL = 'https://github.com/wardmanm/rollcall_derby';
 export const TAG_PREFIX = 'obs-producer-v';
 export const MILESTONE_PREFIX = 'obs-producer v';
 

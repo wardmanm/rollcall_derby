@@ -1,7 +1,7 @@
 # Cuts an obs-producer release. Deliberate by design (ADR-0010):
 # manual start only, dry run by default, and publishing waits for approval
 # in the protected "release" environment.
-# Guide: obs-producer/docs/guides/releasing.md
+# Guide: docs/guides/releasing.md
 name: obs-producer release
 
 on:
@@ -66,15 +66,12 @@ jobs:
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Tag must not exist yet
-        working-directory: obs-producer
         run: node scripts/release.mjs tag-absent "$VERSION"
 
       - name: CHANGELOG and package versions are ready
-        working-directory: obs-producer
         run: node scripts/release.mjs check "$VERSION"
 
       - name: Milestone is ready (required for x.y.0 releases)
-        working-directory: obs-producer
         run: |
           gh api --paginate "repos/${GITHUB_REPOSITORY}/milestones?state=all&per_page=100" \
             | jq -s 'add' \
@@ -85,25 +82,20 @@ jobs:
         run: corepack enable
 
       - name: Install dependencies
-        working-directory: obs-producer
         run: yarn install --immutable
 
       - name: App checks (types, lint, formatting, unit tests, script tests, docs lint)
-        working-directory: obs-producer
         run: yarn check
 
       - name: Build
-        working-directory: obs-producer
         run: yarn build
 
       - name: End-to-end tests
-        working-directory: obs-producer
         run: |
           yarn workspace @obs-producer/e2e playwright install --with-deps chromium
           yarn test:e2e
 
       - name: Show the release notes
-        working-directory: obs-producer
         run: |
           {
             echo "## Release notes for ${TAG_PREFIX}${VERSION}"
@@ -141,7 +133,6 @@ jobs:
 
       # Approval can come long after preflight: check again right before anything permanent happens.
       - name: Re-check the tag and milestone after approval
-        working-directory: obs-producer
         run: |
           node scripts/release.mjs tag-absent "$VERSION"
           milestone=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/milestones?state=all&per_page=100" \
@@ -157,7 +148,7 @@ jobs:
         run: |
           : > "$RUNNER_TEMP/milestone-issues.txt"
           {
-            node obs-producer/scripts/release.mjs notes "$VERSION"
+            node scripts/release.mjs notes "$VERSION"
             if [ -n "${MILESTONE_NUMBER:-}" ]; then
               gh api --paginate "repos/${GITHUB_REPOSITORY}/issues?milestone=${MILESTONE_NUMBER}&state=closed&per_page=100" \
                 | jq -s '[add // [] | .[] | select(.pull_request | not)]' > "$RUNNER_TEMP/milestone-issues.json"
@@ -190,7 +181,6 @@ jobs:
       # Record on each issue where it shipped. Best effort: the release already exists at this point,
       # so a missing or unexpected issue number is a warning, not a failure.
       - name: Mark issues as released
-        working-directory: obs-producer
         run: |
           url=$(gh release view "${TAG_PREFIX}${VERSION}" --json url --jq .url)
           { node scripts/release.mjs issues "$VERSION"; cat "$RUNNER_TEMP/milestone-issues.txt"; } | sort -un |

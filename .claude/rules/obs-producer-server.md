@@ -1,10 +1,10 @@
 ---
 paths:
-  - "obs-producer/apps/server/**"
+  - "apps/server/**"
 ---
-# obs-producer server (`obs-producer/apps/server/`)
+# obs-producer server (`apps/server/`)
 
-- **Hard rules 1–5** in `obs-producer/AGENTS.md` apply here:
+- **Hard rules 1–5** in `AGENTS.md` apply here:
   - CRG is listen-only (ADR-0005).
   - The server is the hub and works offline (ADR-0004).
   - Authorization happens on the server (ADR-0008).
@@ -25,8 +25,8 @@ paths:
   1. Edit `src/db/schema.ts`.
   2. Run `yarn workspace @obs-producer/server db:generate --name <change>`.
   3. Commit the migration.
-  4. New entities also update `obs-producer/docs/architecture/data-model.md`.
+  4. New entities also update `docs/architecture/data-model.md`.
 - **Keep these in sync in the same change:**
-  - `obs-producer/docs/architecture/README.md`
-  - `obs-producer/docs/architecture/integrations/*.md` (when touching OBS or CRG code)
-  - the feature page under `obs-producer/docs/features/` for any behavior you change
+  - `docs/architecture/README.md`
+  - `docs/architecture/integrations/*.md` (when touching OBS or CRG code)
+  - the feature page under `docs/features/` for any behavior you change

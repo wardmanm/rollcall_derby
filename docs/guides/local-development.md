@@ -3,7 +3,7 @@ title: Local development
 ---
 # Local development
 
-How to get from a fresh clone to OBS Producer running on your machine, and how to work on it day to day. Commands run from `obs-producer/` unless a step says otherwise. Every command is also listed in [AGENTS.md](../../AGENTS.md#commands).
+How to get from a fresh clone to OBS Producer running on your machine, and how to work on it day to day. Commands run from the repo root unless a step says otherwise. Every command is also listed in [AGENTS.md](../../AGENTS.md#commands).
 
 ## Prerequisites
 
@@ -28,8 +28,8 @@ With nvm, each Node version has its own global packages, so repeat this for each
 ## First run
 
 ```bash
-git clone git@github.com:wardmanm/GROBS.git
-cd GROBS/obs-producer
+git clone git@github.com:wardmanm/rollcall_derby.git
+cd rollcall_derby
 yarn --version                                            # should print 4.x; if it prints 1.x, see Prerequisites
 yarn install                                              # all workspaces
 yarn workspace @obs-producer/e2e playwright install chromium   # once per machine, for the end-to-end tests
@@ -77,7 +77,7 @@ The server reads these environment variables:
 |---|---|---|
 | `OBS_PRODUCER_HOST` | `0.0.0.0` | Interface to listen on (`127.0.0.1` keeps it to this machine) |
 | `OBS_PRODUCER_PORT` | `5580` | HTTP, API and Socket.IO port |
-| `OBS_PRODUCER_DATA_DIR` | `obs-producer/data/` | SQLite database and uploaded media (git-ignored) |
+| `OBS_PRODUCER_DATA_DIR` | `data/` | SQLite database and uploaded media (git-ignored) |
 | `OBS_PRODUCER_WEB_DIR` | `apps/web/dist/` | Web build to serve; skipped if it doesn't exist |
 | `OBS_PRODUCER_DEV_SERVER` | `http://localhost:5580` | Where the Vite dev server sends `/api`, `/socket.io` and `/docs` |
 | `OBS_PRODUCER_API_DOCS` | off (`yarn dev` turns it on) | Serve the API explorer at `/docs`: `1` or `true` for on, `0` or `false` for off ([ADR-0014](../decisions/0014-route-schemas-and-api-explorer.md)) |
@@ -121,7 +121,7 @@ These follow from running TypeScript directly on Node ([ADR-0013](../decisions/0
 2. Run `yarn workspace @obs-producer/server db:generate --name <short-change-name>`.
 3. Commit the generated SQL in `apps/server/drizzle/` with the schema change.
 
-Migrations run automatically when the server starts. To start from an empty database, stop the server and delete `obs-producer/data/`.
+Migrations run automatically when the server starts. To start from an empty database, stop the server and delete `data/`.
 
 ### Adding dependencies
 

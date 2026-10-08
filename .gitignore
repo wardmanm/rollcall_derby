@@ -17,3 +17,15 @@ dist/
 # Playwright output
 e2e/test-results/
 e2e/playwright-report/
+
+# Editors and OS
+.DS_Store
+
+# Storybook and Vitest browser-mode output
+storybook-static/
+*storybook.log
+__screenshots__/
+
+# Personal agent settings (not shared)
+CLAUDE.local.md
+.claude/settings.local.json

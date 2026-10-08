@@ -18,4 +18,4 @@ A web app for producing roller derby streams in [OBS Studio](https://obsproject.
 
 ## License
 
-MIT. See [LICENSE](../LICENSE).
+MIT. See [LICENSE](LICENSE).

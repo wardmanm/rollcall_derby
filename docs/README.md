@@ -28,4 +28,4 @@ This wiki is the source of truth for what the app does, how it's built, and why.
 
 1. Read the [wiki guide](wiki-guide.md). It covers where each fact belongs, the page templates, and how to record a decision.
 2. Update the wiki in the same commit as the change it describes.
-3. From `obs-producer/`, run `node scripts/check-docs.mjs` before committing. CI runs it too.
+3. From the repo root, run `node scripts/check-docs.mjs` before committing. CI runs it too.

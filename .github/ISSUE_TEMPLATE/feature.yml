@@ -1,18 +1,18 @@
 name: "OBS Producer: feature"
 description: Work on OBS Producer, linked to the wiki page that specifies it.
-labels: ["enhancement", "obs-producer"]
+labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
         The wiki feature page is the spec. If this work changes what a feature should do, the PR that implements it updates the page.
-        Feature index: https://github.com/wardmanm/GROBS/blob/main/obs-producer/docs/features/README.md
+        Feature index: https://github.com/wardmanm/rollcall_derby/blob/main/docs/features/README.md
   - type: input
     id: wiki-page
     attributes:
       label: Wiki feature page
       description: The page that specifies this work.
-      placeholder: obs-producer/docs/features/team-builder.md
+      placeholder: docs/features/team-builder.md
     validations:
       required: true
   - type: input
