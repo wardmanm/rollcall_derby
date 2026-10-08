@@ -1,6 +1,6 @@
-name: "OBS Producer: chore"
+name: 'OBS Producer: chore'
 description: Maintenance with no user-visible change, such as dependencies, tooling, CI, refactoring or docs upkeep.
-labels: ["chore"]
+labels: ['chore']
 body:
   - type: markdown
     attributes:

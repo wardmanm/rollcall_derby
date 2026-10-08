@@ -1,6 +1,6 @@
-name: "OBS Producer: feature"
+name: 'OBS Producer: feature'
 description: Work on OBS Producer, linked to the wiki page that specifies it.
-labels: ["enhancement"]
+labels: ['enhancement']
 body:
   - type: markdown
     attributes:

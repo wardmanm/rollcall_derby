@@ -1,6 +1,6 @@
-name: "OBS Producer: bug"
+name: 'OBS Producer: bug'
 description: Something in OBS Producer doesn't behave the way its wiki page says.
-labels: ["bug"]
+labels: ['bug']
 body:
   - type: input
     id: version
