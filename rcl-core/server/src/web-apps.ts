@@ -19,18 +19,23 @@ export interface WebApp {
 
 const PRODUCER_WEB_DIR = fileURLToPath(new URL('../../../rcl-producer/web/dist', import.meta.url));
 
-// The web builds this server serves. Temporary: Phase 4b replaces this list with each installed app module's `web`.
+// The web builds this server serves, core's first. Temporary: Phase 4b replaces this list with each installed app
+// module's `web`.
 export function installedWebApps(coreWebDir: string): WebApp[] {
   return [
-    { base: '/', dir: coreWebDir },
+    { base: '/core/', dir: coreWebDir },
     { base: '/producer/', dir: PRODUCER_WEB_DIR, pages: { overlay: 'overlay.html' } },
   ];
 }
 
 // Serves each app's build below its base: real files as they are, its pages at their paths, and index.html for
-// every other GET below the base, so client-side routes like /producer/screens/3 load. API and Socket.IO paths, and
-// paths no app claims, get a JSON 404.
+// every other GET below the base, so client-side routes like /producer/screens/3 load. `/` redirects to the first
+// app (core's). API and Socket.IO paths, and paths no app claims, get a JSON 404.
 export function serveWebApps(app: FastifyInstance, webApps: readonly WebApp[]): void {
+  const home = webApps[0]?.base;
+  if (home && !webApps.some((web) => web.base === '/')) {
+    app.get('/', (_request, reply) => reply.redirect(home, 302));
+  }
   const built = webApps.filter((web) => existsSync(join(web.dir, 'index.html')));
   built.forEach((web, i) => {
     // Only the first registration may add reply.sendFile; the others share it.

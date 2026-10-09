@@ -17,7 +17,7 @@ import { serveWebApps, type WebApp } from './web-apps.ts';
 export interface AppOptions {
   version: string;
   logger?: boolean;
-  /** The rcl apps' web builds to serve, each below its own base. */
+  /** The rcl apps' web builds to serve, each below its own base. `/` redirects to the first one. */
   webApps?: readonly WebApp[];
   db: AppDatabase;
   /** Every permission routes may need (ADR-0018). Defaults to core's own; tests add others. */

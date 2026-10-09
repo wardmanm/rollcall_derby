@@ -21,7 +21,7 @@ function build(app: string, pages: string[] = []) {
 
 function appWithBuilds(): WebApp[] {
   return [
-    { base: '/', dir: build('core') },
+    { base: '/core/', dir: build('core') },
     { base: '/producer/', dir: build('producer', ['overlay']), pages: { overlay: 'overlay.html' } },
   ];
 }
@@ -37,7 +37,7 @@ describe('serving the web apps', () => {
   it("serves each app's index.html at its base", async () => {
     const webApps = appWithBuilds();
     for (const [url, root] of [
-      ['/', 'core-root'],
+      ['/core/', 'core-root'],
       ['/producer/', 'producer-root'],
     ] as const) {
       const res = await get(webApps, url);
@@ -49,7 +49,7 @@ describe('serving the web apps', () => {
 
   it("serves each app's built assets below its base", async () => {
     const webApps = appWithBuilds();
-    for (const url of ['/assets/core.js', '/producer/assets/producer.js']) {
+    for (const url of ['/core/assets/core.js', '/producer/assets/producer.js']) {
       const res = await get(webApps, url);
       expect(res.statusCode, url).toBe(200);
       expect(res.headers['content-type'], url).toMatch(/javascript/);
@@ -59,10 +59,10 @@ describe('serving the web apps', () => {
   it("falls back to the right app's index.html for client-side routes", async () => {
     const webApps = appWithBuilds();
     for (const [url, root] of [
-      ['/teams/42', 'core-root'],
+      ['/core', 'core-root'],
+      ['/core/teams/42', 'core-root'],
       ['/producer', 'producer-root'],
       ['/producer/screens/3?tab=layout', 'producer-root'],
-      ['/producerish', 'core-root'],
     ] as const) {
       expect((await get(webApps, url)).body, url).toContain(`<div id="${root}">`);
     }
@@ -86,27 +86,36 @@ describe('serving the web apps', () => {
     expect((await get(appWithBuilds(), '/producer/overlays-list')).body).toContain('<div id="producer-root">');
   });
 
-  it('keeps JSON 404s for unknown API routes', async () => {
-    const res = await get(appWithBuilds(), '/api/nope');
-    expect(res.statusCode).toBe(404);
-    expect(res.headers['content-type']).toMatch(/application\/json/);
+  it('sends / to the first app', async () => {
+    const res = await get(appWithBuilds(), '/');
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe('/core/');
+  });
+
+  it('answers paths no app claims, and unknown API routes, with a JSON 404', async () => {
+    // /overlay is where the OBS overlay was before it moved to /producer/overlay; it has no redirect.
+    for (const url of ['/api/nope', '/overlay', '/teams/42', '/producerish']) {
+      const res = await get(appWithBuilds(), url);
+      expect(res.statusCode, url).toBe(404);
+      expect(res.headers['content-type'], url).toMatch(/application\/json/);
+    }
   });
 
   it('serves the apps that are built and skips the rest', async () => {
     const webApps = [
-      { base: '/', dir: join(tmpdir(), 'rollcall-web-does-not-exist') },
+      { base: '/core/', dir: join(tmpdir(), 'rollcall-web-does-not-exist') },
       { base: '/producer/', dir: build('producer', ['overlay']), pages: { overlay: 'overlay.html' } },
     ];
     expect((await get(webApps, '/producer/screens/3')).body).toContain('<div id="producer-root">');
     expect((await get(webApps, '/producer/overlay')).body).toContain('<div id="producer-overlay">');
-    expect((await get(webApps, '/')).statusCode).toBe(404);
+    expect((await get(webApps, '/core/')).statusCode).toBe(404);
   });
 
   it('still serves the API when there is no web build yet', async () => {
-    const webApps = [{ base: '/', dir: join(tmpdir(), 'rollcall-web-does-not-exist') }];
+    const webApps = [{ base: '/core/', dir: join(tmpdir(), 'rollcall-web-does-not-exist') }];
     const { app } = testApp({ webApps });
     expect((await app.inject({ method: 'GET', url: '/api/health' })).statusCode).toBe(200);
-    const res = await app.inject({ method: 'GET', url: '/' });
+    const res = await app.inject({ method: 'GET', url: '/core/' });
     expect(res.statusCode).toBe(404);
     expect(res.json()).toMatchObject({ error: 'Not Found' });
     await app.close();
