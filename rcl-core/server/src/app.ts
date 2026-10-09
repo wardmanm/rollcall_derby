@@ -8,7 +8,9 @@ import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fas
 import { APP_NAME, HealthResponseSchema, type HealthResponse } from '@rollcall/core-contract';
 import type { AppDatabase } from './db.ts';
 import { ERROR_RESPONSES, sendApiError } from './http.ts';
+import { createPermissions, enforceRouteAccess, type Permissions } from './auth/access.ts';
 import { installAuth } from './auth/guard.ts';
+import { CORE_APP_ID, CORE_PERMISSIONS } from './auth/permissions.ts';
 import { registerApiDocs } from './openapi.ts';
 import { registerAuthRoutes } from './routes/auth.ts';
 import { registerSetupRoutes } from './routes/setup.ts';
@@ -20,6 +22,8 @@ export interface AppOptions {
   /** Directory holding the web app's production build. Skipped if it doesn't exist (e.g. in development). */
   webDir?: string;
   db: AppDatabase;
+  /** Every permission routes may need (ADR-0018). Defaults to core's own; tests add others. */
+  permissions?: Permissions;
   /** Registers routes inside the authenticated /api plugin, after cookie, rate-limit and auth are wired up (for tests). */
   registerRoutes?: (api: FastifyInstance) => void;
   /** Called for each route as it's registered; the route inventory test uses it. */
@@ -37,10 +41,12 @@ export function buildApp({
   registerRoutes,
   onRoute,
   apiDocs = false,
+  permissions = createPermissions(CORE_PERMISSIONS),
 }: AppOptions): FastifyInstance {
   const app = Fastify({ logger });
-  // Added first, so it sees every route, including those inside the /api plugin.
+  // Added first, so they see every route, including those inside the /api plugin.
   if (onRoute) app.addHook('onRoute', onRoute);
+  enforceRouteAccess(app, { appId: CORE_APP_ID, permissions });
   // Routes validate requests and serialize replies with the shared Zod schemas they declare (ADR-0007, ADR-0014).
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
@@ -61,6 +67,7 @@ export function buildApp({
     api.withTypeProvider<ZodTypeProvider>().get(
       '/api/health',
       {
+        config: { access: { public: 'Shows whether the server is up, before anyone signs in' } },
         schema: {
           tags: ['health'],
           summary: 'Check that the server is up',

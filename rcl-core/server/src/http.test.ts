@@ -42,7 +42,7 @@ describe('errors raised by Fastify and its plugins', () => {
   it('hide the details of a server error', async () => {
     const { app } = testApp({
       registerRoutes: (api) => {
-        api.get('/api/boom', async () => {
+        api.get('/api/boom', { config: { access: { public: 'test probe' } } }, async () => {
           throw new Error('SQLITE_CORRUPT in /data/rollcall.db');
         });
       },
@@ -76,16 +76,20 @@ describe('route schemas', () => {
       registerRoutes: (fastify) => {
         fastify
           .withTypeProvider<ZodTypeProvider>()
-          .get('/api/leaky', { schema: { response: { 200: SessionUserSchema } } }, async () => {
-            const user = {
-              id: 'u1',
-              username: 'admin',
-              role: 'admin' as const,
-              mustChangePassword: false,
-              passwordHash: 'secret-hash',
-            };
-            return user;
-          });
+          .get(
+            '/api/leaky',
+            { config: { access: { public: 'test probe' } }, schema: { response: { 200: SessionUserSchema } } },
+            async () => {
+              const user = {
+                id: 'u1',
+                username: 'admin',
+                role: 'admin' as const,
+                mustChangePassword: false,
+                passwordHash: 'secret-hash',
+              };
+              return user;
+            },
+          );
       },
     });
     const res = await app.inject({ method: 'GET', url: '/api/leaky' });

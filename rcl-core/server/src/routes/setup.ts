@@ -11,7 +11,7 @@ import { ERROR_RESPONSES } from '../http.ts';
 // Login, setup and password changes each allow 10 attempts per minute per address (each route keeps its own count).
 export const AUTH_RATE_LIMIT = { max: 10, timeWindow: '1 minute' };
 
-// First-run setup (ADR-0008): only while no users exist, and only from the server machine itself,
+// First-run setup (ADR-0018): only while no users exist, and only from the server machine itself,
 // so nobody else on the venue Wi-Fi can claim the Admin account first.
 export function registerSetupRoutes(fastify: FastifyInstance, db: AppDatabase): void {
   const api = fastify.withTypeProvider<ZodTypeProvider>();
@@ -19,6 +19,7 @@ export function registerSetupRoutes(fastify: FastifyInstance, db: AppDatabase): 
   api.get(
     '/api/setup',
     {
+      config: { access: { public: 'The web app asks whether to show first-run setup before anyone can sign in' } },
       schema: {
         tags: ['setup'],
         summary: 'Is first-run setup needed, and can this machine do it?',
@@ -31,7 +32,10 @@ export function registerSetupRoutes(fastify: FastifyInstance, db: AppDatabase): 
   api.post(
     '/api/setup',
     {
-      config: { rateLimit: AUTH_RATE_LIMIT },
+      config: {
+        rateLimit: AUTH_RATE_LIMIT,
+        access: { public: 'Creates the first Admin: only on the server machine, and only while there are no users' },
+      },
       schema: {
         tags: ['setup'],
         summary: 'Create the first Admin and sign in (server machine only, while no users exist)',

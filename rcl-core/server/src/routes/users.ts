@@ -9,7 +9,7 @@ import {
   UserSchema,
 } from '@rollcall/core-contract';
 import type { AppDatabase } from '../db.ts';
-import { requireRole } from '../auth/guard.ts';
+import type { Access } from '../auth/access.ts';
 import { generateTemporaryPassword, hashPassword } from '../auth/passwords.ts';
 import { revokeUserSessions } from '../auth/sessions.ts';
 import {
@@ -25,8 +25,7 @@ import {
 } from '../auth/users.ts';
 import { ERROR_RESPONSES } from '../http.ts';
 
-// Guards run as preValidation, so a non-Admin is refused before their body is looked at.
-const ADMIN_ONLY = { preValidation: requireRole('admin') };
+const MANAGE_USERS: { config: { access: Access } } = { config: { access: { permission: 'core:users.manage' } } };
 const UserParamsSchema = z.strictObject({ id: z.string() });
 const NO_CONTENT = z.undefined();
 const NOT_FOUND = { error: 'not_found' };
@@ -37,15 +36,15 @@ const LAST_ADMIN = { error: 'last_admin', message: 'There must always be at leas
 const isLastAdmin = (db: AppDatabase, user: UserRecord) =>
   user.role === 'admin' && countAdmins(db, { excluding: user.id }) === 0;
 
-// Admin user management (users-and-access R3, ADR-0008). The caller's role is checked in a preValidation hook. The
-// username and last-Admin checks run with no `await` before their write, so concurrent requests can't slip in between.
+// User management (users-and-access R3, ADR-0018), for callers holding core:users.manage. The username and last-Admin
+// checks run with no `await` before their write, so concurrent requests can't slip in between.
 export function registerUserRoutes(fastify: FastifyInstance, db: AppDatabase): void {
   const api = fastify.withTypeProvider<ZodTypeProvider>();
 
   api.get(
     '/api/users',
     {
-      ...ADMIN_ONLY,
+      ...MANAGE_USERS,
       schema: { tags: ['users'], summary: 'List users', response: { 200: UserSchema.array(), ...ERROR_RESPONSES } },
     },
     async () => listUsers(db),
@@ -54,7 +53,7 @@ export function registerUserRoutes(fastify: FastifyInstance, db: AppDatabase): v
   api.post(
     '/api/users',
     {
-      ...ADMIN_ONLY,
+      ...MANAGE_USERS,
       schema: {
         tags: ['users'],
         summary: 'Create a user (the temporary password is shown only in this response)',
@@ -74,7 +73,7 @@ export function registerUserRoutes(fastify: FastifyInstance, db: AppDatabase): v
   api.patch(
     '/api/users/:id',
     {
-      ...ADMIN_ONLY,
+      ...MANAGE_USERS,
       schema: {
         tags: ['users'],
         summary: "Change a user's role",
@@ -95,7 +94,7 @@ export function registerUserRoutes(fastify: FastifyInstance, db: AppDatabase): v
   api.post(
     '/api/users/:id/password-reset',
     {
-      ...ADMIN_ONLY,
+      ...MANAGE_USERS,
       schema: {
         tags: ['users'],
         summary: "Reset a user's password (the temporary password is shown only in this response)",
@@ -117,7 +116,7 @@ export function registerUserRoutes(fastify: FastifyInstance, db: AppDatabase): v
   api.post(
     '/api/users/:id/sign-out',
     {
-      ...ADMIN_ONLY,
+      ...MANAGE_USERS,
       schema: {
         tags: ['users'],
         summary: 'Sign a user out on every device',
@@ -136,7 +135,7 @@ export function registerUserRoutes(fastify: FastifyInstance, db: AppDatabase): v
   api.delete(
     '/api/users/:id',
     {
-      ...ADMIN_ONLY,
+      ...MANAGE_USERS,
       schema: {
         tags: ['users'],
         summary: 'Delete a user',
@@ -148,7 +147,7 @@ export function registerUserRoutes(fastify: FastifyInstance, db: AppDatabase): v
       const user = findUserById(db, request.params.id);
       if (!user) return reply.code(404).send(NOT_FOUND);
       if (isLastAdmin(db, user)) return reply.code(409).send(LAST_ADMIN);
-      if (user.id === request.user?.id) {
+      if (user.id === request.principal?.user.id) {
         return reply
           .code(409)
           .send({ error: 'cannot_delete_self', message: 'Another Admin has to delete your account.' });

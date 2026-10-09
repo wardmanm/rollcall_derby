@@ -1,3 +1,4 @@
+import type { FastifyInstance, preValidationAsyncHookHandler } from 'fastify';
 import type { Role, SessionUser } from '@rollcall/core-contract';
 
 // Who may call a route or join a Socket.IO namespace (ADR-0018). Every /api route declares it in `config.access`, and
@@ -13,6 +14,12 @@ export type Access =
   | { signedIn: true; allowPendingPasswordChange?: true }
   /** A signed-in user whose role holds this permission. Admins hold every permission. */
   | { permission: Permission };
+
+declare module 'fastify' {
+  interface FastifyContextConfig {
+    access?: Access;
+  }
+}
 
 export interface PermissionDef {
   key: Permission;
@@ -87,4 +94,28 @@ export function accessProblem(access: Access, { appId, permissions }: { appId: s
     if (!permissions.find(key)) return `needs ${key}, which ${appId} doesn't declare`;
   }
   return null;
+}
+
+const API_ROUTE = /^\/api(\/|$)/;
+
+// Checks each /api route's declaration as it's registered, then puts the route's guard first in its preValidation
+// hooks, so a refused caller never learns what a valid body looks like (ADR-0014). It's installed on the root
+// instance, so it sees /api routes wherever they're registered. HEAD routes that Fastify adds for GET routes pass
+// through here too, with the same config.
+export function enforceRouteAccess(app: FastifyInstance, options: { appId: string; permissions: Permissions }): void {
+  app.addHook('onRoute', (route) => {
+    if (!API_ROUTE.test(route.url)) return;
+    const name = `${[route.method].flat().join(',')} ${route.url}`;
+    const access = route.config?.access;
+    if (!access) throw new Error(`${name} declares no access. Give it config.access: public, signedIn or a permission`);
+    const problem = accessProblem(access, options);
+    if (problem) throw new Error(`${name} ${problem}`);
+    if ('public' in access) return;
+    const guard: preValidationAsyncHookHandler = async (request, reply) => {
+      const denial = deny(access, request.principal, options.permissions);
+      if (denial) return reply.code(denial.status).send({ error: denial.error });
+      return undefined;
+    };
+    route.preValidation = [guard, ...[route.preValidation ?? []].flat()];
+  });
 }
