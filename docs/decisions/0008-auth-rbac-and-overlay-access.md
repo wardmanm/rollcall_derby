@@ -1,9 +1,12 @@
 ---
 title: Auth, RBAC and overlay access
-status: accepted
+status: superseded
+superseded_by: "0018"
 date: 2026-10-02
 ---
 # 0008. Auth, RBAC and overlay access
+
+> **Superseded by [ADR-0018](0018-declared-access-and-permissions.md):** routes and Socket.IO namespaces declare their access (public, signed in, or a permission), and core enforces it in one place. Accounts, sessions and setup are unchanged.
 
 ## Context
 

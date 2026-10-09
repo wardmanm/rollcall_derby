@@ -4,7 +4,7 @@ import type { SessionUser } from '@rollcall/core-contract';
 import type { AppDatabase } from '../db.ts';
 import { sessions, users } from '../db/schema.ts';
 
-// Sessions last a fixed 30 days from login; using them doesn't extend them (ADR-0008).
+// Sessions last a fixed 30 days from login; using them doesn't extend them (ADR-0018).
 export const SESSION_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
 const LAST_SEEN_RESOLUTION_MS = 60_000;
 

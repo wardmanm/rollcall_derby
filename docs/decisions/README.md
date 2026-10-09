@@ -17,7 +17,7 @@ To write a new one, follow [recording decisions](../wiki-guide.md#recording-deci
 | [0005](0005-crg-is-listen-only.md) | CRG is listen-only | accepted | 2026-09-28 |
 | [0006](0006-one-overlay-renderer-css-variable-theming.md) | One overlay renderer, CSS-variable theming | accepted | 2026-09-28 |
 | [0007](0007-shared-zod-contract.md) | Shared Zod contract | accepted | 2026-09-28 |
-| [0008](0008-auth-rbac-and-overlay-access.md) | Auth, RBAC and overlay access | accepted | 2026-10-02 |
+| [0008](0008-auth-rbac-and-overlay-access.md) | Auth, RBAC and overlay access | superseded by [0018](0018-declared-access-and-permissions.md) | 2026-10-02 |
 | [0009](0009-deliberate-milestone-driven-releases.md) | Deliberate, milestone-driven releases | superseded by [0010](0010-deliberate-releases-patch-tracking.md) | 2026-09-28 |
 | [0010](0010-deliberate-releases-patch-tracking.md) | Deliberate releases, milestones for planned versions only | accepted | 2026-09-29 |
 | [0011](0011-technology-stack-with-yarn.md) | Technology stack, with Yarn workspaces | superseded by [0012](0012-typescript-7-and-oxlint.md) | 2026-09-29 |
@@ -27,4 +27,5 @@ To write a new one, follow [recording decisions](../wiki-guide.md#recording-deci
 | [0015](0015-storybook-admin-and-overlay-kept-apart.md) | Storybook for shared components, admin and overlay kept apart | accepted | 2026-10-07 |
 | [0016](0016-obs-producer-becomes-rollcall.md) | OBS Producer becomes Rollcall, a suite of rcl apps | accepted | 2026-10-08 |
 | [0017](0017-rcl-app-workspace-layout.md) | Technology stack, with rcl apps in one workspace | accepted | 2026-10-08 |
+| [0018](0018-declared-access-and-permissions.md) | Declared access and per-app permissions | accepted | 2026-10-09 |
 <!-- /generated:decisions -->

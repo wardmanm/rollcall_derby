@@ -1,4 +1,4 @@
-// `yarn workspace @rollcall/core-server reset-password <username>`, for an Admin who is locked out (ADR-0008).
+// `yarn workspace @rollcall/core-server reset-password <username>`, for an Admin who is locked out (ADR-0018).
 // Run it on the server machine; it works while the server is running. It prints a temporary password, forces a
 // new password at the next login, and signs the user out everywhere.
 import { existsSync } from 'node:fs';

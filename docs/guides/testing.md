@@ -27,7 +27,7 @@ What to test, where the tests live, and how to run them. New code is written tes
 
 ### Patterns used here
 
-- **Server routes:** `testApp()` from `rcl-core/server/src/testing.ts` builds the Fastify app on a private in-memory SQLite database without listening, so `app.inject({ method: 'GET', url: '/api/health' })` tests a route in memory. `addUser(db, username, password, role)` adds an account, and `createSession(db, userId)` gives you a token to send as the `rollcall_session` cookie. Pass `registerRoutes` to add a throwaway route (see `rcl-core/server/src/auth/guard.test.ts`). Use `startServer()` with `port: 0` only when you need a real socket or the on-disk data directory (see `rcl-core/server/src/server.test.ts`).
+- **Server routes:** `testApp()` from `rcl-core/server/src/testing.ts` builds the Fastify app on a private in-memory SQLite database without listening, so `app.inject({ method: 'GET', url: '/api/health' })` tests a route in memory. `addUser(db, username, password, role)` adds an account, and `createSession(db, userId)` gives you a token to send as the `rollcall_session` cookie. Pass `registerRoutes` to add a throwaway route, with `config: { access: … }` like any route (see `rcl-core/server/src/auth/access.test.ts`). Use `startServer()` with `port: 0` only when you need a real socket or the on-disk data directory (see `rcl-core/server/src/server.test.ts`).
 - **Files and databases:** create a temp directory per test (`mkdtempSync(join(tmpdir(), '…'))`) and remove it in `afterEach`. Never touch `data/`.
 - **RTK Query:** stub `fetch` with `vi.stubGlobal('fetch', …)` and dispatch the endpoint (`rcl-core/web/src/store/api.test.ts`). The API's base URL is absolute so Node's `fetch` accepts it.
 - **Socket.IO in the overlay:** inject a fake socket through `makeOverlayStore(() => fakeSocket)` and emit events by hand (`rcl-core/web/src/overlay/live.test.ts`).
@@ -38,13 +38,14 @@ What to test, where the tests live, and how to run them. New code is written tes
 
 - **Overlay bundle (`rcl-core/web/src/overlay/bundle.test.ts`).** It runs a real Vite build and fails if Mantine or admin-app code reaches the overlay bundle ([ADR-0006](../decisions/0006-one-overlay-renderer-css-variable-theming.md)). It also checks that Mantine *is* in the admin bundle, which proves the check works.
 - **Reconnect after restart (`rcl-core/server/src/server.test.ts`).** It restarts the server on the same port and expects a Socket.IO client to reconnect on its own, so OBS outputs can't go stale.
-- **Route inventory (`rcl-core/server/src/auth/route-inventory.test.ts`).** It records every `/api` route as the app registers it, then sends each one a request.
-  - **Anonymous:** every route outside `PUBLIC_API_ROUTES` (in `src/auth/guard.ts`) must answer 401.
-  - **With a password change pending:** everything except `me`, `password` and `logout` must answer 403.
-  - **Proof it works:** a deliberately unguarded route must be caught.
+- **Access inventories (`rcl-core/server/src/auth/route-inventory.test.ts`, `rcl-core/server/src/realtime.test.ts`).** They record every `/api` route and every Socket.IO namespace as it's created, then send each one a request or connection. A route or namespace with no access declaration can't start at all (`src/auth/access.test.ts`). The inventories check that each declaration is enforced ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)):
+  - **Pinned:** the public routes and namespaces, and the routes that work while a password change is pending, are listed in the tests, so changing them means changing a test.
+  - **Anonymous:** everything that isn't public refuses with `unauthenticated` (401 for routes).
+  - **With a password change pending:** everything except `me`, `password` and `logout` refuses with `password_change_required`.
+  - **Missing permission:** each role is refused with `forbidden` wherever it lacks the permission.
+  - **Proof it works:** each sweep runs again as an Admin, who gets through everywhere, so the sweep must report every route.
 
-  A new route that forgets `requireUser` or `requireRole` fails CI ([ADR-0008](../decisions/0008-auth-rbac-and-overlay-access.md)).
-  It also checks that every `/api` route declares a response schema (and a params schema when its path has parameters), and that the OpenAPI document behind `/docs` lists exactly the registered routes ([ADR-0014](../decisions/0014-route-schemas-and-api-explorer.md)).
+  The route inventory also checks that every `/api` route declares a response schema (and a params schema when its path has parameters), and that the OpenAPI document behind `/docs` lists exactly the registered routes ([ADR-0014](../decisions/0014-route-schemas-and-api-explorer.md)).
 
 ## Stories
 

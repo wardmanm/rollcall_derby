@@ -5,15 +5,15 @@ summary: Username and password login with Admin, Producer and Announcer roles, e
 ---
 # Users and Access
 
-Basic user accounts and role-based access control. The app runs on a shared venue network, so accounts decide who can change what. This page is the **canonical home of the role matrix**; other pages link here instead of restating permissions.
+Basic user accounts and role-based access control. The app runs on a shared venue network, so accounts decide who can change what. This page is the **canonical home of the role matrix and the permission table**; other pages link here instead of restating them.
 
 ## Requirements
 
 - **R1.** Users log in with a username and password. The server keeps the session.
 - **R2.** On first run, the app asks for the initial Admin account to be created.
 - **R3.** Admins create users, reset passwords and assign roles.
-- **R4.** Every API route and socket event checks the caller's role on the server. Hiding UI is not access control ([ADR-0008](../decisions/0008-auth-rbac-and-overlay-access.md)).
-- **R5.** OBS browser sources can't log in, so each output will be reached through an unguessable token URL ([ADR-0008](../decisions/0008-auth-rbac-and-overlay-access.md)). Until output tokens arrive with Live Mode, `/overlay` is public.
+- **R4.** Every API route and socket event checks the caller's access on the server: each one is public, open to any signed-in user, or needs a [permission](../product/glossary.md#permission). Hiding UI is not access control ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)).
+- **R5.** OBS browser sources can't log in, so each output will be reached through an unguessable token URL ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)). Until output tokens arrive with Live Mode, `/overlay` is public.
 - **R6.** Accounts are local only. There are no external identity providers, because the app runs on the LAN with no internet.
 
 ## Role matrix
@@ -35,9 +35,19 @@ Basic user accounts and role-based access control. The app runs on a shared venu
 | Use OBS controls | ✅ | ❓ | ❓ |
 | Edit automation rules | ✅ | ❓ | — |
 
+## Permissions
+
+Routes and live connections check [permissions](../product/glossary.md#permission), not roles ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)). Each permission belongs to one rcl app and is named `<app>:<action>`. Admins hold every permission. This table says which other roles hold each one, and the API explorer at `/docs` shows the permission each route needs. A test keeps the table in step with the code.
+
+| Permission | Allows | Admin | Producer | Announcer |
+|---|---|---|---|---|
+| `core:users.manage` | Create users, change their roles, reset their passwords, sign them out and delete them | ✅ | — | — |
+
+The capabilities in the role matrix become permissions here as each feature is built.
+
 ## Behavior
 
-How accounts work is decided in [ADR-0008](../decisions/0008-auth-rbac-and-overlay-access.md). What people see:
+How accounts work is decided in [ADR-0018](../decisions/0018-declared-access-and-permissions.md). What people see:
 
 - **First run.** While there are no accounts, the setup page creates the first Admin. It only works on the server machine itself, opened at a `localhost` address, so nobody else on the venue Wi-Fi can claim the Admin account first.
 - **Logging in.** A login lasts until you log out, up to 30 days, so nobody is logged out mid-game. A wrong username and a wrong password get the same answer. After 10 attempts in a minute from one device, further attempts are refused for a minute.
@@ -45,6 +55,7 @@ How accounts work is decided in [ADR-0008](../decisions/0008-auth-rbac-and-overl
 - **Forgotten passwords.** An Admin resets the password. It works like a new account, and also signs the person out everywhere.
 - **Changing your password** signs you out on every other device. The new password must differ from the current one.
 - **Signing someone out.** An Admin can sign a user out on every device.
+- **Losing access mid-request.** If an Admin is demoted, deleted or signed out while the server is creating a user or resetting a password, nothing changes and the request is refused. Changing your own password is refused the same way if an Admin reset it in the meantime.
 - **There's always an Admin.** The app refuses to delete or demote the last Admin, and an Admin can't delete their own account.
 - **Locked out?** If the only Admin forgets their password, run `yarn workspace @rollcall/core-server reset-password <username>` on the server machine. It prints a temporary password. It refuses if `ROLLCALL_DATA_DIR` has no `rollcall.db`, and prints the path it checked.
 - **Plain HTTP.** The app runs over HTTP on the venue network for now. HTTPS with your own certificate is planned.

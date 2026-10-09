@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// Accounts and sessions (docs/features/users-and-access.md, ADR-0008). Server and web share these shapes.
+// Accounts and sessions (docs/features/users-and-access.md, ADR-0018). Server and web share these shapes.
 
 export const ROLES = ['admin', 'producer', 'announcer'] as const;
 export const RoleSchema = z.enum(ROLES);

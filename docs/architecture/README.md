@@ -60,13 +60,13 @@ These workspaces are planned in [ADR-0017](../decisions/0017-rcl-app-workspace-l
    3. The server broadcasts the change to the right Socket.IO rooms: per track, per output, per dashboard.
 2. When a producer acts on a dashboard:
    1. A socket event goes to the server.
-   2. The server checks the producer's role ([ADR-0008](../decisions/0008-auth-rbac-and-overlay-access.md)).
+   2. The server checks the caller's access ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)).
    3. The server updates live state or sends an OBS request.
    4. The server broadcasts the result.
 3. Outputs, dashboard previews and the builder canvas all render with the same presentational overlay components, so every view matches what's on air ([ADR-0006](../decisions/0006-one-overlay-renderer-css-variable-theming.md)).
 4. When an output reloads, whether OBS restarted it or it was hidden and shown again, it rebuilds its entire state from the server.
 
-**Socket.IO namespaces.** `/overlay` is public, so OBS outputs need no login until output token URLs arrive ([ADR-0008](../decisions/0008-auth-rbac-and-overlay-access.md)). The default namespace `/` is for signed-in clients such as dashboards. The server checks the session cookie when a client connects.
+**Socket.IO namespaces.** Each namespace declares who may join, as each API route does ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)). `/overlay` is public, so OBS outputs need no login until output token URLs arrive. Signed-in namespaces, such as Live Mode's dashboards, check the session cookie when a client connects. The bare `/` namespace refuses everyone.
 
 ## Key decisions
 
@@ -77,7 +77,7 @@ Summaries only. The ADRs are canonical.
 - [ADR-0005](../decisions/0005-crg-is-listen-only.md): CRG is listen-only, and there are no score displays.
 - [ADR-0006](../decisions/0006-one-overlay-renderer-css-variable-theming.md): One overlay renderer; themes as CSS custom properties.
 - [ADR-0007](../decisions/0007-shared-zod-contract.md): Shared Zod contract; versioned import/export.
-- [ADR-0008](../decisions/0008-auth-rbac-and-overlay-access.md): Server-side sessions and RBAC; a public overlay until output token URLs arrive.
+- [ADR-0018](../decisions/0018-declared-access-and-permissions.md): Server-side sessions; every route and namespace declares its access, checked by permission; a public overlay until output token URLs arrive.
 
 ## More
 

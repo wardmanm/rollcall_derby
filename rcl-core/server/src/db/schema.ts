@@ -8,7 +8,7 @@ export const appMeta = sqliteTable('app_meta', {
   value: text('value').notNull(),
 });
 
-// Local accounts (ADR-0008). Usernames are stored lowercase; passwords only as argon2id PHC strings.
+// Local accounts (ADR-0018). Usernames are stored lowercase; passwords only as argon2id PHC strings.
 // The role values must match ROLES in @rollcall/core-contract (a test checks this).
 export const users = sqliteTable('users', {
   id: text('id').primaryKey(),

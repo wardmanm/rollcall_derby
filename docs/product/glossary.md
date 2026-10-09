@@ -58,6 +58,7 @@ This page defines the terms used across the wiki, the UI and the code. Use them 
 | **rcl app** | One app in the suite. It's named `rcl-<app>` and kept in a root folder of the same name. |
 | **rcl-core** | The host app: the one server process, accounts, shared data such as teams, and the CRG and OBS connections, with an admin GUI for that data. |
 | **rcl-producer** | The app that builds and runs overlays: themes, screens, Live Mode and dashboards. Call it "the Producer app", never just "Producer", which is a [role](#roles). |
+| <a id="permission"></a>**Permission** | A named right in one rcl app, such as `core:users.manage`. Routes and live connections check permissions; a role is a set of them, and Admins hold them all. See [users and access](../features/users-and-access.md#permissions). |
 | **Screen** | An overlay canvas designed in the [Screen Builder](../features/screen-builder.md). It has a size, a theme, and placed overlay components. **Not an OBS Scene.** |
 | **Overlay Component** | A pre-made, configurable building block placed on a screen, such as a team roster. **Not the same as a React component**; in code, prefer names like `OverlayComponent…` to keep them apart. See [overlay components](../features/overlay-components.md). |
 | **Component options** | The settings of one placed overlay component, e.g. which team or how many rows. |
