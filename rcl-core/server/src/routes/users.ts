@@ -37,7 +37,8 @@ const isLastAdmin = (db: AppDatabase, user: UserRecord) =>
   user.role === 'admin' && countAdmins(db, { excluding: user.id }) === 0;
 
 // User management (users-and-access R3, ADR-0018), for callers holding core:users.manage. The username and last-Admin
-// checks run with no `await` before their write, so concurrent requests can't slip in between.
+// checks run with no `await` before their write, so concurrent requests can't slip in between. Handlers that hash a
+// password check the caller again after the await, since the caller may have lost access meanwhile.
 export function registerUserRoutes(fastify: FastifyInstance, db: AppDatabase): void {
   const api = fastify.withTypeProvider<ZodTypeProvider>();
 
@@ -64,6 +65,8 @@ export function registerUserRoutes(fastify: FastifyInstance, db: AppDatabase): v
     async (request, reply) => {
       const temporaryPassword = generateTemporaryPassword();
       const passwordHash = await hashPassword(temporaryPassword);
+      const denial = request.recheckAccess();
+      if (denial) return reply.code(denial.status).send({ error: denial.error });
       if (findUserForLogin(db, request.body.username)) return reply.code(409).send({ error: 'username_taken' });
       const user = createUser(db, { ...request.body, passwordHash, mustChangePassword: true });
       return reply.code(201).send({ user, temporaryPassword });
@@ -105,6 +108,8 @@ export function registerUserRoutes(fastify: FastifyInstance, db: AppDatabase): v
     async (request, reply) => {
       const temporaryPassword = generateTemporaryPassword();
       const passwordHash = await hashPassword(temporaryPassword);
+      const denial = request.recheckAccess();
+      if (denial) return reply.code(denial.status).send({ error: denial.error });
       const user = findUserById(db, request.params.id);
       if (!user) return reply.code(404).send(NOT_FOUND);
       setPassword(db, user.id, passwordHash, { mustChangePassword: true });

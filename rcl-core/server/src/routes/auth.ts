@@ -91,7 +91,11 @@ export function registerAuthRoutes(fastify: FastifyInstance, db: AppDatabase): v
       if (!record || !(await verifyPassword(currentPassword, record.passwordHash))) {
         return reply.code(400).send({ error: 'wrong_password' });
       }
-      setPassword(db, record.id, await hashPassword(newPassword), { mustChangePassword: false });
+      const passwordHash = await hashPassword(newPassword);
+      // Signed out (by an Admin's reset, say) while the password was hashing: don't overwrite the reset.
+      const denial = request.recheckAccess();
+      if (denial) return reply.code(denial.status).send({ error: denial.error });
+      setPassword(db, record.id, passwordHash, { mustChangePassword: false });
       if (request.principal) revokeUserSessions(db, record.id, { exceptToken: request.principal.token });
       return { ...user, mustChangePassword: false };
     },

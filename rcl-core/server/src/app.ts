@@ -63,7 +63,7 @@ export function buildApp({
   // the same error handler and auth checks.
   void app.register(async (api) => {
     api.setErrorHandler(sendApiError);
-    installAuth(api, db);
+    installAuth(api, { db, permissions });
     api.withTypeProvider<ZodTypeProvider>().get(
       '/api/health',
       {

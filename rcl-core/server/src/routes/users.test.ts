@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import type { FastifyInstance } from 'fastify';
 import { CreateUserResponseSchema, PasswordResetResponseSchema, UserSchema, type Role } from '@rollcall/core-contract';
 import type { AppDatabase } from '../db.ts';
 import { SESSION_COOKIE } from '../auth/guard.ts';
 import { verifyPassword } from '../auth/passwords.ts';
 import { createSession, findSession } from '../auth/sessions.ts';
-import { countAdmins, findUserForLogin } from '../auth/users.ts';
+import { countAdmins, deleteUser, findUserForLogin, setRole } from '../auth/users.ts';
 import { addUser, testApp } from '../testing.ts';
 
 const PASSWORD = 'correct horse';
@@ -215,5 +216,49 @@ describe('an unknown user id', () => {
       expect(res.statusCode, `${method} ${url}`).toBe(404);
       expect(res.json()).toEqual({ error: 'not_found' });
     }
+  });
+});
+
+// Runs `change` after the route has checked the caller and before its handler starts: the same window as the
+// handler's own await while it hashes a password.
+function afterAccessCheck(app: FastifyInstance, route: string, change: () => void) {
+  app.addHook('preHandler', async (request) => {
+    if (request.routeOptions.url === route) change();
+  });
+}
+
+const createProducer = (app: FastifyInstance, cookies: Record<string, string>) =>
+  app.inject({ method: 'POST', url: '/api/users', cookies, payload: { username: 'producer1', role: 'producer' } });
+
+describe('an Admin who loses access while a password is hashing', () => {
+  it('creates no user once demoted', async () => {
+    const { app, db, admin } = await withAdmin();
+    afterAccessCheck(app, '/api/users', () => setRole(db, admin.user.id, 'producer'));
+    const res = await createProducer(app, admin.cookies);
+    expect(res.statusCode).toBe(403);
+    expect(res.json()).toEqual({ error: 'forbidden' });
+    expect(findUserForLogin(db, 'producer1')).toBeNull();
+  });
+
+  it('creates no user once deleted', async () => {
+    const { app, db, admin } = await withAdmin();
+    afterAccessCheck(app, '/api/users', () => deleteUser(db, admin.user.id));
+    const res = await createProducer(app, admin.cookies);
+    expect(res.statusCode).toBe(401);
+    expect(findUserForLogin(db, 'producer1')).toBeNull();
+  });
+
+  it('resets no password once demoted', async () => {
+    const { app, db, admin } = await withAdmin();
+    const producer = await signIn(db, 'producer1', 'producer');
+    afterAccessCheck(app, '/api/users/:id/password-reset', () => setRole(db, admin.user.id, 'producer'));
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/users/${producer.user.id}/password-reset`,
+      cookies: admin.cookies,
+    });
+    expect(res.statusCode).toBe(403);
+    expect(await verifyPassword(PASSWORD, findUserForLogin(db, 'producer1')?.passwordHash ?? '')).toBe(true);
+    expect(findSession(db, producer.token)).not.toBeNull();
   });
 });

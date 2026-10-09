@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { SessionUserSchema } from '@rollcall/core-contract';
 import { SESSION_COOKIE } from '../auth/guard.ts';
-import { SESSION_LIFETIME_MS } from '../auth/sessions.ts';
+import { verifyPassword } from '../auth/passwords.ts';
+import { createSession, revokeUserSessions, SESSION_LIFETIME_MS } from '../auth/sessions.ts';
+import { findUserForLogin } from '../auth/users.ts';
 import { addUser, testApp } from '../testing.ts';
 
 const PASSWORD = 'correct horse';
@@ -203,5 +205,25 @@ describe('hardening', () => {
     expect((await app.inject({ method: 'GET', url: '/api/auth/me', cookies })).json()).toMatchObject({
       mustChangePassword: true,
     });
+  });
+});
+
+describe('a password change racing an Admin', () => {
+  it('changes nothing when the user is signed out while the new password is hashing', async () => {
+    const { app, db } = testApp();
+    const user = await addUser(db, 'p1', PASSWORD, 'producer');
+    const cookies = { [SESSION_COOKIE]: createSession(db, user.id).token };
+    // After the access check and before the handler: an Admin resets the password, which signs the user out.
+    app.addHook('preHandler', async (request) => {
+      if (request.routeOptions.url === '/api/auth/password') revokeUserSessions(db, user.id);
+    });
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/auth/password',
+      cookies,
+      payload: { currentPassword: PASSWORD, newPassword: 'a brand new password' },
+    });
+    expect(res.statusCode).toBe(401);
+    expect(await verifyPassword(PASSWORD, findUserForLogin(db, 'p1')?.passwordHash ?? '')).toBe(true);
   });
 });

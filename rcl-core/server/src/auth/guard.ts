@@ -1,12 +1,17 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { AppDatabase } from '../db.ts';
-import type { Principal } from './access.ts';
+import { deny, type Denial, type Permissions, type Principal } from './access.ts';
 import { findSession } from './sessions.ts';
 
 declare module 'fastify' {
   interface FastifyRequest {
     /** Who's calling, from the session cookie; null when nobody is signed in. */
     principal: Principal | null;
+    /**
+     * Checks the caller again against the database as it is now. A handler that awaits (password hashing) before it
+     * writes calls this after the await: the caller may have been demoted, deleted or signed out in the meantime.
+     */
+    recheckAccess(): Denial | undefined;
   }
 }
 
@@ -36,8 +41,13 @@ export function resolvePrincipal(db: AppDatabase, cookies: Record<string, string
 
 // Runs inside the /api plugin: the CSRF check, then the caller onto the request. Each route's access is enforced
 // separately, by enforceRouteAccess in access.ts.
-export function installAuth(app: FastifyInstance, db: AppDatabase): void {
+export function installAuth(app: FastifyInstance, { db, permissions }: { db: AppDatabase; permissions: Permissions }) {
   app.decorateRequest('principal', null);
+  app.decorateRequest('recheckAccess', function (this: FastifyRequest) {
+    this.principal = resolvePrincipal(db, this.cookies);
+    const { access } = this.routeOptions.config;
+    return access ? deny(access, this.principal, permissions) : { status: 403, error: 'forbidden' };
+  });
 
   app.addHook('onRequest', async (request, reply) => {
     if (!SAFE_METHODS.has(request.method) && !isSameOrigin(request.headers.origin, request.headers.host)) {
