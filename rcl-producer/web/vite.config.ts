@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
-import { serverProxy } from '@rollcall/web-sdk/vite';
+import { DEV_PORTS, serverProxy } from '@rollcall/web-sdk/vite';
 import { PRODUCER_BASE } from './src/base.ts';
 
 // Two pages: the Producer app (index.html) and the lean OBS overlay (overlay.html, ADR-0006).
@@ -27,9 +27,9 @@ const overlayRoute: Plugin = {
 export default defineConfig({
   base: PRODUCER_BASE,
   plugins: [react(), overlayRoute],
-  // Port 5174, next to rcl-core's 5173. In development Vite passes API, Socket.IO and API explorer traffic to the
-  // Rollcall server (ADR-0004).
-  server: { port: 5174, strictPort: true, proxy: serverProxy() },
+  // Reached through rcl-core's Vite (the front door) at /producer/, or directly on its own port. Either way it passes
+  // API, Socket.IO and API explorer traffic to the Rollcall server (ADR-0004).
+  server: { port: DEV_PORTS.producer, strictPort: true, proxy: serverProxy() },
   build: {
     rolldownOptions: {
       input: { main: page('./index.html'), overlay: page('./overlay.html') },
