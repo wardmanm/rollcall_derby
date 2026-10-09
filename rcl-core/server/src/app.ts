@@ -50,7 +50,7 @@ export function buildApp({
   // Routes validate requests and serialize replies with the shared Zod schemas they declare (ADR-0007, ADR-0014).
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
-  registerApiDocs(app, { version, apiDocs });
+  registerApiDocs(app, { version, apiDocs, permissions });
   const startedAt = performance.now();
 
   // JSON bodies only: removing the text/plain parser turns form-style cross-site posts into 415s.
