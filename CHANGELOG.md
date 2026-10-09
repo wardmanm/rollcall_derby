@@ -10,6 +10,7 @@ All notable changes to Rollcall are documented here, newest first. The format fo
 - Admins can create users, change roles, reset passwords and sign users out. Every API route and live connection checks who's asking, and a reset-password command rescues a locked-out Admin (wardmanm/GROBS#14)
 - API explorer for developers: Swagger UI at `/docs`, generated from the shared schemas. It's on in `yarn dev`, and on a venue server only with `ROLLCALL_API_DOCS=1` (wardmanm/GROBS#16)
 - The API explorer shows who may call each route: anyone, any signed-in user, or the permission it needs, such as `core:users.manage` (#3)
+- The Producer app at `/producer/`. For now it shows the address to add to OBS for the overlay (#4)
 
 ### Changed
 
@@ -17,6 +18,7 @@ All notable changes to Rollcall are documented here, newest first. The format fo
 - The database file is now `rollcall.db`. Rollcall is a new clone, so copy your old `obs-producer/data/` folder into the new clone's `data/` first; the server refuses to start while the data folder holds only the old `obs-producer.db`, and explains how to keep your accounts. `reset-password` refuses a folder with no database and prints the path it checked (#2)
 - The OBS overlay now uses its own public live connection. After upgrading, refresh each OBS browser source (right-click ▸ Refresh) so it picks up the change (wardmanm/GROBS#14)
 - Access is checked by permission instead of by role. Admins hold every permission, so who can do what is unchanged (#3)
+- Each app now has its own address: the admin app is at `/core/` (`/` takes you there) and the Producer app at `/producer/`. **The OBS overlay moved from `/overlay` to `/producer/overlay`, with no redirect:** change the URL of each OBS browser source (#4)
 
 ### Fixed
 

@@ -1,11 +1,11 @@
 ---
 paths:
-  - "rcl-core/web/src/overlay/**"
-  - "rcl-core/web/overlay.html"
+  - "rcl-producer/web/src/overlay/**"
+  - "rcl-producer/web/overlay.html"
 ---
-# rcl-core OBS overlay (`rcl-core/web/src/overlay/`, ADR-0006)
+# rcl-producer OBS overlay (`rcl-producer/web/src/overlay/`, ADR-0006)
 
-- **Never import Mantine or admin-app code** (`src/store`, `src/layout`, `src/pages`, `src/components`). `src/overlay/bundle.test.ts` fails if any reaches the overlay bundle.
+- **Never import Mantine, `@rollcall/web-sdk` or the Producer app's own code** (`src/pages`, `src/routes.tsx`, `src/main.tsx`). `src/overlay/bundle.test.ts` fails if a Mantine or web SDK module reaches the overlay bundle.
 - **Overlay components** (`src/overlay/components/`) are presentational:
   - Data comes in through props.
   - Styling uses CSS modules and theme custom properties (`--theme-*`) only, never hard-coded colors or fonts.
@@ -16,6 +16,7 @@ paths:
   - A disconnect keeps the last state.
   - Render nothing until the server has spoken.
 - **`html` and `body` stay transparent.**
+- **The page is served at `/producer/overlay`** and everything below it, where output URLs will live (`rcl-core/server/src/web-apps.ts`).
 - **Docs:**
   - component catalog and options: `docs/features/overlay-components.md`
   - renderer and theming: `docs/decisions/0006-one-overlay-renderer-css-variable-theming.md`

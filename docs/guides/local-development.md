@@ -44,27 +44,32 @@ yarn check                                                # everything should pa
 yarn dev
 ```
 
-This starts two processes:
+This starts three processes:
 - **the server** on port 5580, restarting when its code changes;
-- **the Vite dev server** on port 5173, reloading the browser when web code changes. It passes `/api`, `/socket.io` and `/docs` through to the server, so the browser only ever talks to port 5173.
+- **rcl-core's Vite dev server** on port 5173, the front door. It serves rcl-core's web app at `/core/`, redirects `/` there, passes `/producer` on to the Producer app's Vite, and passes `/api`, `/socket.io` and `/docs` to the server. The browser only ever talks to port 5173;
+- **the Producer app's Vite dev server** on port 5174, reached through the front door.
+
+Each Vite server reloads the browser when its web code changes, through the front door too.
 
 Then open:
-- **Admin app:** `http://localhost:5173`. The header badge shows `Server v…` once the server answers.
-- **OBS overlay:** `http://localhost:5173/overlay`. A small card appears over a transparent page.
+- **Admin app:** `http://localhost:5173`, which goes to `/core/`. The header badge shows `Server v…` once the server answers.
+- **Producer app:** `http://localhost:5173/producer/`.
+- **OBS overlay:** `http://localhost:5173/producer/overlay`. A small card appears over a transparent page.
 - **API explorer:** `http://localhost:5173/docs`. See [Trying the API](#trying-the-api).
 
-Stop both with Ctrl-C.
+Stop them all with Ctrl-C.
 
 ### Production (what runs at a venue)
 
 ```bash
-yarn build    # web app + overlay into rcl-core/web/dist/
-yarn start    # the server, which also serves the build
+yarn build    # every web app: rcl-core/web/dist/ and rcl-producer/web/dist/ (with the overlay)
+yarn start    # the server, which also serves the builds
 ```
 
 Everything is on one port:
-- **Admin app:** `http://localhost:5580`
-- **Overlay:** `http://localhost:5580/overlay`
+- **Admin app:** `http://localhost:5580`, which goes to `/core/`
+- **Producer app:** `http://localhost:5580/producer/`
+- **OBS overlay:** `http://localhost:5580/producer/overlay`
 - **Health check:** `http://localhost:5580/api/health`
 
 The server listens on every network interface, so other devices on the venue network can use `http://<this machine's IP>:5580`.
@@ -78,8 +83,8 @@ The server reads these environment variables:
 | `ROLLCALL_HOST` | `0.0.0.0` | Interface to listen on (`127.0.0.1` keeps it to this machine) |
 | `ROLLCALL_PORT` | `5580` | HTTP, API and Socket.IO port |
 | `ROLLCALL_DATA_DIR` | `data/` | SQLite database and uploaded media (git-ignored) |
-| `ROLLCALL_WEB_DIR` | `rcl-core/web/dist/` | Web build to serve; skipped if it doesn't exist |
-| `ROLLCALL_DEV_SERVER` | `http://localhost:5580` | Where the Vite dev server sends `/api`, `/socket.io` and `/docs` |
+| `ROLLCALL_WEB_DIR` | `rcl-core/web/dist/` | rcl-core's web build, served at `/core/`; skipped if it doesn't exist. The Producer app's build is always `rcl-producer/web/dist/` |
+| `ROLLCALL_DEV_SERVER` | `http://localhost:5580` | Where the Vite dev servers send `/api`, `/socket.io` and `/docs` |
 | `ROLLCALL_API_DOCS` | off (`yarn dev` turns it on) | Serve the API explorer at `/docs`: `1` or `true` for on, `0` or `false` for off ([ADR-0014](../decisions/0014-route-schemas-and-api-explorer.md)) |
 
 The names are prefixed because shells such as zsh already set `HOST` to the machine's name.
@@ -95,7 +100,7 @@ On a venue server the explorer is off. To turn it on, start the server with `ROL
 
 ### Storybook
 
-`yarn storybook` shows the web app's shared components, one at a time, outside the app ([ADR-0015](../decisions/0015-storybook-admin-and-overlay-kept-apart.md)). It opens `http://localhost:6006`, the admin components. The overlay components appear in the same window under **Overlay**, served from port 6007.
+`yarn storybook` shows the shared components, one at a time, outside the apps ([ADR-0015](../decisions/0015-storybook-admin-and-overlay-kept-apart.md)). It opens `http://localhost:6006`, the admin components: the web SDK's, and rcl-core's own once it has some. The Producer app's overlay components appear in the same window under **Overlay**, served from port 6007.
 
 - **Admin stories:** switch light and dark from the toolbar.
 - **Overlay stories:** switch the **Theme** (sample themes until the Theme Builder) and the **Backdrop** behind the transparent overlay.
@@ -151,7 +156,7 @@ How tests are organized is in [Testing](testing.md).
 | Symptom | Fix |
 |---|---|
 | `This project's package.json defines "packageManager": "yarn@4…". However the current global version of Yarn is 1.22…` | Yarn classic is answering. Follow the Corepack steps in [Prerequisites](#prerequisites) |
-| `EADDRINUSE` on 5580 or 5173 | Another copy is still running. Find it with `lsof -nP -iTCP:5580 -sTCP:LISTEN` and stop it |
+| `EADDRINUSE`, or `Port … is already in use`, on 5580, 5173 or 5174 | Another copy is still running. Find it with `lsof -nP -iTCP:5580 -sTCP:LISTEN` (or that port) and stop it |
 | `YN0016 … quarantined` during `yarn add` / `yarn up` | That version was published less than 24 hours ago. Pick the previous one for now |
 | Admin badge says **Server unreachable** in dev | Start the server too (`yarn dev` starts both), or point `ROLLCALL_DEV_SERVER` at it |
 | Overlay page is blank | It stays empty until the server answers over Socket.IO. Check `/api/health` on the same host |

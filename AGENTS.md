@@ -4,7 +4,7 @@ Rollcall is a suite of apps for producing roller derby events and streams, hoste
 - **rcl-core** is the server: accounts, shared data such as teams, the CRG and OBS connections, and an admin GUI for that data.
 - **rcl-producer** builds and runs overlays: themes, screens, Live Mode and producer dashboards. Each screen is loaded into OBS as a browser source.
 
-**Status:** moved from GROBS, where it was OBS Producer, and being split into rcl-core and rcl-producer ([spec](design-docs/specs/2026-10-07-rollcall-split-design.md)). Until the split, all code is in [rcl-core](rcl-core/AGENTS.md). Features start with Phase 1 on the [roadmap](docs/product/roadmap.md). To run it locally, see [local development](docs/guides/local-development.md).
+**Status:** moved from GROBS, where it was OBS Producer, and being split into rcl-core and rcl-producer ([spec](design-docs/specs/2026-10-07-rollcall-split-design.md)). The Producer app's web code is in [rcl-producer](rcl-producer/AGENTS.md) and shared web code in `packages/web-sdk`; all server code stays in [rcl-core](rcl-core/AGENTS.md) until app modules arrive. Features start with Phase 1 on the [roadmap](docs/product/roadmap.md). To run it locally, see [local development](docs/guides/local-development.md).
 
 These rules apply to AI agents and human contributors alike.
 
@@ -47,6 +47,8 @@ rollcall_derby/
 ├── CHANGELOG.md       release notes; add a line under Unreleased for user-visible changes
 ├── scripts/           check-docs.mjs (docs lint), release.mjs (release helper) + tests
 ├── rcl-core/          the host app: server, admin web app and contract (see rcl-core/AGENTS.md)
+├── rcl-producer/      the Producer app: its web app and the OBS overlay (see rcl-producer/AGENTS.md)
+├── packages/          code shared across apps: web-sdk (@rollcall/web-sdk)
 ├── e2e/               @rollcall/e2e: Playwright tests against the real production build
 ├── package.json       Yarn 4 workspaces root (packageManager pins the Yarn version)
 └── tsconfig.base.json strict settings every workspace extends
@@ -62,15 +64,15 @@ Run from the repo root:
 |---|---|
 | `yarn install` | Install dependencies for all workspaces (CI uses `yarn install --immutable`) |
 | `yarn check` | **Run before every commit:** typecheck, lint, format check, unit tests, script tests and docs lint |
-| `yarn dev` | Server (restarts on changes) and Vite dev server together; open `http://localhost:5173`. The API explorer is at `/docs` ([ADR-0014](docs/decisions/0014-route-schemas-and-api-explorer.md)) |
-| `yarn build` / `yarn start` | Production build of the web app (admin app + OBS overlay), then run the server that serves it |
+| `yarn dev` | The server (restarts on changes) and each web app's Vite dev server; open `http://localhost:5173`, the front door, which redirects to `/core/` and passes `/producer/` on. The API explorer is at `/docs` ([ADR-0014](docs/decisions/0014-route-schemas-and-api-explorer.md)) |
+| `yarn build` / `yarn start` | Production build of every web app (rcl-core's at `/core/`, the Producer app and its OBS overlay at `/producer/`), then run the server that serves them |
 | `yarn typecheck` | Type-check every workspace with TypeScript 7 |
 | `yarn lint` | Oxlint with type-aware rules, React hooks and jsx-a11y rules ([ADR-0017](docs/decisions/0017-rcl-app-workspace-layout.md)). Config: `.oxlintrc.json` |
 | `yarn format` / `yarn format:check` | Prettier (Markdown is excluded; the docs lint covers it) |
-| `yarn test` | Vitest: every workspace's `*.test.ts(x)` next to the code (Node for server and contract, jsdom for web) |
+| `yarn test` | Vitest: every workspace's `*.test.ts(x)` next to the code (Node for server and contract, jsdom for the web apps and the web SDK) |
 | `yarn test:e2e` | Playwright end-to-end tests in `e2e/tests/`: builds the app and runs the real server on port 5590 |
 | `yarn test:stories` | Story tests: every Storybook story rendered in Chromium, with accessibility checks ([ADR-0015](docs/decisions/0015-storybook-admin-and-overlay-kept-apart.md)) |
-| `yarn storybook` | Both Storybooks in one window at `http://localhost:6006` (admin), with the overlay section from port 6007 |
+| `yarn storybook` | Both Storybooks in one window at `http://localhost:6006` (admin, from `rcl-core/web`), with the overlay section from port 6007 (`rcl-producer/web`) |
 | `yarn test:scripts` | Tests for the docs lint and release helper (`node --test "scripts/*.test.mjs"`) |
 | `yarn docs:check` | Docs lint (`node scripts/check-docs.mjs`); add `--fix`, `--questions` or `--next-adr` as needed |
 | `node scripts/release.mjs prepare\|check\|notes <version>` | Release helper ([releasing](docs/guides/releasing.md)); `tag-absent\|milestone\|issues` are used by the release workflow |

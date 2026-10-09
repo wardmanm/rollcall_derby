@@ -10,8 +10,8 @@ What to test, where the tests live, and how to run them. New code is written tes
 | Layer | Tool | Where | Runs with |
 |---|---|---|---|
 | Unit and integration | [Vitest](https://vitest.dev/) | `*.test.ts(x)` next to the code, in every workspace | `yarn test` |
-| React components | Vitest + React Testing Library, jsdom | `rcl-core/web/src/**/*.test.tsx` | `yarn test` |
-| Stories | Storybook + Vitest browser mode (Playwright's Chromium) | `rcl-core/web/src/**/*.stories.tsx` | `yarn test:stories` |
+| React components | Vitest + React Testing Library, jsdom | `rcl-core/web`, `rcl-producer/web` and `packages/web-sdk`: `src/**/*.test.tsx` | `yarn test` |
+| Stories | Storybook + Vitest browser mode (Playwright's Chromium) | `*.stories.tsx` next to the component | `yarn test:stories` |
 | End to end | [Playwright](https://playwright.dev/) | `e2e/tests/*.spec.ts` | `yarn test:e2e` |
 | Repo scripts | Node's built-in test runner | `scripts/*.test.mjs` | `yarn test:scripts` |
 
@@ -19,9 +19,9 @@ What to test, where the tests live, and how to run them. New code is written tes
 
 ## Vitest
 
-- **Two environments, set in `vitest.config.ts`:**
-  - **`node`:** `rcl-core/contract` and `rcl-core/server`.
-  - **`web`:** `rcl-core/web`, in jsdom, with `rcl-core/web/src/test/setup.ts`.
+- **Projects, set in `vitest.config.ts`:**
+  - **`node`:** `rcl-core/contract` and `rcl-core/server`, in Node.
+  - **`core-web`**, **`producer-web`** and **`web-sdk`:** `rcl-core/web`, `rcl-producer/web` and `packages/web-sdk`, in jsdom, all with `packages/web-sdk/src/test/setup.ts`.
 - **One web test needs real Node APIs.** It opts out of jsdom with `// @vitest-environment node` at the top of the file (the overlay bundle check below).
 - **Running a subset:** `yarn vitest run <path or name>`, e.g. `yarn vitest run rcl-core/server` or `yarn vitest run -t "health"`. `yarn vitest` watches for changes.
 
@@ -29,14 +29,14 @@ What to test, where the tests live, and how to run them. New code is written tes
 
 - **Server routes:** `testApp()` from `rcl-core/server/src/testing.ts` builds the Fastify app on a private in-memory SQLite database without listening, so `app.inject({ method: 'GET', url: '/api/health' })` tests a route in memory. `addUser(db, username, password, role)` adds an account, and `createSession(db, userId)` gives you a token to send as the `rollcall_session` cookie. Pass `registerRoutes` to add a throwaway route, with `config: { access: … }` like any route (see `rcl-core/server/src/auth/access.test.ts`). Use `startServer()` with `port: 0` only when you need a real socket or the on-disk data directory (see `rcl-core/server/src/server.test.ts`).
 - **Files and databases:** create a temp directory per test (`mkdtempSync(join(tmpdir(), '…'))`) and remove it in `afterEach`. Never touch `data/`.
-- **RTK Query:** stub `fetch` with `vi.stubGlobal('fetch', …)` and dispatch the endpoint (`rcl-core/web/src/store/api.test.ts`). The API's base URL is absolute so Node's `fetch` accepts it.
-- **Socket.IO in the overlay:** inject a fake socket through `makeOverlayStore(() => fakeSocket)` and emit events by hand (`rcl-core/web/src/overlay/live.test.ts`).
+- **RTK Query:** stub `fetch` with `vi.stubGlobal('fetch', …)` and dispatch the endpoint (`packages/web-sdk/src/api.test.ts`). The API's base URL is absolute so Node's `fetch` accepts it.
+- **Socket.IO in the overlay:** inject a fake socket through `makeOverlayStore(() => fakeSocket)` and emit events by hand (`rcl-producer/web/src/overlay/live.test.ts`).
 - **Components:** render with React Testing Library and query by role or text, as a user would. Wrap anything that uses Mantine in `MantineProvider`; the full `App` already does.
 - **Shared schemas:** every schema in `rcl-core/contract` gets tests for an accepted payload and for each rejected shape that matters.
 
 ### Guards that protect the architecture
 
-- **Overlay bundle (`rcl-core/web/src/overlay/bundle.test.ts`).** It runs a real Vite build and fails if Mantine or admin-app code reaches the overlay bundle ([ADR-0006](../decisions/0006-one-overlay-renderer-css-variable-theming.md)). It also checks that Mantine *is* in the admin bundle, which proves the check works.
+- **Overlay bundle (`rcl-producer/web/src/overlay/bundle.test.ts`).** It runs a real Vite build of the Producer app and fails if any Mantine or web SDK module reaches the overlay bundle ([ADR-0006](../decisions/0006-one-overlay-renderer-css-variable-theming.md)). It also checks that both *are* in the Producer app's own bundle, which proves the check works.
 - **Reconnect after restart (`rcl-core/server/src/server.test.ts`).** It restarts the server on the same port and expects a Socket.IO client to reconnect on its own, so OBS outputs can't go stale.
 - **Access inventories (`rcl-core/server/src/auth/route-inventory.test.ts`, `rcl-core/server/src/realtime.test.ts`).** They record every `/api` route and every Socket.IO namespace as it's created, then send each one a request or connection. A route or namespace with no access declaration can't start at all (`src/auth/access.test.ts`). The inventories check that each declaration is enforced ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)):
   - **Pinned:** the public routes and namespaces, and the routes that work while a password change is pending, are listed in the tests, so changing them means changing a test.
@@ -51,17 +51,17 @@ What to test, where the tests live, and how to run them. New code is written tes
 
 Shared components get a story next to them (`Component.stories.tsx`), and every story is also a test, run through its own Vitest config, `vitest.stories.config.ts` ([ADR-0015](../decisions/0015-storybook-admin-and-overlay-kept-apart.md)). `yarn test:stories` renders each one in Chromium and fails on a render error, a failed `play` check, or an accessibility violation.
 
-- **Which Storybook:** admin components (anywhere under `src/` outside `src/overlay`, such as `src/components`) go in the admin Storybook; overlay components (`src/overlay`) in the overlay one.
-- **Server data:** give each story its own answer with a `beforeEach` that stubs `fetch` and restores it (see `ServerStatus.stories.tsx`). A fresh `makeStore()` per story keeps RTK Query empty.
+- **Which Storybook:** the admin Storybook (`rcl-core/web/.storybook/admin`) shows the web SDK's components, and rcl-core's own once it has some: its first story also adds `../../src/**/*.stories.tsx` to that Storybook's `main.ts`, since Storybook warns about a pattern that matches nothing. Overlay components (`rcl-producer/web/src/overlay`) go in the overlay Storybook (`rcl-producer/web/.storybook/overlay`). The Producer app's other components get a dashboard Storybook with their first story.
+- **Server data:** give each story its own answer with a `beforeEach` that stubs `fetch` and restores it (see `packages/web-sdk/src/ServerStatus.stories.tsx`). A fresh `makeStore()` per story keeps RTK Query empty.
 - **Themes in CI:** a story pinned to a sample theme with `globals: { overlayTheme: 'light' }` is checked for contrast like any other.
 - **Isolation:** every overlay story checks for no Mantine variables or stylesheet on the page, and that theme variables reach it, the same check the e2e test makes on the real overlay page.
 
 ## Playwright
 
-- **What it tests:** the real production setup. `e2e/playwright.config.ts` builds the web app and starts the server on port **5590**, separate from the development port 5580, with a throwaway data directory under the OS temp folder. It stops the server afterwards.
+- **What it tests:** the real production setup. `e2e/playwright.config.ts` builds every web app and starts the server on port **5590**, separate from the development port 5580, with a throwaway data directory under the OS temp folder. It stops the server afterwards.
 - **First time on a machine:** run `yarn workspace @rollcall/e2e playwright install chromium`.
 - **Running:** `yarn test:e2e`, or `yarn test:e2e --grep overlay` for a subset.
-- **Scope:** end-to-end tests cover what only a real browser can show: the admin shell loads, the overlay is transparent and loads no Mantine styles, and routes resolve. Logic belongs in Vitest.
+- **Scope:** end-to-end tests cover what only a real browser can show: `/` takes you to `/core/`, each app's shell loads, the overlay at `/producer/overlay` is transparent and loads no Mantine styles, and routes resolve. Logic belongs in Vitest.
 - **Failures in CI:** the workflow uploads the HTML report as the `playwright-report` artifact.
 
 ## What every change needs

@@ -1,6 +1,6 @@
 # Rollcall
 
-A suite of apps for producing roller derby streams in [OBS Studio](https://obsproject.com/): `rcl-core` today, with `rcl-producer` coming. You host it on a laptop at the venue, and anyone on the local network can reach it.
+A suite of apps for producing roller derby streams in [OBS Studio](https://obsproject.com/): `rcl-core` and `rcl-producer`. You host it on a laptop at the venue, and anyone on the local network can reach it.
 
 - **Team Builder**: teams with skaters, bench staff, roles, numbers and photos.
 - **Theme Builder**: shared visual styles such as colors, fonts, borders and corner radius.

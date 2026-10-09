@@ -13,7 +13,7 @@ Basic user accounts and role-based access control. The app runs on a shared venu
 - **R2.** On first run, the app asks for the initial Admin account to be created.
 - **R3.** Admins create users, reset passwords and assign roles.
 - **R4.** Every API route and socket event checks the caller's access on the server: each one is public, open to any signed-in user, or needs a [permission](../product/glossary.md#permission). Hiding UI is not access control ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)).
-- **R5.** OBS browser sources can't log in, so each output will be reached through an unguessable token URL ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)). Until output tokens arrive with Live Mode, `/overlay` is public.
+- **R5.** OBS browser sources can't log in, so each output will be reached through an unguessable token URL ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)). Until output tokens arrive with Live Mode, `/producer/overlay` is public.
 - **R6.** Accounts are local only. There are no external identity providers, because the app runs on the LAN with no internet.
 
 ## Role matrix
@@ -59,7 +59,7 @@ How accounts work is decided in [ADR-0018](../decisions/0018-declared-access-and
 - **There's always an Admin.** The app refuses to delete or demote the last Admin, and an Admin can't delete their own account.
 - **Locked out?** If the only Admin forgets their password, run `yarn workspace @rollcall/core-server reset-password <username>` on the server machine. It prints a temporary password. It refuses if `ROLLCALL_DATA_DIR` has no `rollcall.db`, and prints the path it checked.
 - **Plain HTTP.** The app runs over HTTP on the venue network for now. HTTPS with your own certificate is planned.
-- **OBS outputs** don't log in. `/overlay` is public until output token URLs arrive (R5).
+- **OBS outputs** don't log in. `/producer/overlay` is public until output token URLs arrive (R5).
 
 The pages for setup, login, changing your password and managing users are in progress. Until they ship, these work through the API.
 

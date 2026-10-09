@@ -45,8 +45,10 @@ These workspaces are planned in [ADR-0017](../decisions/0017-rcl-app-workspace-l
 | Workspace | Responsibility |
 |---|---|
 | `rcl-core/server` | REST API, Socket.IO hub, authentication and role checks, SQLite, media storage, one connection per OBS and CRG instance, automation engine, live state |
-| `rcl-core/web` | React SPA for builders, Live Mode and dashboards. A separate lightweight **overlay entry** renders outputs for OBS |
+| `rcl-core/web` | React SPA for rcl-core's admin GUI: setup, sign-in, users and the data editors, served at `/core/` |
 | `rcl-core/contract` | Zod schemas and TypeScript types used by both server and web: API, socket messages, import/export formats |
+| `rcl-producer/web` | React SPA for the builders, Live Mode and dashboards, served at `/producer/`. A separate lightweight **overlay entry** at `/producer/overlay` renders outputs for OBS |
+| `packages/web-sdk` | Code every app's Mantine GUI shares: the app shell, the server badge, the RTK Query base API and store, and the dev proxy. Overlay entries never use it |
 
 ## How data flows
 
