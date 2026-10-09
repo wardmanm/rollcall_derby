@@ -1,14 +1,24 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import Database from 'better-sqlite3';
 import { io as connect, type Socket } from 'socket.io-client';
 import { APP_NAME, SERVER_HELLO_EVENT, ServerHelloSchema } from '@rollcall/core-contract';
 import { startServer, type RunningServer } from './server.ts';
 import { openDatabase } from './db.ts';
 import { sessions } from './db/schema.ts';
+import { dummyHash } from './auth/passwords.ts';
+import type * as Passwords from './auth/passwords.ts';
 import { createSession } from './auth/sessions.ts';
 import { createUser } from './auth/users.ts';
+
+// Wraps dummyHash in a spy that still hashes, so a test can see when startServer first asks for it.
+vi.mock('./auth/passwords.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof Passwords>();
+  return { ...actual, dummyHash: vi.fn<typeof actual.dummyHash>(actual.dummyHash) };
+});
 
 let running: RunningServer | undefined;
 let client: Socket | undefined;
@@ -111,6 +121,42 @@ describe('startServer', () => {
       expect(() => purge?.()).not.toThrow();
     } finally {
       spy.mockRestore();
+    }
+  });
+});
+
+describe('startServer at startup', () => {
+  it('hashes the stand-in password before it listens, so the first failed login is as slow as the rest', async () => {
+    dataDir = mkdtempSync(join(tmpdir(), 'op-server-'));
+    vi.mocked(dummyHash).mockClear();
+    running = await startServer(
+      { host: '127.0.0.1', port: 0, dataDir, webDir: join(dataDir, 'no-web-build') },
+      { version: '1.0.0', logger: false },
+    );
+    expect(dummyHash).toHaveBeenCalledOnce();
+    await expect(vi.mocked(dummyHash).mock.results[0]?.value).resolves.toMatch(/^\$argon2id\$/);
+  });
+
+  it('closes the database and stops its timer when it cannot listen', async () => {
+    dataDir = mkdtempSync(join(tmpdir(), 'op-server-'));
+    const blocker = createServer();
+    await new Promise<void>((resolve) => blocker.listen(0, '127.0.0.1', resolve));
+    const { port } = blocker.address() as { port: number };
+    const close = vi.spyOn(Database.prototype, 'close');
+    const clearTimer = vi.spyOn(globalThis, 'clearInterval');
+    try {
+      await expect(
+        startServer(
+          { host: '127.0.0.1', port, dataDir, webDir: join(dataDir, 'no-web-build') },
+          { version: '1.0.0', logger: false },
+        ),
+      ).rejects.toThrow('EADDRINUSE');
+      expect(close).toHaveBeenCalledOnce();
+      expect(clearTimer).toHaveBeenCalled();
+    } finally {
+      close.mockRestore();
+      clearTimer.mockRestore();
+      await new Promise<void>((resolve) => blocker.close(() => resolve()));
     }
   });
 });

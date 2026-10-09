@@ -1,5 +1,6 @@
 import { buildApp } from './app.ts';
 import { createPermissions } from './auth/access.ts';
+import { dummyHash } from './auth/passwords.ts';
 import { CORE_PERMISSIONS } from './auth/permissions.ts';
 import { purgeExpiredSessions } from './auth/sessions.ts';
 import type { ServerConfig } from './config.ts';
@@ -46,7 +47,15 @@ export async function startServer(
     sqlite.close();
   });
 
-  await app.listen({ host: config.host, port: config.port });
+  try {
+    // Hash the stand-in password now, so the first failed login takes as long as later ones.
+    await dummyHash();
+    await app.listen({ host: config.host, port: config.port });
+  } catch (error) {
+    // The port is taken, or a route's access declaration is wrong: release the database, timer and sockets.
+    await app.close();
+    throw error;
+  }
   const address = app.server.address();
   if (!address || typeof address === 'string') throw new Error(`Unexpected server address: ${String(address)}`);
   const { port } = address;
