@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Provider } from 'react-redux';
 import { expect } from 'storybook/test';
-import { makeStore } from '../store/store.ts';
+import { makeStore } from './store.ts';
 import { ServerStatus } from './ServerStatus.tsx';
 
 const HEALTH = { status: 'ok', name: 'Rollcall', version: '0.2.0', uptimeSeconds: 42 };

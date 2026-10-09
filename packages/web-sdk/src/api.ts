@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { HealthResponse } from '@rollcall/core-contract';
-import { parseHealth } from '../health.ts';
+import { parseHealth } from './health.ts';
 
 // All server data lives in RTK Query, never copied into slices (hard rule 6, ADR-0003).
 // Responses are validated against the shared Zod contract (ADR-0007).

@@ -1,12 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
-
-// In development the Vite dev server proxies API, Socket.IO and API explorer (/docs) traffic to the
-// Rollcall server, so the browser only ever talks to one origin (ADR-0004). Object entries, not the string
-// shorthand: the shorthand sets `changeOrigin`, which rewrites `Host`, and the server's CSRF check compares
-// `Origin` with `Host`.
-const server = process.env.ROLLCALL_DEV_SERVER ?? 'http://localhost:5580';
+import { serverProxy } from '@rollcall/web-sdk/vite';
 
 // Two pages: the admin app (index.html) and the lean OBS overlay (overlay.html, ADR-0006).
 const page = (file: string) => fileURLToPath(new URL(file, import.meta.url));
@@ -29,13 +24,8 @@ const overlayRoute: Plugin = {
 
 export default defineConfig({
   plugins: [react(), overlayRoute],
-  server: {
-    proxy: {
-      '/api': { target: server },
-      '/docs': { target: server },
-      '/socket.io': { target: server, ws: true },
-    },
-  },
+  // In development Vite passes API, Socket.IO and API explorer traffic to the Rollcall server (ADR-0004).
+  server: { proxy: serverProxy() },
   build: {
     rolldownOptions: {
       input: { main: page('./index.html'), overlay: page('./overlay.html') },

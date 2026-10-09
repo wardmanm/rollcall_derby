@@ -8,6 +8,7 @@
   },
   "workspaces": [
     "rcl-core/*",
+    "packages/*",
     "e2e"
   ],
   "scripts": {

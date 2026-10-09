@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config';
 
-// `yarn test` runs every workspace: Node for server and contract, jsdom + React for the web app.
+// `yarn test` runs every workspace: Node for server and contract, jsdom + React for the web apps and the web SDK.
 // Story tests have their own config (vitest.stories.config.ts), so this file never loads Storybook's plugin.
 export default defineConfig({
   test: {
@@ -15,8 +15,17 @@ export default defineConfig({
       {
         extends: './rcl-core/web/vite.config.ts',
         test: {
-          name: 'web',
+          name: 'core-web',
           root: './rcl-core/web',
+          include: ['src/**/*.test.{ts,tsx}'],
+          environment: 'jsdom',
+          setupFiles: ['../../packages/web-sdk/src/test/setup.ts'],
+        },
+      },
+      {
+        test: {
+          name: 'web-sdk',
+          root: './packages/web-sdk',
           include: ['src/**/*.test.{ts,tsx}'],
           environment: 'jsdom',
           setupFiles: ['src/test/setup.ts'],

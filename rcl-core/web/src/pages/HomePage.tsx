@@ -1,5 +1,5 @@
 import { Card, Stack, Text, Title } from '@mantine/core';
-import { useGetHealthQuery } from '../store/api.ts';
+import { useGetHealthQuery } from '@rollcall/web-sdk';
 
 export function HomePage() {
   const { data } = useGetHealthQuery();

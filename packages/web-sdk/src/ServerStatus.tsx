@@ -1,5 +1,5 @@
 import { Badge, Loader } from '@mantine/core';
-import { useGetHealthQuery } from '../store/api.ts';
+import { useGetHealthQuery } from './api.ts';
 
 // Header badge showing whether the Rollcall server answers, re-checked every 10 seconds.
 export function ServerStatus() {

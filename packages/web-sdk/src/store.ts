@@ -1,7 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { api } from './api.ts';
 
-// The admin and dashboard store. The overlay entry gets its own lean store (ADR-0006).
+// The store for an rcl app's GUI. Overlay entries get their own lean store (ADR-0006).
 export function makeStore() {
   return configureStore({
     reducer: { [api.reducerPath]: api.reducer },
