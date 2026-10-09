@@ -23,6 +23,16 @@ export default defineConfig({
         },
       },
       {
+        extends: './rcl-producer/web/vite.config.ts',
+        test: {
+          name: 'producer-web',
+          root: './rcl-producer/web',
+          include: ['src/**/*.test.{ts,tsx}'],
+          environment: 'jsdom',
+          setupFiles: ['../../packages/web-sdk/src/test/setup.ts'],
+        },
+      },
+      {
         test: {
           name: 'web-sdk',
           root: './packages/web-sdk',

@@ -6,6 +6,7 @@ import { purgeExpiredSessions } from './auth/sessions.ts';
 import type { ServerConfig } from './config.ts';
 import { openDatabase } from './db.ts';
 import { attachRealtime } from './realtime.ts';
+import { installedWebApps } from './web-apps.ts';
 
 export interface RunningServer {
   url: string;
@@ -19,7 +20,8 @@ export async function startServer(
 ): Promise<RunningServer> {
   const { db, sqlite } = openDatabase(config.dataDir);
   const permissions = createPermissions(CORE_PERMISSIONS);
-  const app = buildApp({ version, logger, webDir: config.webDir, db, apiDocs: config.apiDocs, permissions });
+  const webApps = installedWebApps(config.webDir);
+  const app = buildApp({ version, logger, webApps, db, apiDocs: config.apiDocs, permissions });
   const io = attachRealtime(app.server, { version, db, log: app.log, permissions });
 
   // Expired sessions are already ignored; this just keeps the table small.

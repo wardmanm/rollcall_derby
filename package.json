@@ -8,12 +8,13 @@
   },
   "workspaces": [
     "rcl-core/*",
+    "rcl-producer/*",
     "packages/*",
     "e2e"
   ],
   "scripts": {
     "dev": "yarn workspaces foreach --all --exclude rollcall --parallel --interlaced run dev",
-    "build": "yarn workspace @rollcall/core-web build",
+    "build": "yarn workspaces foreach --all --exclude rollcall run build",
     "start": "yarn workspace @rollcall/core-server start",
     "typecheck": "yarn workspaces foreach --all --exclude rollcall --parallel run typecheck",
     "lint": "oxlint",
@@ -24,7 +25,7 @@
     "test:e2e": "yarn workspace @rollcall/e2e test",
     "test:scripts": "node --test \"scripts/*.test.mjs\"",
     "docs:check": "node scripts/check-docs.mjs",
-    "storybook": "yarn workspace @rollcall/core-web storybook",
+    "storybook": "yarn workspace @rollcall/producer-web storybook & yarn workspace @rollcall/core-web storybook",
     "check": "yarn typecheck && yarn lint && yarn format:check && yarn test && yarn test:scripts && yarn docs:check"
   },
   "devDependencies": {

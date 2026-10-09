@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
-    "storybook": "storybook dev -c .storybook/overlay -p 6007 --host localhost --exact-port --no-open --no-version-updates & storybook dev -c .storybook/admin -p 6006 --host localhost --exact-port --no-version-updates"
+    "storybook": "storybook dev -c .storybook/admin -p 6006 --host localhost --exact-port --no-version-updates"
   },
   "dependencies": {
     "@mantine/core": "^9.6.3",
@@ -19,8 +19,7 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-redux": "^9.3.0",
-    "react-router": "^8.4.0",
-    "socket.io-client": "^4.8.4"
+    "react-router": "^8.4.0"
   },
   "devDependencies": {
     "@storybook/addon-a11y": "^10.6.1",

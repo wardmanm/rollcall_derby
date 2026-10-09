@@ -1,7 +1,4 @@
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import Fastify, { type FastifyInstance, type RouteOptions } from 'fastify';
-import fastifyStatic from '@fastify/static';
 import fastifyCookie from '@fastify/cookie';
 import fastifyRateLimit from '@fastify/rate-limit';
 import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fastify-type-provider-zod';
@@ -15,12 +12,13 @@ import { registerApiDocs } from './openapi.ts';
 import { registerAuthRoutes } from './routes/auth.ts';
 import { registerSetupRoutes } from './routes/setup.ts';
 import { registerUserRoutes } from './routes/users.ts';
+import { serveWebApps, type WebApp } from './web-apps.ts';
 
 export interface AppOptions {
   version: string;
   logger?: boolean;
-  /** Directory holding the web app's production build. Skipped if it doesn't exist (e.g. in development). */
-  webDir?: string;
+  /** The rcl apps' web builds to serve, each below its own base. */
+  webApps?: readonly WebApp[];
   db: AppDatabase;
   /** Every permission routes may need (ADR-0018). Defaults to core's own; tests add others. */
   permissions?: Permissions;
@@ -36,7 +34,7 @@ export interface AppOptions {
 export function buildApp({
   version,
   logger = false,
-  webDir,
+  webApps = [],
   db,
   registerRoutes,
   onRoute,
@@ -88,21 +86,7 @@ export function buildApp({
     registerRoutes?.(api);
   });
 
-  if (webDir && existsSync(join(webDir, 'index.html'))) serveWebBuild(app, webDir);
+  serveWebApps(app, webApps);
 
   return app;
-}
-
-// Serves the web build: real files as-is; /overlay and below get the OBS overlay page (ADR-0006);
-// any other GET outside /api and /socket.io gets the admin app so client-side routes like /teams/42 load.
-function serveWebBuild(app: FastifyInstance, webDir: string) {
-  void app.register(fastifyStatic, { root: webDir, wildcard: false });
-  app.setNotFoundHandler((request, reply) => {
-    const isAppRoute = request.method === 'GET' && !/^\/(api|socket\.io)(\/|$)/.test(request.url);
-    if (isAppRoute && /^\/overlay(\/|$|\?)/.test(request.url)) return reply.type('text/html').sendFile('overlay.html');
-    if (isAppRoute) return reply.type('text/html').sendFile('index.html');
-    return reply
-      .code(404)
-      .send({ message: `Route ${request.method}:${request.url} not found`, error: 'Not Found', statusCode: 404 });
-  });
 }
