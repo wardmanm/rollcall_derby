@@ -7,20 +7,18 @@ import { PRODUCER_BASE } from './src/base.ts';
 // Two pages: the Producer app (index.html) and the lean OBS overlay (overlay.html, ADR-0006).
 const page = (file: string) => fileURLToPath(new URL(file, import.meta.url));
 
-// Serve the overlay at /producer/overlay in development too, matching the production server: real files (and
-// other tools' own paths, such as the overlay Storybook's config files) win, and only an unmatched
-// /producer/overlay request falls back to the overlay page. Returning a function from configureServer runs this
-// after Vite's own middlewares, the same precedence as the production server's not-found handler
-// (rcl-core/server/src/web-apps.ts).
+// Serve the overlay at /producer/overlay and everything below it in development too, as the production server
+// does (rcl-core/server/src/web-apps.ts). This runs before Vite's own middlewares: after them, the URL has already
+// been rewritten to index.html. No real file lives below /producer/overlay, so nothing else is shadowed.
+const OVERLAY_PATH = /^\/producer\/overlay(?:\/[^?]*)?(\?.*)?$/;
 const overlayRoute: Plugin = {
   name: 'rollcall-overlay-route',
   configureServer(dev) {
-    return () => {
-      dev.middlewares.use((req, _res, next) => {
-        if (req.url && /^\/producer\/overlay(\/|$|\?)/.test(req.url)) req.url = '/producer/overlay.html';
-        next();
-      });
-    };
+    dev.middlewares.use((req, _res, next) => {
+      const match = req.url ? OVERLAY_PATH.exec(req.url) : null;
+      if (match) req.url = `/producer/overlay.html${match[1] ?? ''}`;
+      next();
+    });
   },
 };
 
