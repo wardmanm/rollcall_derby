@@ -1,4 +1,6 @@
 import { buildApp } from './app.ts';
+import { createPermissions } from './auth/access.ts';
+import { CORE_PERMISSIONS } from './auth/permissions.ts';
 import { purgeExpiredSessions } from './auth/sessions.ts';
 import type { ServerConfig } from './config.ts';
 import { openDatabase } from './db.ts';
@@ -15,8 +17,9 @@ export async function startServer(
   { version, logger = true }: { version: string; logger?: boolean },
 ): Promise<RunningServer> {
   const { db, sqlite } = openDatabase(config.dataDir);
-  const app = buildApp({ version, logger, webDir: config.webDir, db, apiDocs: config.apiDocs });
-  const io = attachRealtime(app.server, { version, db, log: app.log });
+  const permissions = createPermissions(CORE_PERMISSIONS);
+  const app = buildApp({ version, logger, webDir: config.webDir, db, apiDocs: config.apiDocs, permissions });
+  const io = attachRealtime(app.server, { version, db, log: app.log, permissions });
 
   // Expired sessions are already ignored; this just keeps the table small.
   purgeExpiredSessions(db);
