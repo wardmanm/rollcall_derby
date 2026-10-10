@@ -70,7 +70,7 @@ Everything is on one port:
 - **Admin app:** `http://localhost:5580`, which goes to `/core/`
 - **Producer app:** `http://localhost:5580/producer/`
 - **OBS overlay:** `http://localhost:5580/producer/overlay`
-- **Health check:** `http://localhost:5580/api/health`
+- **Health check:** `http://localhost:5580/api/core/health`
 
 The server listens on every network interface, so other devices on the venue network can use `http://<this machine's IP>:5580`.
 
@@ -93,7 +93,7 @@ The names are prefixed because shells such as zsh already set `HOST` to the mach
 
 `yarn dev` also serves an API explorer (Swagger UI) at `http://localhost:5173/docs`. It lists every `/api` route with its request and response shapes, generated from the shared schemas, so it's always current ([ADR-0014](../decisions/0014-route-schemas-and-api-explorer.md)).
 
-1. Open `POST /api/auth/login`, choose **Try it out**, and log in. On a fresh data folder, create the first Admin with `POST /api/setup` first.
+1. Open `POST /api/core/auth/login`, choose **Try it out**, and log in. On a fresh data folder, create the first Admin with `POST /api/core/setup` first. Each rcl app's routes are below `/api/<app>/`.
 2. Your browser keeps the session cookie, so every later call runs as you, limited by your role.
 
 On a venue server the explorer is off. To turn it on, start the server with `ROLLCALL_API_DOCS=1` and open `http://<server>:5580/docs`.
@@ -159,5 +159,5 @@ How tests are organized is in [Testing](testing.md).
 | `EADDRINUSE`, or `Port … is already in use`, on 5580, 5173 or 5174 | Another copy is still running. Find it with `lsof -nP -iTCP:5580 -sTCP:LISTEN` (or that port) and stop it |
 | `YN0016 … quarantined` during `yarn add` / `yarn up` | That version was published less than 24 hours ago. Pick the previous one for now |
 | Admin badge says **Server unreachable** in dev | Start the server too (`yarn dev` starts both), or point `ROLLCALL_DEV_SERVER` at it |
-| Overlay page is blank | It stays empty until the server answers over Socket.IO. Check `/api/health` on the same host |
+| Overlay page is blank | It stays empty until the server answers over Socket.IO. Check `/api/core/health` on the same host |
 | Locked out: the only Admin forgot their password | On the server machine, run `yarn workspace @rollcall/core-server reset-password <username>`. It prints a temporary password; log in with it and choose a new one |

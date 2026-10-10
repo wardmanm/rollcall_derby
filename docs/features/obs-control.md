@@ -5,7 +5,7 @@ summary: Switch scenes, trigger hotkeys and toggle sources in OBS from producer 
 ---
 # OBS Control
 
-Producers control OBS from the same dashboards they use to run overlays. The server holds the only connection to each OBS instance and sends commands on behalf of dashboards ([ADR-0004](../decisions/0004-server-is-the-hub.md)).
+Producers control OBS from the same dashboards they use to run overlays. The server holds the only connection to each OBS instance and sends commands on behalf of dashboards ([ADR-0019](../decisions/0019-rcl-apps-as-modules.md)).
 
 ## Users and roles
 

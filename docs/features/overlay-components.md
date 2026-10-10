@@ -20,7 +20,7 @@ Admins place and configure components in the Screen Builder. Producers, and Anno
 ## Requirements
 
 - **R1.** Each component type declares:
-  - its **options schema** (a Zod schema, [ADR-0007](../decisions/0007-shared-zod-contract.md)), which the builder uses to render the options form and validate input;
+  - its **options schema** (a Zod schema, [ADR-0019](../decisions/0019-rcl-apps-as-modules.md)), which the builder uses to render the options form and validate input;
   - its **data needs**, such as a team, a game or CRG state;
   - its **live controls**, such as show/hide or "next page".
 - **R2.** Components are presentational. They receive options, data and theme through props and CSS variables, and never read the admin store or talk to the server themselves ([ADR-0006](../decisions/0006-one-overlay-renderer-css-variable-theming.md)).

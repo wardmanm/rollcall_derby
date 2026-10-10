@@ -21,7 +21,7 @@ Admins and Producers can create and edit teams. See the [role matrix](users-and-
   - a name;
   - a number (skaters). Numbers are stored as **text**, not integers, so that numbers such as `00` and `07` keep their leading zeros.
 - **R4.** Each member can have one or more roles, such as captain, alt captain or bench coach.
-- **R5.** Each member can have a photo. Photos are uploaded to the server and served from the local network, because nothing can depend on the internet ([ADR-0004](../decisions/0004-server-is-the-hub.md)).
+- **R5.** Each member can have a photo. Photos are uploaded to the server and served from the local network, because nothing can depend on the internet ([ADR-0019](../decisions/0019-rcl-apps-as-modules.md)).
 - **R6.** Teams can be exported and imported as JSON ([import / export](import-export.md)).
 
 ## Behavior

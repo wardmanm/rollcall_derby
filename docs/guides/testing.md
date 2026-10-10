@@ -20,14 +20,14 @@ What to test, where the tests live, and how to run them. New code is written tes
 ## Vitest
 
 - **Projects, set in `vitest.config.ts`:**
-  - **`node`:** `rcl-core/contract` and `rcl-core/server`, in Node.
+  - **`node`:** every app's `server` and `contract`, such as `rcl-core/server`, in Node.
   - **`core-web`**, **`producer-web`** and **`web-sdk`:** `rcl-core/web`, `rcl-producer/web` and `packages/web-sdk`, in jsdom, all with `packages/web-sdk/src/test/setup.ts`.
-- **One web test needs real Node APIs.** It opts out of jsdom with `// @vitest-environment node` at the top of the file (the overlay bundle check below).
+- **A few web tests need real Node APIs:** the dev proxy checks, the dev overlay route and the overlay bundle check. Each opts out of jsdom with `// @vitest-environment node` at the top of the file.
 - **Running a subset:** `yarn vitest run <path or name>`, e.g. `yarn vitest run rcl-core/server` or `yarn vitest run -t "health"`. `yarn vitest` watches for changes.
 
 ### Patterns used here
 
-- **Server routes:** `testApp()` from `rcl-core/server/src/testing.ts` builds the Fastify app on a private in-memory SQLite database without listening, so `app.inject({ method: 'GET', url: '/api/health' })` tests a route in memory. `addUser(db, username, password, role)` adds an account, and `createSession(db, userId)` gives you a token to send as the `rollcall_session` cookie. Pass `registerRoutes` to add a throwaway route, with `config: { access: … }` like any route (see `rcl-core/server/src/auth/access.test.ts`). Use `startServer()` with `port: 0` only when you need a real socket or the on-disk data directory (see `rcl-core/server/src/server.test.ts`).
+- **Server routes:** `testApp()` from `rcl-core/server/src/testing.ts` builds the Fastify app on a private in-memory SQLite database without listening, so `app.inject({ method: 'GET', url: '/api/core/health' })` tests a route in memory. `addUser(db, username, password, role)` adds an account, and `createSession(db, userId)` gives you a token to send as the `rollcall_session` cookie. Pass `registerRoutes` to add a throwaway route below `/api/core/`, with `config: { access: … }` like any route, or `apps` to host a throwaway app module with its own routes, namespaces and permissions (see `rcl-core/server/src/auth/access.test.ts`). Use `startServer()` with `port: 0` only when you need a real socket or the on-disk data directory (see `rcl-core/server/src/server.test.ts`).
 - **Files and databases:** create a temp directory per test (`mkdtempSync(join(tmpdir(), '…'))`) and remove it in `afterEach`. Never touch `data/`.
 - **RTK Query:** stub `fetch` with `vi.stubGlobal('fetch', …)` and dispatch the endpoint (`packages/web-sdk/src/api.test.ts`). The API's base URL is absolute so Node's `fetch` accepts it.
 - **Socket.IO in the overlay:** inject a fake socket through `makeOverlayStore(() => fakeSocket)` and emit events by hand (`rcl-producer/web/src/overlay/live.test.ts`).
@@ -37,6 +37,8 @@ What to test, where the tests live, and how to run them. New code is written tes
 ### Guards that protect the architecture
 
 - **Overlay bundle (`rcl-producer/web/src/overlay/bundle.test.ts`).** It runs a real Vite build of the Producer app and fails if any Mantine or web SDK module reaches the overlay bundle ([ADR-0006](../decisions/0006-one-overlay-renderer-css-variable-theming.md)). It also checks that both *are* in the Producer app's own bundle, which proves the check works.
+- **Boundaries (`scripts/check-boundaries.test.mjs`).** It fails if an app's server depends on rcl-core's server or on another app's, if rcl-core's server imports an app anywhere but `src/installed-apps.ts`, or if any workspace imports a `@rollcall` package it doesn't list ([ADR-0019](../decisions/0019-rcl-apps-as-modules.md)). Fixture repos prove each rule fires.
+- **Installed apps (`rcl-core/server/src/installed-apps.test.ts`).** Every installed app must accept the current rcl-core version, and its migrations may only create tables named after it (`<id>_…`).
 - **Reconnect after restart (`rcl-core/server/src/server.test.ts`).** It restarts the server on the same port and expects a Socket.IO client to reconnect on its own, so OBS outputs can't go stale.
 - **Access inventories (`rcl-core/server/src/auth/route-inventory.test.ts`, `rcl-core/server/src/realtime.test.ts`).** They record every `/api` route and every Socket.IO namespace as it's created, then send each one a request or connection. A route or namespace with no access declaration can't start at all (`src/auth/access.test.ts`). The inventories check that each declaration is enforced ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)):
   - **Pinned:** the public routes and namespaces, and the routes that work while a password change is pending, are listed in the tests, so changing them means changing a test.

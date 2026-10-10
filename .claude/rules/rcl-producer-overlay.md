@@ -11,7 +11,7 @@ paths:
   - Styling uses CSS modules and theme custom properties (`--theme-*`) only, never hard-coded colors or fonts.
   - Fonts are local only (hard rule 4).
   - Get a story next to them, in the overlay Storybook, which never loads Mantine (ADR-0015).
-- **Live state** comes only from Socket.IO, into the RTK Query cache in `live.ts` (hard rule 6), and is validated with shared schemas.
+- **Live state** comes only from Socket.IO, the `/producer/overlay` namespace, into the RTK Query cache in `live.ts` (hard rule 6), and is validated with schemas from `@rollcall/producer-contract`.
   - A reload rebuilds state from the server.
   - A disconnect keeps the last state.
   - Render nothing until the server has spoken.

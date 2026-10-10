@@ -1,9 +1,12 @@
 ---
 title: Shared Zod contract
-status: accepted
+status: superseded
+superseded_by: "0019"
 date: 2026-09-28
 ---
 # 0007. Shared Zod contract
+
+> **Superseded by [ADR-0019](0019-rcl-apps-as-modules.md):** each rcl app has its own Zod contract (`rcl-<app>/contract`), with the same rules.
 
 ## Context
 

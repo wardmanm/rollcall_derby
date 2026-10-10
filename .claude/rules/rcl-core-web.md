@@ -10,7 +10,7 @@ paths:
 - **Server data lives only in RTK Query**, never copied into slices (hard rule 6, ADR-0003).
   - Slices are for client-only state.
   - Use `useAppDispatch` and `useAppSelector` from the web SDK, never the untyped hooks.
-- **Validate responses** with the shared Zod schemas in `transformResponse` (ADR-0007).
+- **Validate responses** with the shared Zod schemas in `transformResponse` (ADR-0019).
 - **Admin UI:** Mantine 9 and React Router 8 (ADR-0017). Routes live in `src/routes.tsx`, and each area's behavior is specified in `docs/features/*.md`. Update that page in the same change.
 - **Testing:** React Testing Library in jsdom; see `docs/guides/testing.md`.
 - **Shared admin components** get a story next to them, in the admin Storybook (ADR-0015). The first one also adds `'../../src/**/*.stories.tsx'` to `.storybook/admin/main.ts`. See `docs/guides/testing.md#stories`.

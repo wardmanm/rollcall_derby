@@ -21,7 +21,7 @@ Admins create and edit themes. Producers use existing themes. See the [role matr
   - border thickness
 - **R3.** A theme compiles to CSS custom properties, e.g. `--theme-color-primary`. Overlay components style themselves **only** through these properties. They never hard-code colors or fonts.
 - **R4.** While editing, a theme is previewed live on sample overlay components.
-- **R5.** Fonts work offline. Font files are uploaded or bundled and served by our server, never loaded from a font CDN ([ADR-0004](../decisions/0004-server-is-the-hub.md)).
+- **R5.** Fonts work offline. Font files are uploaded or bundled and served by our server, never loaded from a font CDN ([ADR-0019](../decisions/0019-rcl-apps-as-modules.md)).
 - **R6.** Themes can be exported and imported as JSON, including their font files ([import / export](import-export.md)).
 
 ## Behavior

@@ -4,4 +4,4 @@
 
 These add to the repo-root `CLAUDE.md`. Shared rules belong in `AGENTS.md` above, not here.
 
-- **Path-scoped rules** for this app are `.claude/rules/rcl-producer-{web,overlay}.md` at the repo root. Update them in the same change when code here moves.
+- **Path-scoped rules** for this app are `.claude/rules/rcl-producer-{server,contract,web,overlay}.md` at the repo root. Update them in the same change when code here moves.

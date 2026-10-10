@@ -6,13 +6,15 @@ paths:
 
 - **Hard rules 1–5** in `AGENTS.md` apply here:
   - CRG is listen-only (ADR-0005).
-  - The server is the hub and works offline (ADR-0004).
+  - The server is the hub and works offline (ADR-0019).
   - Authorization happens on the server (ADR-0018).
 - **TypeScript runs directly on Node (ADR-0013):** `.ts` import extensions, erasable syntax only, no build step.
-- **Routes go in `buildApp()`** (`src/app.ts`) so `app.inject()` can test them. Database, Socket.IO and listening are wired in `startServer()` (`src/server.ts`).
-- **Routes declare their schemas** (ADR-0007, ADR-0014).
+- **This server hosts every rcl app as a module** (ADR-0019). `src/apps.ts` runs the startup checks and migrations, `src/app.ts` mounts each app's routes below `/api/<id>/`, and `src/realtime.ts` its namespaces. Database, Socket.IO and listening are wired in `startServer()` (`src/server.ts`).
+  - Installed apps are listed in `src/installed-apps.ts`, the only file that may import an app's server (`scripts/check-boundaries.test.mjs`).
+  - Core's own routes go in its module, `src/core-app.ts`, with paths relative to `/api/core` (`/users`, not `/api/core/users`), so `app.inject()` can test them.
+- **Routes declare their schemas** (ADR-0019, ADR-0014).
   - Use `fastify.withTypeProvider<ZodTypeProvider>()`.
-  - Give every `/api` route `schema: { tags, summary, body?, params?, response: { <status>: Schema, ...ERROR_RESPONSES } }`, with schemas from `@rollcall/core-contract`.
+  - Give every `/api` route `schema: { tags, summary, body?, params?, response: { <status>: Schema, ...ERROR_RESPONSES } }`, with schemas from `@rollcall/core-contract`. Tags are named `core/<area>`.
   - Fastify validates and serializes with them, so don't parse bodies by hand.
   - Socket payloads are validated with shared schemas too.
 - **Every `/api` route declares who may call it** (hard rule 5, ADR-0018).
@@ -20,7 +22,7 @@ paths:
   - A new permission goes in `CORE_PERMISSIONS` (`src/auth/permissions.ts`) and in the table on `docs/features/users-and-access.md`. A test keeps the two in step.
   - The server won't start with a missing or wrong declaration. Don't write your own role checks; read the caller from `request.principal`.
   - A handler that awaits before it writes calls `request.recheckAccess()` after the await.
-- **Socket.IO:** create namespaces only with `realtime.namespace(name, { access })` in `src/realtime.ts`. `/` refuses everyone. `/overlay` is public until output token URLs arrive.
+- **Socket.IO:** each app creates its namespaces with `rt.namespace(name, { access })` in its module's `realtime()`, at or below `/<id>`. `/` refuses everyone.
 - **Database changes:**
   1. Edit `src/db/schema.ts`.
   2. Run `yarn workspace @rollcall/core-server db:generate --name <change>`.

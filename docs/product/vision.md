@@ -40,7 +40,7 @@ Exact permissions are in [users and access](../features/users-and-access.md#role
 
 - **No scoring and no score displays.** CRG owns scores, clocks and its own scoreboard overlay. We build roster and custom game-data displays. ([ADR-0005](../decisions/0005-crg-is-listen-only.md))
 - **Never write to CRG.** We only listen. ([ADR-0005](../decisions/0005-crg-is-listen-only.md))
-- **No internet hosting and no cloud dependencies.** It runs on a machine on the venue network and must work with no internet connection. ([ADR-0004](../decisions/0004-server-is-the-hub.md))
+- **No internet hosting and no cloud dependencies.** It runs on a machine on the venue network and must work with no internet connection. ([ADR-0019](../decisions/0019-rcl-apps-as-modules.md))
 - **Not a replacement for OBS.** OBS still does capture, mixing, encoding and streaming. We supply browser sources and send OBS commands.
 
 ## What success looks like

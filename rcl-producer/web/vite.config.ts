@@ -26,7 +26,7 @@ export default defineConfig({
   base: PRODUCER_BASE,
   plugins: [react(), overlayRoute],
   // Reached through rcl-core's Vite (the front door) at /producer/, or directly on its own port. Either way it passes
-  // API, Socket.IO and API explorer traffic to the Rollcall server (ADR-0004).
+  // API, Socket.IO and API explorer traffic to the Rollcall server (ADR-0019).
   server: { port: DEV_PORTS.producer, strictPort: true, proxy: serverProxy() },
   build: {
     rolldownOptions: {

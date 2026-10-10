@@ -7,7 +7,7 @@ How Rollcall fits together. This page describes the **intended** architecture, s
 
 ## System at a glance
 
-Everything runs on the venue network and nothing needs the internet ([ADR-0004](../decisions/0004-server-is-the-hub.md)).
+Everything runs on the venue network and nothing needs the internet ([ADR-0019](../decisions/0019-rcl-apps-as-modules.md)).
 
 ```mermaid
 flowchart LR
@@ -44,17 +44,20 @@ These workspaces are planned in [ADR-0017](../decisions/0017-rcl-app-workspace-l
 
 | Workspace | Responsibility |
 |---|---|
-| `rcl-core/server` | REST API, Socket.IO hub, authentication and role checks, SQLite, media storage, one connection per OBS and CRG instance, automation engine, live state |
+| `rcl-core/server` | The one server process: hosts every rcl app as a module ([ADR-0019](../decisions/0019-rcl-apps-as-modules.md)), plus core's own REST API, Socket.IO hub, accounts and access checks, SQLite, media storage, one connection per OBS and CRG instance, automation engine and live state |
 | `rcl-core/web` | React SPA for rcl-core's admin GUI: setup, sign-in, users and the data editors, served at `/core/` |
-| `rcl-core/contract` | Zod schemas and TypeScript types used by both server and web: API, socket messages, import/export formats |
+| `rcl-core/contract` | Zod schemas and TypeScript types for core's API, socket messages and import/export formats, used by server and web |
+| `rcl-producer/server` | The Producer app's module: its routes, namespaces (such as the overlay's `/producer/overlay`) and tables, hosted by rcl-core |
+| `rcl-producer/contract` | Zod schemas and types for the Producer app's API and socket messages |
 | `rcl-producer/web` | React SPA for the builders, Live Mode and dashboards, served at `/producer/`. A separate lightweight **overlay entry** at `/producer/overlay` renders outputs for OBS |
+| `packages/app-sdk` | The types an app module is written against: `AppModule`, `AppContext`, `Access` and permissions |
 | `packages/web-sdk` | Code every app's Mantine GUI shares: the app shell, the server badge, the RTK Query base API and store, and the dev proxy. Overlay entries never use it |
 
 ## How data flows
 
 **Setup time.** The admin UI reads and writes teams, themes and screens through the REST API. In the browser, that data lives in the RTK Query cache ([ADR-0003](../decisions/0003-client-state-with-redux-toolkit.md)).
 
-**Live.** The server is the single authority for live state ([ADR-0004](../decisions/0004-server-is-the-hub.md)).
+**Live.** The server is the single authority for live state ([ADR-0019](../decisions/0019-rcl-apps-as-modules.md)).
 
 1. When CRG pushes a state update to the server's listener for that track:
    1. The listener diffs the update against the previous state and detects game events ([CRG integration](integrations/crg-scoreboard.md#detecting-game-events)).
@@ -68,17 +71,17 @@ These workspaces are planned in [ADR-0017](../decisions/0017-rcl-app-workspace-l
 3. Outputs, dashboard previews and the builder canvas all render with the same presentational overlay components, so every view matches what's on air ([ADR-0006](../decisions/0006-one-overlay-renderer-css-variable-theming.md)).
 4. When an output reloads, whether OBS restarted it or it was hidden and shown again, it rebuilds its entire state from the server.
 
-**Socket.IO namespaces.** Each namespace declares who may join, as each API route does ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)). `/overlay` is public, so OBS outputs need no login until output token URLs arrive. Signed-in namespaces, such as Live Mode's dashboards, check the session cookie when a client connects. The bare `/` namespace refuses everyone.
+**Socket.IO namespaces.** Each rcl app has its own namespaces, at or below `/<id>`, and each one declares who may join, as each API route does ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)). The OBS overlay's `/producer/overlay` is public, so OBS outputs need no login until output token URLs arrive. Signed-in namespaces, such as Live Mode's dashboards, check the session cookie when a client connects. The bare `/` namespace refuses everyone.
 
 ## Key decisions
 
 Summaries only. The ADRs are canonical.
 
 - [ADR-0003](../decisions/0003-client-state-with-redux-toolkit.md): Redux Toolkit; server data only in RTK Query.
-- [ADR-0004](../decisions/0004-server-is-the-hub.md): The server owns live state and all external connections, and the app works offline.
+- [ADR-0019](../decisions/0019-rcl-apps-as-modules.md): The server owns live state and all external connections, and the app works offline.
 - [ADR-0005](../decisions/0005-crg-is-listen-only.md): CRG is listen-only, and there are no score displays.
 - [ADR-0006](../decisions/0006-one-overlay-renderer-css-variable-theming.md): One overlay renderer; themes as CSS custom properties.
-- [ADR-0007](../decisions/0007-shared-zod-contract.md): Shared Zod contract; versioned import/export.
+- [ADR-0019](../decisions/0019-rcl-apps-as-modules.md): Shared Zod contract; versioned import/export.
 - [ADR-0018](../decisions/0018-declared-access-and-permissions.md): Server-side sessions; every route and namespace declares its access, checked by permission; a public overlay until output token URLs arrive.
 
 ## More

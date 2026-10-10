@@ -11,6 +11,7 @@ All notable changes to Rollcall are documented here, newest first. The format fo
 - API explorer for developers: Swagger UI at `/docs`, generated from the shared schemas. It's on in `yarn dev`, and on a venue server only with `ROLLCALL_API_DOCS=1` (wardmanm/GROBS#16)
 - The API explorer shows who may call each route: anyone, any signed-in user, or the permission it needs, such as `core:users.manage` (#3)
 - The Producer app at `/producer/`. For now it shows the address to add to OBS for the overlay (#4)
+- The server lists the apps it hosts at `/api/core/apps`, for signed-in users (#5)
 
 ### Changed
 
@@ -19,6 +20,7 @@ All notable changes to Rollcall are documented here, newest first. The format fo
 - The OBS overlay now uses its own public live connection. After upgrading, refresh each OBS browser source (right-click ▸ Refresh) so it picks up the change (wardmanm/GROBS#14)
 - Access is checked by permission instead of by role. Admins hold every permission, so who can do what is unchanged (#3)
 - Each app now has its own address: the admin app is at `/core/` (`/` takes you there) and the Producer app at `/producer/`. **The OBS overlay moved from `/overlay` to `/producer/overlay`, with no redirect:** change the URL of each OBS browser source (#4)
+- rcl-core now hosts each app as a module, so every API address starts with its app: `/api/health` is now `/api/core/health`, `/api/auth/login` is `/api/core/auth/login`, and so on. The OBS overlay's live connection moved too: after upgrading, refresh each OBS browser source (right-click ▸ Refresh) (#5)
 
 ### Fixed
 

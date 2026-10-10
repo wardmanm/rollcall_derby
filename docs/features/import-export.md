@@ -14,7 +14,7 @@ Admins can import and export everything. Producers can import and export teams. 
 ## Requirements
 
 - **R1.** Teams, themes and screens can be exported and imported. Other entities may be added later.
-- **R2.** Every file carries a versioned envelope that identifies its format, its kind (team, theme, screen) and its format version. The schemas are shared Zod schemas ([ADR-0007](../decisions/0007-shared-zod-contract.md)).
+- **R2.** Every file carries a versioned envelope that identifies its format, its kind (team, theme, screen) and its format version. The schemas are shared Zod schemas ([ADR-0019](../decisions/0019-rcl-apps-as-modules.md)).
 - **R3.** Imports are validated before anything is saved. A file that fails validation changes nothing, and the error says what's wrong and where.
 - **R4.** Files in older formats are migrated when imported, so an export always stays importable by later versions.
 - **R5.** Media that belongs to exported data (team photos and logos, theme fonts) travels with the export.

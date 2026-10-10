@@ -1,6 +1,6 @@
 # rcl-core — agent instructions
 
-rcl-core is Rollcall's host: the one server process, accounts and access, shared data such as teams, the CRG and OBS connections, and the admin web app for that data ([ADR-0016](../docs/decisions/0016-obs-producer-becomes-rollcall.md)). It also serves every rcl app's web build, each below its own path: its own at `/core/`, the Producer app's at `/producer/`.
+rcl-core is Rollcall's host: the one server process, accounts and access, shared data such as teams, the CRG and OBS connections, and the admin web app for that data ([ADR-0016](../docs/decisions/0016-obs-producer-becomes-rollcall.md)). It hosts every rcl app as a module, itself included as module `core` ([ADR-0019](../docs/decisions/0019-rcl-apps-as-modules.md)): each app's routes below `/api/<id>/`, its Socket.IO namespaces below `/<id>`, and its web build at `/<id>/`. The installed apps are listed in `server/src/installed-apps.ts`.
 
 These rules add to the repo-root [AGENTS.md](../AGENTS.md). Its hard rules apply here.
 
@@ -8,9 +8,9 @@ These rules add to the repo-root [AGENTS.md](../AGENTS.md). Its hard rules apply
 
 ```
 rcl-core/
-├── server/     @rollcall/core-server: Fastify API, Socket.IO, OBS/CRG connections, SQLite
+├── server/     @rollcall/core-server: the host (Fastify, Socket.IO, SQLite, OBS/CRG connections) and core's own module
 ├── web/        @rollcall/core-web: the admin React SPA, served at /core/
-└── contract/   @rollcall/core-contract: Zod schemas and types, used as TypeScript source (no build step)
+└── contract/   @rollcall/core-contract: Zod schemas and types for /api/core, used as TypeScript source (no build step)
 ```
 
 ## Commands

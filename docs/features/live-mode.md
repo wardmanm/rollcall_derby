@@ -18,7 +18,7 @@ Admins and Producers set up events and run dashboards. Announcers see only the d
 - **R3.** Several tracks can run at the same time. Each track runs its own sequence of games, and producers can control all tracks at once.
 - **R4.** Each track listens to its own CRG instance ([CRG automation](crg-automation.md)).
 - **R5.** Each screen used on a track has an [output](../product/glossary.md#output) URL that is added to OBS as a browser source.
-- **R6.** A change made on one dashboard appears on every other dashboard and output straight away. The server holds the live state ([ADR-0004](../decisions/0004-server-is-the-hub.md)).
+- **R6.** A change made on one dashboard appears on every other dashboard and output straight away. The server holds the live state ([ADR-0019](../decisions/0019-rcl-apps-as-modules.md)).
 
 ## Producer dashboards
 

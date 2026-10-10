@@ -4,7 +4,7 @@ Rollcall is a suite of apps for producing roller derby events and streams, hoste
 - **rcl-core** is the server: accounts, shared data such as teams, the CRG and OBS connections, and an admin GUI for that data.
 - **rcl-producer** builds and runs overlays: themes, screens, Live Mode and producer dashboards. Each screen is loaded into OBS as a browser source.
 
-**Status:** moved from GROBS, where it was OBS Producer, and being split into rcl-core and rcl-producer ([spec](design-docs/specs/2026-10-07-rollcall-split-design.md)). The Producer app's web code is in [rcl-producer](rcl-producer/AGENTS.md) and shared web code in `packages/web-sdk`; all server code stays in [rcl-core](rcl-core/AGENTS.md) until app modules arrive. Features start with Phase 1 on the [roadmap](docs/product/roadmap.md). To run it locally, see [local development](docs/guides/local-development.md).
+**Status:** moved from GROBS, where it was OBS Producer, and being split into rcl-core and rcl-producer ([spec](design-docs/specs/2026-10-07-rollcall-split-design.md)). [rcl-core](rcl-core/AGENTS.md)'s server hosts each app as a module, including [rcl-producer](rcl-producer/AGENTS.md)'s ([ADR-0019](docs/decisions/0019-rcl-apps-as-modules.md)). Code shared across apps is in `packages/`. Features start with Phase 1 on the [roadmap](docs/product/roadmap.md). To run it locally, see [local development](docs/guides/local-development.md).
 
 These rules apply to AI agents and human contributors alike.
 
@@ -20,8 +20,8 @@ These must never be broken. Each one is copied word for word from the ADR in bra
 
 1. **CRG is listen-only.** Outbound WebSocket messages to CRG are exactly `Register` and `Ping`, sent through the single CRG send wrapper. The only HTTP request allowed is `GET /SaveJSON/`. Never send `Set`, `StartNewGame` or command keys. Never call `/Load/*` or `/Media/*`. ([ADR-0005](docs/decisions/0005-crg-is-listen-only.md))
 2. **No scoring, no score displays.** CRG owns scoring, clocks and its own scoreboard overlay. We build rosters and custom game-data displays. ([ADR-0005](docs/decisions/0005-crg-is-listen-only.md))
-3. **The server is the hub.** Browsers (dashboards, overlays) never connect to OBS or CRG directly. Secrets such as the OBS password never reach a browser. ([ADR-0004](docs/decisions/0004-server-is-the-hub.md))
-4. **Works offline at the venue.** Nothing at runtime depends on the internet: no CDNs, no hosted fonts, no cloud APIs. The server serves every asset. ([ADR-0004](docs/decisions/0004-server-is-the-hub.md))
+3. **The server is the hub.** Browsers (dashboards, overlays) never connect to OBS or CRG directly. Secrets such as the OBS password never reach a browser. ([ADR-0019](docs/decisions/0019-rcl-apps-as-modules.md))
+4. **Works offline at the venue.** Nothing at runtime depends on the internet: no CDNs, no hosted fonts, no cloud APIs. The server serves every asset. ([ADR-0019](docs/decisions/0019-rcl-apps-as-modules.md))
 5. **Authorization happens on the server.** Every API route and socket event checks the caller's access. Hiding UI is not access control. ([ADR-0018](docs/decisions/0018-declared-access-and-permissions.md))
 6. **Server data lives in RTK Query, never copied into slices.** Overlay components are presentational: they get data through props and never read the admin store. ([ADR-0003](docs/decisions/0003-client-state-with-redux-toolkit.md), [ADR-0006](docs/decisions/0006-one-overlay-renderer-css-variable-theming.md))
 7. **Releases are deliberate.** A release is cut only by a person running the release workflow and approving it. Agents never approve a release deployment, and never create release tags or GitHub Releases or start the release workflow (even as a dry run) unless the user explicitly asks them to for a specific version. ([ADR-0010](docs/decisions/0010-deliberate-releases-patch-tracking.md))
@@ -32,8 +32,8 @@ Details and rationale are in the [ADRs](docs/decisions/README.md).
 
 - TypeScript 7 (strict) monorepo with Yarn 4 workspaces, Node ≥ 24.7 (the 24 LTS line) ([ADR-0017](docs/decisions/0017-rcl-app-workspace-layout.md))
 - Web: Vite + React SPA, React Router, Mantine for admin UI, Redux Toolkit + RTK Query ([ADR-0017](docs/decisions/0017-rcl-app-workspace-layout.md), [ADR-0003](docs/decisions/0003-client-state-with-redux-toolkit.md))
-- Server: Fastify + Socket.IO; SQLite via Drizzle ([ADR-0017](docs/decisions/0017-rcl-app-workspace-layout.md), [ADR-0004](docs/decisions/0004-server-is-the-hub.md))
-- Contract: Zod schemas in `rcl-core/contract` ([ADR-0007](docs/decisions/0007-shared-zod-contract.md))
+- Server: Fastify + Socket.IO; SQLite via Drizzle ([ADR-0017](docs/decisions/0017-rcl-app-workspace-layout.md), [ADR-0019](docs/decisions/0019-rcl-apps-as-modules.md))
+- Contracts: Zod schemas in each app's `contract` workspace, such as `rcl-core/contract` ([ADR-0019](docs/decisions/0019-rcl-apps-as-modules.md))
 - TypeScript runs natively on Node with no build step: erasable syntax only (no `enum`/`namespace`), `.ts` extensions on relative imports ([ADR-0013](docs/decisions/0013-run-typescript-natively-on-node.md))
 - Lint and format: Oxlint with type-aware rules (not ESLint), Prettier ([ADR-0017](docs/decisions/0017-rcl-app-workspace-layout.md))
 - Tests: Vitest, React Testing Library, Playwright
@@ -47,8 +47,8 @@ rollcall_derby/
 ├── CHANGELOG.md       release notes; add a line under Unreleased for user-visible changes
 ├── scripts/           check-docs.mjs (docs lint), release.mjs (release helper) + tests
 ├── rcl-core/          the host app: server, admin web app and contract (see rcl-core/AGENTS.md)
-├── rcl-producer/      the Producer app: its web app and the OBS overlay (see rcl-producer/AGENTS.md)
-├── packages/          code shared across apps: web-sdk (@rollcall/web-sdk)
+├── rcl-producer/      the Producer app: its server module, contract, web app and the OBS overlay (see rcl-producer/AGENTS.md)
+├── packages/          code shared across apps: app-sdk (@rollcall/app-sdk), web-sdk (@rollcall/web-sdk)
 ├── e2e/               @rollcall/e2e: Playwright tests against the real production build
 ├── package.json       Yarn 4 workspaces root (packageManager pins the Yarn version)
 └── tsconfig.base.json strict settings every workspace extends

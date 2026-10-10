@@ -3,7 +3,7 @@ import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 import { io } from 'socket.io-client';
 import { SERVER_HELLO_EVENT, ServerHelloSchema, type ServerHello } from '@rollcall/producer-contract';
 
-// The overlay's live state comes only from the server over Socket.IO (ADR-0004), held in the RTK Query
+// The overlay's live state comes only from the server over Socket.IO (ADR-0019), held in the RTK Query
 // cache rather than a slice (hard rule 6, ADR-0003). A reload starts empty and rebuilds from what the
 // server sends on connect; a dropped connection keeps the last known state on screen.
 

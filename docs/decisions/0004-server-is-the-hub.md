@@ -1,9 +1,12 @@
 ---
 title: Server is the hub
-status: accepted
+status: superseded
+superseded_by: "0019"
 date: 2026-09-28
 ---
 # 0004. Server is the hub
+
+> **Superseded by [ADR-0019](0019-rcl-apps-as-modules.md):** rcl-core's server is the hub for the whole suite, hosting each rcl app as a module. The hub and offline rules are unchanged.
 
 ## Context
 

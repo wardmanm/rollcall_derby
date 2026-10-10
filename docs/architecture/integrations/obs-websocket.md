@@ -3,7 +3,7 @@ title: OBS WebSocket integration
 ---
 # OBS WebSocket integration
 
-How we control OBS, and what our outputs need to know about running inside an OBS browser source. The server holds the only connection to each OBS instance and relays commands on behalf of dashboards ([ADR-0004](../../decisions/0004-server-is-the-hub.md)).
+How we control OBS, and what our outputs need to know about running inside an OBS browser source. The server holds the only connection to each OBS instance and relays commands on behalf of dashboards ([ADR-0019](../../decisions/0019-rcl-apps-as-modules.md)).
 
 > **Verified against:** the obs-websocket **5.x** protocol (latest tag 5.7.4, RPC version 1), **obs-websocket-js v5.0.8**, and the obs-browser source, on 2026-09-28. If you build against newer versions, re-check the facts you rely on and update this line.
 
