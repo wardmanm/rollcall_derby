@@ -1,33 +1,11 @@
 import type { FastifyInstance, preValidationAsyncHookHandler } from 'fastify';
+import type { Access, Permission, PermissionDef } from '@rollcall/app-sdk';
 import type { Role, SessionUser } from '@rollcall/core-contract';
 
 // Who may call a route or join a Socket.IO namespace (ADR-0018). Every /api route declares it in `config.access`, and
 // the server refuses to start when a declaration is missing or wrong, so access is denied by default.
 
-/** `<app id>:<action>`, such as `core:users.manage`. Each rcl app declares its own, prefixed with its id. */
-export type Permission = `${string}:${string}`;
-
-export type Access =
-  /** Anyone, signed in or not. The reason is shown in the API explorer. */
-  | { public: string }
-  /** Any signed-in user. Only `me`, `password` and `logout` let a pending password change through. */
-  | { signedIn: true; allowPendingPasswordChange?: true }
-  /** A signed-in user whose role holds this permission. Admins hold every permission. */
-  | { permission: Permission };
-
-declare module 'fastify' {
-  interface FastifyContextConfig {
-    access?: Access;
-  }
-}
-
-export interface PermissionDef {
-  key: Permission;
-  /** What it allows. Shown in the API explorer and on the users-and-access feature page. */
-  summary: string;
-  /** The roles it's granted to besides Admin, which holds every permission. */
-  roles: readonly Role[];
-}
+export type { Access, Permission, PermissionDef } from '@rollcall/app-sdk';
 
 export interface Permissions {
   readonly all: readonly PermissionDef[];
