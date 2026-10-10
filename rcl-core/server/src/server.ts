@@ -1,12 +1,10 @@
 import { buildApp } from './app.ts';
-import { createPermissions } from './auth/access.ts';
 import { dummyHash } from './auth/passwords.ts';
-import { CORE_PERMISSIONS } from './auth/permissions.ts';
 import { purgeExpiredSessions } from './auth/sessions.ts';
 import type { ServerConfig } from './config.ts';
 import { openDatabase } from './db.ts';
 import { attachRealtime } from './realtime.ts';
-import { installedWebApps } from './web-apps.ts';
+import { INSTALLED_APPS } from './installed-apps.ts';
 
 export interface RunningServer {
   url: string;
@@ -19,10 +17,15 @@ export async function startServer(
   { version, logger = true }: { version: string; logger?: boolean },
 ): Promise<RunningServer> {
   const { db, sqlite } = openDatabase(config.dataDir);
-  const permissions = createPermissions(CORE_PERMISSIONS);
-  const webApps = installedWebApps(config.webDir);
-  const app = buildApp({ version, logger, webApps, db, apiDocs: config.apiDocs, permissions });
-  const io = attachRealtime(app.server, { version, db, log: app.log, permissions });
+  const app = buildApp({
+    version,
+    logger,
+    db,
+    coreWebDir: config.webDir,
+    apps: INSTALLED_APPS,
+    apiDocs: config.apiDocs,
+  });
+  const io = attachRealtime(app.server, { version, db, log: app.log, permissions: app.hostedApps.permissions });
 
   // Expired sessions are already ignored; this just keeps the table small.
   purgeExpiredSessions(db);

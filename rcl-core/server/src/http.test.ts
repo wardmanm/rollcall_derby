@@ -4,7 +4,7 @@ import { SessionUserSchema } from '@rollcall/core-contract';
 import { testApp } from './testing.ts';
 
 const login = (app: ReturnType<typeof testApp>['app'], remoteAddress = '127.0.0.1') =>
-  app.inject({ method: 'POST', url: '/api/auth/login', remoteAddress, payload: { username: 'x', password: 'y' } });
+  app.inject({ method: 'POST', url: '/api/core/auth/login', remoteAddress, payload: { username: 'x', password: 'y' } });
 
 describe('errors raised by Fastify and its plugins', () => {
   it('name a rate limit', async () => {
@@ -19,7 +19,7 @@ describe('errors raised by Fastify and its plugins', () => {
     const { app } = testApp();
     const res = await app.inject({
       method: 'POST',
-      url: '/api/auth/login',
+      url: '/api/core/auth/login',
       payload: 'a=b',
       headers: { 'content-type': 'text/plain' },
     });
@@ -31,7 +31,7 @@ describe('errors raised by Fastify and its plugins', () => {
     const { app } = testApp();
     const res = await app.inject({
       method: 'POST',
-      url: '/api/auth/login',
+      url: '/api/core/auth/login',
       payload: '{"username":',
       headers: { 'content-type': 'application/json' },
     });
@@ -42,12 +42,12 @@ describe('errors raised by Fastify and its plugins', () => {
   it('hide the details of a server error', async () => {
     const { app } = testApp({
       registerRoutes: (api) => {
-        api.get('/api/boom', { config: { access: { public: 'test probe' } } }, async () => {
+        api.get('/api/core/boom', { config: { access: { public: 'test probe' } } }, async () => {
           throw new Error('SQLITE_CORRUPT in /data/rollcall.db');
         });
       },
     });
-    const res = await app.inject({ method: 'GET', url: '/api/boom' });
+    const res = await app.inject({ method: 'GET', url: '/api/core/boom' });
     expect(res.statusCode).toBe(500);
     expect(res.json()).toEqual({ error: 'internal_error' });
   });
@@ -55,7 +55,7 @@ describe('errors raised by Fastify and its plugins', () => {
   it('hide the details of a server error on the health route too', async () => {
     // A version that isn't a string makes the health response fail its own schema.
     const { app } = testApp({ version: 42 as unknown as string });
-    const res = await app.inject({ method: 'GET', url: '/api/health' });
+    const res = await app.inject({ method: 'GET', url: '/api/core/health' });
     expect(res.statusCode).toBe(500);
     expect(res.json()).toEqual({ error: 'internal_error' });
   });
@@ -77,7 +77,7 @@ describe('route schemas', () => {
         fastify
           .withTypeProvider<ZodTypeProvider>()
           .get(
-            '/api/leaky',
+            '/api/core/leaky',
             { config: { access: { public: 'test probe' } }, schema: { response: { 200: SessionUserSchema } } },
             async () => {
               const user = {
@@ -92,7 +92,7 @@ describe('route schemas', () => {
           );
       },
     });
-    const res = await app.inject({ method: 'GET', url: '/api/leaky' });
+    const res = await app.inject({ method: 'GET', url: '/api/core/leaky' });
     expect(res.statusCode).toBe(500);
     expect(res.json()).toEqual({ error: 'internal_error' });
     expect(res.body).not.toContain('secret-hash');

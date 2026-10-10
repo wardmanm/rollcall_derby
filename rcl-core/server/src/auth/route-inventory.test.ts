@@ -4,10 +4,10 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import type { Role } from '@rollcall/core-contract';
 import type { AppOptions } from '../app.ts';
 import { ERROR_RESPONSES } from '../http.ts';
-import { addUser, testApp } from '../testing.ts';
-import { createPermissions, type Access } from './access.ts';
+import { INSTALLED_APPS } from '../installed-apps.ts';
+import { addUser, CORE_VERSION, testApp } from '../testing.ts';
+import type { Access } from './access.ts';
 import { SESSION_COOKIE } from './guard.ts';
-import { CORE_PERMISSIONS } from './permissions.ts';
 import { createSession } from './sessions.ts';
 
 // Hard rule 5 (ADR-0018): every /api route checks the caller's access. A route with no declaration can't start at all
@@ -17,7 +17,6 @@ import { createSession } from './sessions.ts';
 
 const ANY_ID = '00000000-0000-4000-8000-000000000000';
 const byName = (a: string, b: string) => a.localeCompare(b);
-const permissions = createPermissions(CORE_PERMISSIONS);
 
 type Cookies = Record<string, string>;
 const anonymous = async (): Promise<Cookies> => ({});
@@ -33,7 +32,10 @@ interface ApiRoute {
 
 async function inventory(options: Partial<AppOptions> = {}) {
   const routes: ApiRoute[] = [];
+  // Every installed app, hosted at this core's version, so the sweeps cover all of their routes.
   const { app, db } = testApp({
+    version: CORE_VERSION,
+    apps: INSTALLED_APPS,
     ...options,
     onRoute: (route) => {
       if (!route.url.startsWith('/api')) return;
@@ -98,15 +100,15 @@ describe('route inventory', () => {
     const { app, routes } = await inventory();
     await app.close();
     expect(keysOf(where(routes, isPublic))).toEqual([
-      'GET /api/health',
-      'GET /api/setup',
-      'POST /api/auth/login',
-      'POST /api/setup',
+      'GET /api/core/health',
+      'GET /api/core/setup',
+      'POST /api/core/auth/login',
+      'POST /api/core/setup',
     ]);
     expect(keysOf(where(routes, allowsPendingChange))).toEqual([
-      'GET /api/auth/me',
-      'POST /api/auth/logout',
-      'POST /api/auth/password',
+      'GET /api/core/auth/me',
+      'POST /api/core/auth/logout',
+      'POST /api/core/auth/password',
     ]);
   });
 
@@ -123,7 +125,7 @@ describe('route inventory', () => {
     const inv = await inventory();
     const gated = where(inv.routes, (access) => !isPublic(access) && !allowsPendingChange(access));
     const pending = { status: 403, error: 'password_change_required' };
-    expect(keysOf(gated)).toContain('GET /api/users');
+    expect(keysOf(gated)).toContain('GET /api/core/users');
     expect(await notRefused(inv, gated, inv.as('producer', { mustChangePassword: true }), pending)).toEqual([]);
     expect(await notRefused(inv, gated, inv.as('admin'), pending)).toHaveLength(gated.length);
     await inv.app.close();
@@ -133,8 +135,9 @@ describe('route inventory', () => {
     const inv = await inventory();
     const forbidden = { status: 403, error: 'forbidden' };
     for (const role of ['producer', 'announcer'] as const) {
+      const { permissions } = inv.app.hostedApps;
       const lacking = where(inv.routes, (a) => 'permission' in a && !permissions.granted(role, a.permission));
-      expect(keysOf(lacking), role).toContain('GET /api/users');
+      expect(keysOf(lacking), role).toContain('GET /api/core/users');
       expect(await notRefused(inv, lacking, inv.as(role), forbidden), role).toEqual([]);
       expect(await notRefused(inv, lacking, inv.as('admin'), forbidden), role).toHaveLength(lacking.length);
     }
@@ -149,9 +152,9 @@ describe('route inventory', () => {
     const signedIn = { access: { signedIn: true } } as const;
     const missing = await routesMissingSchemas({
       registerRoutes: (api) => {
-        api.get('/api/schemaless/:id', { config: signedIn }, async () => ({ ok: true }));
+        api.get('/api/core/schemaless/:id', { config: signedIn }, async () => ({ ok: true }));
         api.withTypeProvider<ZodTypeProvider>().get(
-          '/api/errors-only',
+          '/api/core/errors-only',
           { config: signedIn, schema: { response: { ...ERROR_RESPONSES } } },
           // No success status is declared, so nothing but void type-checks here; the handler is never invoked.
           async () => undefined,
@@ -159,9 +162,9 @@ describe('route inventory', () => {
       },
     });
     expect(missing).toEqual([
-      'GET /api/schemaless/:id has no success (2xx) response schema',
-      'GET /api/schemaless/:id has no params schema',
-      'GET /api/errors-only has no success (2xx) response schema',
+      'GET /api/core/schemaless/:id has no success (2xx) response schema',
+      'GET /api/core/schemaless/:id has no params schema',
+      'GET /api/core/errors-only has no success (2xx) response schema',
     ]);
   });
 

@@ -21,7 +21,7 @@ export default defineConfig({
   webServer: {
     command: 'yarn build && yarn start',
     cwd: projectRoot,
-    url: `http://127.0.0.1:${port}/api/health`,
+    url: `http://127.0.0.1:${port}/api/core/health`,
     reuseExistingServer: false,
     timeout: 120_000,
     env: {

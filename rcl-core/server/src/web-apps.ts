@@ -1,12 +1,11 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import type { FastifyInstance } from 'fastify';
 import fastifyStatic from '@fastify/static';
 
-/** One rcl app's web build, served below `base` (split spec). */
+/** One hosted rcl app's web build, served below `base` (ADR-0019). */
 export interface WebApp {
-  /** Where it's served, matching its Vite `base`: `/producer/`, or `/` for the app at the root. */
+  /** Where it's served, matching its Vite `base`: `/<id>/`, such as `/producer/`. */
   base: string;
   /** Its production build folder. Skipped while it has no index.html (e.g. in development). */
   dir: string;
@@ -17,40 +16,28 @@ export interface WebApp {
   pages?: Record<string, string>;
 }
 
-const PRODUCER_WEB_DIR = fileURLToPath(new URL('../../../rcl-producer/web/dist', import.meta.url));
-
-// The web builds this server serves, core's first. Temporary: Phase 4b replaces this list with each installed app
-// module's `web`.
-export function installedWebApps(coreWebDir: string): WebApp[] {
-  return [
-    { base: '/core/', dir: coreWebDir },
-    { base: '/producer/', dir: PRODUCER_WEB_DIR, pages: { overlay: 'overlay.html' } },
-  ];
-}
-
-// Serves each app's build below its base: real files as they are, its pages at their paths, and index.html for
-// every other GET below the base, so client-side routes like /producer/screens/3 load. `/` redirects to the first
-// app (core's). API and Socket.IO paths, and paths no app claims, get a JSON 404.
-export function serveWebApps(app: FastifyInstance, webApps: readonly WebApp[]): void {
-  const home = webApps[0]?.base;
-  if (home && !webApps.some((web) => web.base === '/')) {
-    app.get('/', (_request, reply) => reply.redirect(home, 302));
+// Serves each hosted app's build below its base (ADR-0019): real files as they are, its pages at their paths, and
+// index.html for every other path below the base, so client-side routes like /producer/screens/3 load. `/`
+// redirects to the first app (core's). Returns the page for a path that no route or file answers, if any; the
+// server's not-found handler sends it.
+export function serveWebApps(
+  app: FastifyInstance,
+  webApps: readonly WebApp[],
+): (path: string) => { dir: string; file: string } | undefined {
+  for (const web of webApps) {
+    if (!/^\/[a-z][a-z0-9-]*\/$/.test(web.base)) throw new Error(`Web app base ${web.base} must be /<id>/`);
   }
+  const home = webApps[0]?.base;
+  if (home) app.get('/', (_request, reply) => reply.redirect(home, 302));
   const built = webApps.filter((web) => existsSync(join(web.dir, 'index.html')));
   built.forEach((web, i) => {
     // Only the first registration may add reply.sendFile; the others share it.
     void app.register(fastifyStatic, { root: web.dir, prefix: web.base, wildcard: false, decorateReply: i === 0 });
   });
-  app.setNotFoundHandler((request, reply) => {
-    const path = request.url.split('?')[0] ?? '';
-    const web = request.method === 'GET' && !/^\/(api|socket\.io)(\/|$)/.test(path) ? appAt(built, path) : undefined;
-    if (!web) {
-      return reply
-        .code(404)
-        .send({ message: `Route ${request.method}:${request.url} not found`, error: 'Not Found', statusCode: 404 });
-    }
-    return reply.type('text/html').sendFile(pageAt(web, path), web.dir);
-  });
+  return (path) => {
+    const web = appAt(built, path);
+    return web && { dir: web.dir, file: pageAt(web, path) };
+  };
 }
 
 // The app with the longest base that `path` is at or below ('/producer' counts as '/producer/').

@@ -20,13 +20,13 @@ export function registerAuthRoutes(fastify: FastifyInstance, db: AppDatabase): v
   const api = fastify.withTypeProvider<ZodTypeProvider>();
 
   api.post(
-    '/api/auth/login',
+    '/auth/login',
     {
       config: { rateLimit: AUTH_RATE_LIMIT, access: { public: 'Signing in' } },
       // A malformed body must look and take the same as wrong credentials, so the handler deals with it.
       attachValidation: true,
       schema: {
-        tags: ['auth'],
+        tags: ['core/auth'],
         summary: 'Log in',
         body: LoginRequestSchema,
         response: { 200: SessionUserSchema, ...ERROR_RESPONSES },
@@ -48,10 +48,10 @@ export function registerAuthRoutes(fastify: FastifyInstance, db: AppDatabase): v
   );
 
   api.post(
-    '/api/auth/logout',
+    '/auth/logout',
     {
       config: { access: SIGNED_IN_PENDING_OK },
-      schema: { tags: ['auth'], summary: 'Log out', response: { 204: z.undefined(), ...ERROR_RESPONSES } },
+      schema: { tags: ['core/auth'], summary: 'Log out', response: { 204: z.undefined(), ...ERROR_RESPONSES } },
     },
     async (request, reply) => {
       if (request.principal) revokeSession(db, request.principal.token);
@@ -61,20 +61,20 @@ export function registerAuthRoutes(fastify: FastifyInstance, db: AppDatabase): v
   );
 
   api.get(
-    '/api/auth/me',
+    '/auth/me',
     {
       config: { access: SIGNED_IN_PENDING_OK },
-      schema: { tags: ['auth'], summary: 'Who am I?', response: { 200: SessionUserSchema, ...ERROR_RESPONSES } },
+      schema: { tags: ['core/auth'], summary: 'Who am I?', response: { 200: SessionUserSchema, ...ERROR_RESPONSES } },
     },
     async (request, reply) => request.principal?.user ?? reply.code(401).send(UNAUTHENTICATED),
   );
 
   api.post(
-    '/api/auth/password',
+    '/auth/password',
     {
       config: { rateLimit: AUTH_RATE_LIMIT, access: SIGNED_IN_PENDING_OK },
       schema: {
-        tags: ['auth'],
+        tags: ['core/auth'],
         summary: 'Change your own password',
         body: ChangePasswordRequestSchema,
         response: { 200: SessionUserSchema, ...ERROR_RESPONSES },

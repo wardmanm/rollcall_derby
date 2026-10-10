@@ -43,7 +43,7 @@ describe('startServer', () => {
       { host: '127.0.0.1', port: 0, dataDir, webDir: join(dataDir, 'no-web-build') },
       { version: '1.0.0', logger: false },
     );
-    const res = await fetch(`${running.url}/api/setup`);
+    const res = await fetch(`${running.url}/api/core/setup`);
     expect(await res.json()).toEqual({ needsSetup: false, canSetupHere: true });
 
     const check = openDatabase(dataDir);
@@ -59,7 +59,7 @@ describe('startServer', () => {
       { version: '9.9.9', logger: false },
     );
 
-    const health = await fetch(`${running.url}/api/health`);
+    const health = await fetch(`${running.url}/api/core/health`);
     expect(health.status).toBe(200);
 
     client = connect(`${running.url}/overlay`, { transports: ['websocket'] });

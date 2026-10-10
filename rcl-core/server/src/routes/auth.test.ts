@@ -15,12 +15,12 @@ async function withAdmin() {
 }
 
 const login = (app: ReturnType<typeof testApp>['app'], username: string, password: string) =>
-  app.inject({ method: 'POST', url: '/api/auth/login', payload: { username, password } });
+  app.inject({ method: 'POST', url: '/api/core/auth/login', payload: { username, password } });
 
 const sessionCookie = (res: Awaited<ReturnType<typeof login>>) =>
   res.cookies.find((c) => c.name === SESSION_COOKIE)?.value ?? '';
 
-describe('POST /api/auth/login', () => {
+describe('POST /api/core/auth/login', () => {
   it('logs in, ignoring username case and spaces, with a 30-day HttpOnly cookie', async () => {
     const { app } = await withAdmin();
     const res = await login(app, ' ADMIN ', PASSWORD);
@@ -37,7 +37,7 @@ describe('POST /api/auth/login', () => {
     const responses = [
       await login(app, 'admin', 'wrong password'),
       await login(app, 'nobody', PASSWORD),
-      await app.inject({ method: 'POST', url: '/api/auth/login', payload: { user: 'admin' } }),
+      await app.inject({ method: 'POST', url: '/api/core/auth/login', payload: { user: 'admin' } }),
       await login(app, 'admin', 'x'.repeat(300)),
     ];
     for (const res of responses) {
@@ -68,45 +68,48 @@ describe('POST /api/auth/login', () => {
   });
 });
 
-describe('GET /api/auth/me and POST /api/auth/logout', () => {
+describe('GET /api/core/auth/me and POST /api/core/auth/logout', () => {
   it('returns the current user, and stops working after logout', async () => {
     const { app } = await withAdmin();
     const token = sessionCookie(await login(app, 'admin', PASSWORD));
     const cookies = { [SESSION_COOKIE]: token };
-    const me = await app.inject({ method: 'GET', url: '/api/auth/me', cookies });
+    const me = await app.inject({ method: 'GET', url: '/api/core/auth/me', cookies });
     expect(me.json()).toMatchObject({ username: 'admin', mustChangePassword: false });
 
-    const out = await app.inject({ method: 'POST', url: '/api/auth/logout', cookies });
+    const out = await app.inject({ method: 'POST', url: '/api/core/auth/logout', cookies });
     expect(out.statusCode).toBe(204);
     expect(out.cookies.find((c) => c.name === SESSION_COOKIE)?.value).toBe('');
-    expect((await app.inject({ method: 'GET', url: '/api/auth/me', cookies })).statusCode).toBe(401);
+    expect((await app.inject({ method: 'GET', url: '/api/core/auth/me', cookies })).statusCode).toBe(401);
   });
 
   it('requires a session', async () => {
     const { app } = await withAdmin();
-    expect((await app.inject({ method: 'GET', url: '/api/auth/me' })).json()).toEqual({ error: 'unauthenticated' });
-    expect((await app.inject({ method: 'POST', url: '/api/auth/logout' })).statusCode).toBe(401);
+    expect((await app.inject({ method: 'GET', url: '/api/core/auth/me' })).json()).toEqual({
+      error: 'unauthenticated',
+    });
+    expect((await app.inject({ method: 'POST', url: '/api/core/auth/logout' })).statusCode).toBe(401);
   });
 });
 
-describe('POST /api/auth/password', () => {
+describe('POST /api/core/auth/password', () => {
   it('changes the password, keeps this session and signs out the others', async () => {
     const { app } = await withAdmin();
     const here = sessionCookie(await login(app, 'admin', PASSWORD));
     const elsewhere = sessionCookie(await login(app, 'admin', PASSWORD));
     const res = await app.inject({
       method: 'POST',
-      url: '/api/auth/password',
+      url: '/api/core/auth/password',
       cookies: { [SESSION_COOKIE]: here },
       payload: { currentPassword: PASSWORD, newPassword: 'battery staple' },
     });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toMatchObject({ mustChangePassword: false });
     expect(
-      (await app.inject({ method: 'GET', url: '/api/auth/me', cookies: { [SESSION_COOKIE]: here } })).statusCode,
+      (await app.inject({ method: 'GET', url: '/api/core/auth/me', cookies: { [SESSION_COOKIE]: here } })).statusCode,
     ).toBe(200);
     expect(
-      (await app.inject({ method: 'GET', url: '/api/auth/me', cookies: { [SESSION_COOKIE]: elsewhere } })).statusCode,
+      (await app.inject({ method: 'GET', url: '/api/core/auth/me', cookies: { [SESSION_COOKIE]: elsewhere } }))
+        .statusCode,
     ).toBe(401);
     expect((await login(app, 'admin', PASSWORD)).statusCode).toBe(401);
     expect((await login(app, 'admin', 'battery staple')).statusCode).toBe(200);
@@ -118,7 +121,7 @@ describe('POST /api/auth/password', () => {
     const token = sessionCookie(await login(app, 'p1', PASSWORD));
     const res = await app.inject({
       method: 'POST',
-      url: '/api/auth/password',
+      url: '/api/core/auth/password',
       cookies: { [SESSION_COOKIE]: token },
       payload: { currentPassword: PASSWORD, newPassword: 'battery staple' },
     });
@@ -129,7 +132,12 @@ describe('POST /api/auth/password', () => {
     const { app } = await withAdmin();
     const cookies = { [SESSION_COOKIE]: sessionCookie(await login(app, 'admin', PASSWORD)) };
     const change = (currentPassword: string, newPassword: string) =>
-      app.inject({ method: 'POST', url: '/api/auth/password', cookies, payload: { currentPassword, newPassword } });
+      app.inject({
+        method: 'POST',
+        url: '/api/core/auth/password',
+        cookies,
+        payload: { currentPassword, newPassword },
+      });
     expect((await change('nope', 'battery staple')).json()).toEqual({ error: 'wrong_password' });
     expect((await change(PASSWORD, 'short')).json()).toMatchObject({ error: 'validation_failed' });
   });
@@ -140,7 +148,7 @@ describe('POST /api/auth/password', () => {
     const cookies = { [SESSION_COOKIE]: sessionCookie(await login(app, 'producer01', PASSWORD)) };
     const res = await app.inject({
       method: 'POST',
-      url: '/api/auth/password',
+      url: '/api/core/auth/password',
       cookies,
       payload: { currentPassword: PASSWORD, newPassword: 'PRODUCER01' },
     });
@@ -154,7 +162,7 @@ describe('POST /api/auth/password', () => {
     const change = () =>
       app.inject({
         method: 'POST',
-        url: '/api/auth/password',
+        url: '/api/core/auth/password',
         cookies,
         payload: { currentPassword: 'nope', newPassword: 'battery staple' },
       });
@@ -168,9 +176,9 @@ describe('with a password change pending', () => {
     const { app, db } = testApp();
     await addUser(db, 'p1', PASSWORD, 'producer', { mustChangePassword: true });
     const cookies = { [SESSION_COOKIE]: sessionCookie(await login(app, 'p1', PASSWORD)) };
-    const me = await app.inject({ method: 'GET', url: '/api/auth/me', cookies });
+    const me = await app.inject({ method: 'GET', url: '/api/core/auth/me', cookies });
     expect(me.json()).toMatchObject({ username: 'p1', mustChangePassword: true });
-    expect((await app.inject({ method: 'POST', url: '/api/auth/logout', cookies })).statusCode).toBe(204);
+    expect((await app.inject({ method: 'POST', url: '/api/core/auth/logout', cookies })).statusCode).toBe(204);
   });
 });
 
@@ -181,12 +189,12 @@ describe('hardening', () => {
     const first = sessionCookie(await login(app, 'admin', PASSWORD));
     const second = await app.inject({
       method: 'POST',
-      url: '/api/auth/login',
+      url: '/api/core/auth/login',
       cookies: { [SESSION_COOKIE]: first },
       payload: { username: 'p1', password: PASSWORD },
     });
     expect(second.statusCode).toBe(200);
-    const me = await app.inject({ method: 'GET', url: '/api/auth/me', cookies: { [SESSION_COOKIE]: first } });
+    const me = await app.inject({ method: 'GET', url: '/api/core/auth/me', cookies: { [SESSION_COOKIE]: first } });
     expect(me.statusCode).toBe(401);
   });
 
@@ -196,13 +204,13 @@ describe('hardening', () => {
     const cookies = { [SESSION_COOKIE]: sessionCookie(await login(app, 'p1', PASSWORD)) };
     const res = await app.inject({
       method: 'POST',
-      url: '/api/auth/password',
+      url: '/api/core/auth/password',
       cookies,
       payload: { currentPassword: PASSWORD, newPassword: PASSWORD },
     });
     expect(res.statusCode).toBe(400);
     expect(res.json()).toMatchObject({ error: 'validation_failed' });
-    expect((await app.inject({ method: 'GET', url: '/api/auth/me', cookies })).json()).toMatchObject({
+    expect((await app.inject({ method: 'GET', url: '/api/core/auth/me', cookies })).json()).toMatchObject({
       mustChangePassword: true,
     });
   });
@@ -215,11 +223,11 @@ describe('a password change racing an Admin', () => {
     const cookies = { [SESSION_COOKIE]: createSession(db, user.id).token };
     // After the access check and before the handler: an Admin resets the password, which signs the user out.
     app.addHook('preHandler', async (request) => {
-      if (request.routeOptions.url === '/api/auth/password') revokeUserSessions(db, user.id);
+      if (request.routeOptions.url === '/api/core/auth/password') revokeUserSessions(db, user.id);
     });
     const res = await app.inject({
       method: 'POST',
-      url: '/api/auth/password',
+      url: '/api/core/auth/password',
       cookies,
       payload: { currentPassword: PASSWORD, newPassword: 'a brand new password' },
     });

@@ -12,7 +12,8 @@ export interface ServerConfig {
 
 // data/ at the repo root (git-ignored), resolved from this file so it doesn't depend on the working directory.
 const DEFAULT_DATA_DIR = fileURLToPath(new URL('../../../data', import.meta.url));
-// The web app's production build (`yarn workspace @rollcall/core-web build`).
+// rcl-core's own web build (`yarn workspace @rollcall/core-web build`), served at /core/. Other apps' builds
+// come from their modules.
 const DEFAULT_WEB_DIR = fileURLToPath(new URL('../../web/dist', import.meta.url));
 
 // The prefix settings had before the rename to Rollcall (ADR-0016). A leftover old name would be silently ignored,

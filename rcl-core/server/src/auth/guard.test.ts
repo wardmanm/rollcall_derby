@@ -7,7 +7,7 @@ import { addUser, testApp } from '../testing.ts';
 function appWithProbe() {
   return testApp({
     registerRoutes: (api) => {
-      api.post('/api/probe', { config: { access: { signedIn: true } } }, async (request) => ({
+      api.post('/api/core/probe', { config: { access: { signedIn: true } } }, async (request) => ({
         user: request.principal?.user.username,
       }));
     },
@@ -17,7 +17,7 @@ function appWithProbe() {
 describe('the session cookie', () => {
   it('rejects a request without a session', async () => {
     const { app } = appWithProbe();
-    const res = await app.inject({ method: 'POST', url: '/api/probe', payload: {} });
+    const res = await app.inject({ method: 'POST', url: '/api/core/probe', payload: {} });
     expect(res.statusCode).toBe(401);
     expect(res.json()).toEqual({ error: 'unauthenticated' });
   });
@@ -28,7 +28,7 @@ describe('the session cookie', () => {
     const { token } = createSession(db, user.id);
     const res = await app.inject({
       method: 'POST',
-      url: '/api/probe',
+      url: '/api/core/probe',
       payload: {},
       cookies: { [SESSION_COOKIE]: token },
     });
@@ -42,7 +42,7 @@ describe('the session cookie', () => {
     for (const cookie of [token, 'not-a-real-token']) {
       const res = await app.inject({
         method: 'POST',
-        url: '/api/probe',
+        url: '/api/core/probe',
         payload: {},
         cookies: { [SESSION_COOKIE]: cookie },
       });
@@ -55,7 +55,7 @@ describe('CSRF protection', () => {
   it('rejects a state-changing request from another origin, including Origin: null', async () => {
     const { app } = appWithProbe();
     for (const origin of ['http://evil.example', 'null']) {
-      const res = await app.inject({ method: 'POST', url: '/api/probe', payload: {}, headers: { origin } });
+      const res = await app.inject({ method: 'POST', url: '/api/core/probe', payload: {}, headers: { origin } });
       expect(res.statusCode, origin).toBe(403);
       expect(res.json()).toEqual({ error: 'cross_origin' });
     }
@@ -65,12 +65,12 @@ describe('CSRF protection', () => {
     const { app } = appWithProbe();
     const same = await app.inject({
       method: 'POST',
-      url: '/api/probe',
+      url: '/api/core/probe',
       payload: {},
       headers: { host: 'localhost:5580', origin: 'http://localhost:5580' },
     });
     expect(same.statusCode).toBe(401); // reached the route; no session
-    const none = await app.inject({ method: 'POST', url: '/api/probe', payload: {} });
+    const none = await app.inject({ method: 'POST', url: '/api/core/probe', payload: {} });
     expect(none.statusCode).toBe(401);
   });
 
@@ -79,7 +79,7 @@ describe('CSRF protection', () => {
     for (const contentType of ['text/plain', 'application/x-www-form-urlencoded']) {
       const res = await app.inject({
         method: 'POST',
-        url: '/api/probe',
+        url: '/api/core/probe',
         payload: 'a=b',
         headers: { 'content-type': contentType },
       });
@@ -89,7 +89,7 @@ describe('CSRF protection', () => {
 
   it('leaves GET requests from other origins alone', async () => {
     const { app } = appWithProbe();
-    const res = await app.inject({ method: 'GET', url: '/api/setup', headers: { origin: 'http://evil.example' } });
+    const res = await app.inject({ method: 'GET', url: '/api/core/setup', headers: { origin: 'http://evil.example' } });
     expect(res.statusCode).toBe(200);
   });
 });

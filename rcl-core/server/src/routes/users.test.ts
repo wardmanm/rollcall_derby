@@ -22,16 +22,16 @@ async function withAdmin() {
   return { app, db, admin: await signIn(db, 'admin', 'admin') };
 }
 
-describe('GET /api/users', () => {
+describe('GET /api/core/users', () => {
   it('is for Admins only', async () => {
     const { app, db, admin } = await withAdmin();
     for (const role of ['producer', 'announcer'] as const) {
       const { cookies } = await signIn(db, `${role}1`, role);
-      const res = await app.inject({ method: 'GET', url: '/api/users', cookies });
+      const res = await app.inject({ method: 'GET', url: '/api/core/users', cookies });
       expect(res.statusCode, role).toBe(403);
       expect(res.json()).toEqual({ error: 'forbidden' });
     }
-    const res = await app.inject({ method: 'GET', url: '/api/users', cookies: admin.cookies });
+    const res = await app.inject({ method: 'GET', url: '/api/core/users', cookies: admin.cookies });
     expect(res.statusCode).toBe(200);
     expect(
       UserSchema.array()
@@ -41,12 +41,12 @@ describe('GET /api/users', () => {
   });
 });
 
-describe('POST /api/users', () => {
+describe('POST /api/core/users', () => {
   it('creates a user with a temporary password that is shown once and must be changed', async () => {
     const { app, db, admin } = await withAdmin();
     const res = await app.inject({
       method: 'POST',
-      url: '/api/users',
+      url: '/api/core/users',
       cookies: admin.cookies,
       payload: { username: ' Producer1 ', role: 'producer' },
     });
@@ -55,7 +55,7 @@ describe('POST /api/users', () => {
     expect(user).toMatchObject({ username: 'producer1', role: 'producer', mustChangePassword: true });
     expect(temporaryPassword).toMatch(/^[A-Za-z0-9]{20}$/);
     expect(await verifyPassword(temporaryPassword, findUserForLogin(db, 'producer1')?.passwordHash ?? '')).toBe(true);
-    const list = await app.inject({ method: 'GET', url: '/api/users', cookies: admin.cookies });
+    const list = await app.inject({ method: 'GET', url: '/api/core/users', cookies: admin.cookies });
     expect(list.body).not.toContain(temporaryPassword);
   });
 
@@ -63,7 +63,7 @@ describe('POST /api/users', () => {
     const { app, admin } = await withAdmin();
     const res = await app.inject({
       method: 'POST',
-      url: '/api/users',
+      url: '/api/core/users',
       cookies: admin.cookies,
       payload: { username: 'ADMIN', role: 'producer' },
     });
@@ -78,7 +78,7 @@ describe('POST /api/users', () => {
       { username: 'producer1', role: 'owner' },
       { username: 'producer1' },
     ]) {
-      const res = await app.inject({ method: 'POST', url: '/api/users', cookies: admin.cookies, payload });
+      const res = await app.inject({ method: 'POST', url: '/api/core/users', cookies: admin.cookies, payload });
       expect(res.statusCode, JSON.stringify(payload)).toBe(400);
       expect(res.json()).toMatchObject({ error: 'validation_failed' });
     }
@@ -87,32 +87,32 @@ describe('POST /api/users', () => {
   it('refuses a non-Admin before looking at the body', async () => {
     const { app, db } = await withAdmin();
     const { cookies } = await signIn(db, 'producer1', 'producer');
-    const res = await app.inject({ method: 'POST', url: '/api/users', cookies, payload: {} });
+    const res = await app.inject({ method: 'POST', url: '/api/core/users', cookies, payload: {} });
     expect(res.statusCode).toBe(403);
     expect(res.json()).toEqual({ error: 'forbidden' });
   });
 });
 
-describe('PATCH /api/users/:id', () => {
+describe('PATCH /api/core/users/:id', () => {
   it('changes a role, effective from the very next request', async () => {
     const { app, db, admin } = await withAdmin();
     const second = await signIn(db, 'second', 'admin');
     const res = await app.inject({
       method: 'PATCH',
-      url: `/api/users/${second.user.id}`,
+      url: `/api/core/users/${second.user.id}`,
       cookies: admin.cookies,
       payload: { role: 'producer' },
     });
     expect(res.statusCode).toBe(200);
     expect(UserSchema.parse(res.json())).toMatchObject({ username: 'second', role: 'producer' });
-    expect((await app.inject({ method: 'GET', url: '/api/users', cookies: second.cookies })).statusCode).toBe(403);
+    expect((await app.inject({ method: 'GET', url: '/api/core/users', cookies: second.cookies })).statusCode).toBe(403);
   });
 
   it('refuses to demote the last Admin', async () => {
     const { app, admin } = await withAdmin();
     const res = await app.inject({
       method: 'PATCH',
-      url: `/api/users/${admin.user.id}`,
+      url: `/api/core/users/${admin.user.id}`,
       cookies: admin.cookies,
       payload: { role: 'producer' },
     });
@@ -124,20 +124,20 @@ describe('PATCH /api/users/:id', () => {
     const { app, db, admin } = await withAdmin();
     const second = await signIn(db, 'second', 'admin');
     const demote = (id: string, cookies: Record<string, string>) =>
-      app.inject({ method: 'PATCH', url: `/api/users/${id}`, cookies, payload: { role: 'producer' } });
+      app.inject({ method: 'PATCH', url: `/api/core/users/${id}`, cookies, payload: { role: 'producer' } });
     const results = await Promise.all([demote(second.user.id, admin.cookies), demote(admin.user.id, second.cookies)]);
     expect(results.filter((r) => r.statusCode === 200)).toHaveLength(1);
     expect(countAdmins(db)).toBe(1);
   });
 });
 
-describe('POST /api/users/:id/password-reset', () => {
+describe('POST /api/core/users/:id/password-reset', () => {
   it('returns a new temporary password once, forces a change and signs the user out', async () => {
     const { app, db, admin } = await withAdmin();
     const producer = await signIn(db, 'producer1', 'producer');
     const res = await app.inject({
       method: 'POST',
-      url: `/api/users/${producer.user.id}/password-reset`,
+      url: `/api/core/users/${producer.user.id}/password-reset`,
       cookies: admin.cookies,
     });
     expect(res.statusCode).toBe(200);
@@ -150,14 +150,14 @@ describe('POST /api/users/:id/password-reset', () => {
   });
 });
 
-describe('POST /api/users/:id/sign-out', () => {
+describe('POST /api/core/users/:id/sign-out', () => {
   it('signs the user out on every device, and nobody else', async () => {
     const { app, db, admin } = await withAdmin();
     const producer = await signIn(db, 'producer1', 'producer');
     const otherDevice = createSession(db, producer.user.id);
     const res = await app.inject({
       method: 'POST',
-      url: `/api/users/${producer.user.id}/sign-out`,
+      url: `/api/core/users/${producer.user.id}/sign-out`,
       cookies: admin.cookies,
     });
     expect(res.statusCode).toBe(204);
@@ -167,19 +167,25 @@ describe('POST /api/users/:id/sign-out', () => {
   });
 });
 
-describe('DELETE /api/users/:id', () => {
+describe('DELETE /api/core/users/:id', () => {
   it('deletes a user, whose session stops working at once', async () => {
     const { app, db, admin } = await withAdmin();
     const producer = await signIn(db, 'producer1', 'producer');
-    const res = await app.inject({ method: 'DELETE', url: `/api/users/${producer.user.id}`, cookies: admin.cookies });
+    const res = await app.inject({
+      method: 'DELETE',
+      url: `/api/core/users/${producer.user.id}`,
+      cookies: admin.cookies,
+    });
     expect(res.statusCode).toBe(204);
     expect(findUserForLogin(db, 'producer1')).toBeNull();
-    expect((await app.inject({ method: 'GET', url: '/api/auth/me', cookies: producer.cookies })).statusCode).toBe(401);
+    expect((await app.inject({ method: 'GET', url: '/api/core/auth/me', cookies: producer.cookies })).statusCode).toBe(
+      401,
+    );
   });
 
   it('refuses to delete the last Admin', async () => {
     const { app, admin } = await withAdmin();
-    const res = await app.inject({ method: 'DELETE', url: `/api/users/${admin.user.id}`, cookies: admin.cookies });
+    const res = await app.inject({ method: 'DELETE', url: `/api/core/users/${admin.user.id}`, cookies: admin.cookies });
     expect(res.statusCode).toBe(409);
     expect(res.json()).toMatchObject({ error: 'last_admin' });
   });
@@ -187,7 +193,7 @@ describe('DELETE /api/users/:id', () => {
   it('refuses to delete yourself', async () => {
     const { app, db, admin } = await withAdmin();
     await signIn(db, 'second', 'admin');
-    const res = await app.inject({ method: 'DELETE', url: `/api/users/${admin.user.id}`, cookies: admin.cookies });
+    const res = await app.inject({ method: 'DELETE', url: `/api/core/users/${admin.user.id}`, cookies: admin.cookies });
     expect(res.statusCode).toBe(409);
     expect(res.json()).toMatchObject({ error: 'cannot_delete_self' });
   });
@@ -196,7 +202,7 @@ describe('DELETE /api/users/:id', () => {
     const { app, db, admin } = await withAdmin();
     const second = await signIn(db, 'second', 'admin');
     const remove = (id: string, cookies: Record<string, string>) =>
-      app.inject({ method: 'DELETE', url: `/api/users/${id}`, cookies });
+      app.inject({ method: 'DELETE', url: `/api/core/users/${id}`, cookies });
     const results = await Promise.all([remove(second.user.id, admin.cookies), remove(admin.user.id, second.cookies)]);
     expect(results.filter((r) => r.statusCode === 204)).toHaveLength(1);
     expect(countAdmins(db)).toBe(1);
@@ -207,10 +213,10 @@ describe('an unknown user id', () => {
   it('gets 404 everywhere', async () => {
     const { app, admin } = await withAdmin();
     for (const [method, url, payload] of [
-      ['PATCH', `/api/users/${UNKNOWN_ID}`, { role: 'producer' }],
-      ['POST', `/api/users/${UNKNOWN_ID}/password-reset`, undefined],
-      ['POST', `/api/users/${UNKNOWN_ID}/sign-out`, undefined],
-      ['DELETE', `/api/users/${UNKNOWN_ID}`, undefined],
+      ['PATCH', `/api/core/users/${UNKNOWN_ID}`, { role: 'producer' }],
+      ['POST', `/api/core/users/${UNKNOWN_ID}/password-reset`, undefined],
+      ['POST', `/api/core/users/${UNKNOWN_ID}/sign-out`, undefined],
+      ['DELETE', `/api/core/users/${UNKNOWN_ID}`, undefined],
     ] as const) {
       const res = await app.inject({ method, url, cookies: admin.cookies, payload });
       expect(res.statusCode, `${method} ${url}`).toBe(404);
@@ -228,12 +234,12 @@ function afterAccessCheck(app: FastifyInstance, route: string, change: () => voi
 }
 
 const createProducer = (app: FastifyInstance, cookies: Record<string, string>) =>
-  app.inject({ method: 'POST', url: '/api/users', cookies, payload: { username: 'producer1', role: 'producer' } });
+  app.inject({ method: 'POST', url: '/api/core/users', cookies, payload: { username: 'producer1', role: 'producer' } });
 
 describe('an Admin who loses access while a password is hashing', () => {
   it('creates no user once demoted', async () => {
     const { app, db, admin } = await withAdmin();
-    afterAccessCheck(app, '/api/users', () => setRole(db, admin.user.id, 'producer'));
+    afterAccessCheck(app, '/api/core/users', () => setRole(db, admin.user.id, 'producer'));
     const res = await createProducer(app, admin.cookies);
     expect(res.statusCode).toBe(403);
     expect(res.json()).toEqual({ error: 'forbidden' });
@@ -242,7 +248,7 @@ describe('an Admin who loses access while a password is hashing', () => {
 
   it('creates no user once deleted', async () => {
     const { app, db, admin } = await withAdmin();
-    afterAccessCheck(app, '/api/users', () => deleteUser(db, admin.user.id));
+    afterAccessCheck(app, '/api/core/users', () => deleteUser(db, admin.user.id));
     const res = await createProducer(app, admin.cookies);
     expect(res.statusCode).toBe(401);
     expect(findUserForLogin(db, 'producer1')).toBeNull();
@@ -251,10 +257,10 @@ describe('an Admin who loses access while a password is hashing', () => {
   it('resets no password once demoted', async () => {
     const { app, db, admin } = await withAdmin();
     const producer = await signIn(db, 'producer1', 'producer');
-    afterAccessCheck(app, '/api/users/:id/password-reset', () => setRole(db, admin.user.id, 'producer'));
+    afterAccessCheck(app, '/api/core/users/:id/password-reset', () => setRole(db, admin.user.id, 'producer'));
     const res = await app.inject({
       method: 'POST',
-      url: `/api/users/${producer.user.id}/password-reset`,
+      url: `/api/core/users/${producer.user.id}/password-reset`,
       cookies: admin.cookies,
     });
     expect(res.statusCode).toBe(403);

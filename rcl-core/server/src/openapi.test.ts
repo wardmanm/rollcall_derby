@@ -38,26 +38,37 @@ describe('API explorer', () => {
       name: 'rollcall_session',
     });
     const json = 'application/json';
-    expect(at(doc, 'paths', '/api/users', 'post', 'requestBody', 'content', json, 'schema', 'required')).toEqual(
+    expect(at(doc, 'paths', '/api/core/users', 'post', 'requestBody', 'content', json, 'schema', 'required')).toEqual(
       expect.arrayContaining(['username', 'role']),
     );
-    const me = at(doc, 'paths', '/api/auth/me', 'get', 'responses', '200', 'content', json, 'schema', 'properties');
+    const me = at(
+      doc,
+      'paths',
+      '/api/core/auth/me',
+      'get',
+      'responses',
+      '200',
+      'content',
+      json,
+      'schema',
+      'properties',
+    );
     expect(Object.keys(me ?? {})).toEqual(expect.arrayContaining(['id', 'username', 'role', 'mustChangePassword']));
-    expect(at(doc, 'paths', '/api/users/{id}', 'delete', 'tags')).toEqual(['users']);
+    expect(at(doc, 'paths', '/api/core/users/{id}', 'delete', 'tags')).toEqual(['core/users']);
   });
 
   it('says who may call each operation, and that public ones need no session', async () => {
     const { app } = testApp({ apiDocs: true });
     const doc = (await app.inject({ method: 'GET', url: '/docs/json' })).json<unknown>();
     expect(at(doc, 'security')).toEqual([{ session: [] }]);
-    expect(at(doc, 'paths', '/api/health', 'get', 'security')).toEqual([]);
-    expect(at(doc, 'paths', '/api/health', 'get', 'description')).toBe(
+    expect(at(doc, 'paths', '/api/core/health', 'get', 'security')).toEqual([]);
+    expect(at(doc, 'paths', '/api/core/health', 'get', 'description')).toBe(
       '**Public:** Shows whether the server is up, before anyone signs in.',
     );
-    expect(at(doc, 'paths', '/api/auth/me', 'get', 'description')).toBe(
+    expect(at(doc, 'paths', '/api/core/auth/me', 'get', 'description')).toBe(
       '**Any signed-in user**, even with a password change pending.',
     );
-    expect(at(doc, 'paths', '/api/users', 'get', 'description')).toBe('**Needs `core:users.manage`:** Admin.');
-    expect(at(doc, 'paths', '/api/users', 'get', 'security')).toBeUndefined();
+    expect(at(doc, 'paths', '/api/core/users', 'get', 'description')).toBe('**Needs `core:users.manage`:** Admin.');
+    expect(at(doc, 'paths', '/api/core/users', 'get', 'security')).toBeUndefined();
   });
 });

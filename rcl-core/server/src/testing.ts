@@ -4,7 +4,11 @@ import { buildApp, type AppOptions } from './app.ts';
 import { migrateApp, migrationsTableFor } from './apps.ts';
 import { openMemoryDatabase, type AppDatabase } from './db.ts';
 import { hashPassword } from './auth/passwords.ts';
+import pkg from '../package.json' with { type: 'json' };
 import { createUser, type UserRecord } from './auth/users.ts';
+
+/** This rcl-core's version, as main.ts passes it to the server. */
+export const CORE_VERSION = pkg.version;
 
 // Test helpers: an app on a private in-memory database, and a quick way to add users.
 export function testApp(options: Partial<AppOptions> = {}) {

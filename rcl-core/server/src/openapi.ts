@@ -6,9 +6,9 @@ import type { Access, Permissions } from './auth/access.ts';
 import { SESSION_COOKIE } from './auth/guard.ts';
 
 const DESCRIPTION = [
-  'The Rollcall server API. Requests and replies are JSON; `204` replies have no body.',
+  'The Rollcall server API. Requests and replies are JSON; `204` replies have no body. Every rcl app has its routes below `/api/<app>/` and its tags named `<app>/…`.',
   '',
-  '**Signing in.** Call `POST /api/auth/login` with "Try it out". Your browser keeps the `rollcall_session` cookie and sends it with every later call, so they run as you, with the permissions your role holds. On a fresh data folder, create the first Admin with `POST /api/setup` from the server machine.',
+  '**Signing in.** Call `POST /api/core/auth/login` with "Try it out". Your browser keeps the `rollcall_session` cookie and sends it with every later call, so they run as you, with the permissions your role holds. On a fresh data folder, create the first Admin with `POST /api/core/setup` from the server machine.',
   '',
   '**Who may call what.** Each operation says so: public, any signed-in user, or a permission such as `core:users.manage`. Admins hold every permission; the users-and-access feature page lists which other roles hold each one.',
   '',
@@ -42,10 +42,10 @@ export function registerApiDocs(
     openapi: {
       info: { title: 'Rollcall API', version, description: DESCRIPTION },
       tags: [
-        { name: 'health', description: 'Is the server up?' },
-        { name: 'setup', description: 'Creating the first Admin' },
-        { name: 'auth', description: 'Logging in and out, and your own password' },
-        { name: 'users', description: 'User management (Admin only)' },
+        { name: 'core/health', description: 'Is the server up?' },
+        { name: 'core/setup', description: 'Creating the first Admin' },
+        { name: 'core/auth', description: 'Logging in and out, and your own password' },
+        { name: 'core/users', description: 'User management (Admin only)' },
       ],
       components: { securitySchemes: { session: { type: 'apiKey', in: 'cookie', name: SESSION_COOKIE } } },
       security: [{ session: [] }],

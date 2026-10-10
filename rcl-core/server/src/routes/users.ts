@@ -43,20 +43,24 @@ export function registerUserRoutes(fastify: FastifyInstance, db: AppDatabase): v
   const api = fastify.withTypeProvider<ZodTypeProvider>();
 
   api.get(
-    '/api/users',
+    '/users',
     {
       ...MANAGE_USERS,
-      schema: { tags: ['users'], summary: 'List users', response: { 200: UserSchema.array(), ...ERROR_RESPONSES } },
+      schema: {
+        tags: ['core/users'],
+        summary: 'List users',
+        response: { 200: UserSchema.array(), ...ERROR_RESPONSES },
+      },
     },
     async () => listUsers(db),
   );
 
   api.post(
-    '/api/users',
+    '/users',
     {
       ...MANAGE_USERS,
       schema: {
-        tags: ['users'],
+        tags: ['core/users'],
         summary: 'Create a user (the temporary password is shown only in this response)',
         body: CreateUserRequestSchema,
         response: { 201: CreateUserResponseSchema, ...ERROR_RESPONSES },
@@ -74,11 +78,11 @@ export function registerUserRoutes(fastify: FastifyInstance, db: AppDatabase): v
   );
 
   api.patch(
-    '/api/users/:id',
+    '/users/:id',
     {
       ...MANAGE_USERS,
       schema: {
-        tags: ['users'],
+        tags: ['core/users'],
         summary: "Change a user's role",
         params: UserParamsSchema,
         body: UpdateUserRequestSchema,
@@ -95,11 +99,11 @@ export function registerUserRoutes(fastify: FastifyInstance, db: AppDatabase): v
   );
 
   api.post(
-    '/api/users/:id/password-reset',
+    '/users/:id/password-reset',
     {
       ...MANAGE_USERS,
       schema: {
-        tags: ['users'],
+        tags: ['core/users'],
         summary: "Reset a user's password (the temporary password is shown only in this response)",
         params: UserParamsSchema,
         response: { 200: PasswordResetResponseSchema, ...ERROR_RESPONSES },
@@ -119,11 +123,11 @@ export function registerUserRoutes(fastify: FastifyInstance, db: AppDatabase): v
   );
 
   api.post(
-    '/api/users/:id/sign-out',
+    '/users/:id/sign-out',
     {
       ...MANAGE_USERS,
       schema: {
-        tags: ['users'],
+        tags: ['core/users'],
         summary: 'Sign a user out on every device',
         params: UserParamsSchema,
         response: { 204: NO_CONTENT, ...ERROR_RESPONSES },
@@ -138,11 +142,11 @@ export function registerUserRoutes(fastify: FastifyInstance, db: AppDatabase): v
   );
 
   api.delete(
-    '/api/users/:id',
+    '/users/:id',
     {
       ...MANAGE_USERS,
       schema: {
-        tags: ['users'],
+        tags: ['core/users'],
         summary: 'Delete a user',
         params: UserParamsSchema,
         response: { 204: NO_CONTENT, ...ERROR_RESPONSES },

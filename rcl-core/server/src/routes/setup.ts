@@ -17,11 +17,11 @@ export function registerSetupRoutes(fastify: FastifyInstance, db: AppDatabase): 
   const api = fastify.withTypeProvider<ZodTypeProvider>();
 
   api.get(
-    '/api/setup',
+    '/setup',
     {
       config: { access: { public: 'The web app asks whether to show first-run setup before anyone can sign in' } },
       schema: {
-        tags: ['setup'],
+        tags: ['core/setup'],
         summary: 'Is first-run setup needed, and can this machine do it?',
         response: { 200: SetupStatusSchema, ...ERROR_RESPONSES },
       },
@@ -30,14 +30,14 @@ export function registerSetupRoutes(fastify: FastifyInstance, db: AppDatabase): 
   );
 
   api.post(
-    '/api/setup',
+    '/setup',
     {
       config: {
         rateLimit: AUTH_RATE_LIMIT,
         access: { public: 'Creates the first Admin: only on the server machine, and only while there are no users' },
       },
       schema: {
-        tags: ['setup'],
+        tags: ['core/setup'],
         summary: 'Create the first Admin and sign in (server machine only, while no users exist)',
         body: SetupRequestSchema,
         response: { 201: SessionUserSchema, ...ERROR_RESPONSES },

@@ -2,8 +2,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { AppModule } from '@rollcall/app-sdk';
+import type { AppOptions } from './app.ts';
 import { testApp } from './testing.ts';
-import type { WebApp } from './web-apps.ts';
 
 const dirs: string[] = [];
 afterEach(() => dirs.splice(0).forEach((d) => rmSync(d, { recursive: true, force: true })));
@@ -19,16 +20,26 @@ function build(app: string, pages: string[] = []) {
   return dir;
 }
 
-function appWithBuilds(): WebApp[] {
-  return [
-    { base: '/core/', dir: build('core') },
-    { base: '/producer/', dir: build('producer', ['overlay']), pages: { overlay: 'overlay.html' } },
-  ];
+// A hosted app with only a web build, served at /producer/ with an overlay page.
+const producerWith = (dir: string): AppModule => ({
+  id: 'producer',
+  title: 'Producer',
+  version: '1.0.0',
+  requiresCore: '*',
+  permissions: [],
+  web: { dir, pages: { overlay: 'overlay.html' } },
+});
+
+type Builds = Pick<AppOptions, 'coreWebDir' | 'apps'>;
+const missing = join(tmpdir(), 'rollcall-web-does-not-exist');
+
+function appWithBuilds(): Builds {
+  return { coreWebDir: build('core'), apps: [producerWith(build('producer', ['overlay']))] };
 }
 
-async function get(webApps: readonly WebApp[], url: string) {
-  const { app } = testApp({ webApps });
-  const res = await app.inject({ method: 'GET', url });
+async function get(builds: Builds, url: string, method: 'GET' | 'HEAD' = 'GET') {
+  const { app } = testApp(builds);
+  const res = await app.inject({ method, url });
   await app.close();
   return res;
 }
@@ -82,6 +93,15 @@ describe('serving the web apps', () => {
     }
   });
 
+  it('answers HEAD for pages and client-side routes as it answers GET', async () => {
+    const webApps = appWithBuilds();
+    for (const url of ['/core/teams/42', '/producer/overlay/some-output-token']) {
+      const res = await get(webApps, url, 'HEAD');
+      expect(res.statusCode, url).toBe(200);
+      expect(res.headers['content-type'], url).toMatch(/text\/html/);
+    }
+  });
+
   it("does not treat look-alike paths as an app's page", async () => {
     expect((await get(appWithBuilds(), '/producer/overlays-list')).body).toContain('<div id="producer-root">');
   });
@@ -94,7 +114,7 @@ describe('serving the web apps', () => {
 
   it('answers paths no app claims, and unknown API routes, with a JSON 404', async () => {
     // /overlay is where the OBS overlay was before it moved to /producer/overlay; it has no redirect.
-    for (const url of ['/api/nope', '/overlay', '/teams/42', '/producerish']) {
+    for (const url of ['/api/core/nope', '/overlay', '/teams/42', '/producerish']) {
       const res = await get(appWithBuilds(), url);
       expect(res.statusCode, url).toBe(404);
       expect(res.headers['content-type'], url).toMatch(/application\/json/);
@@ -102,19 +122,15 @@ describe('serving the web apps', () => {
   });
 
   it('serves the apps that are built and skips the rest', async () => {
-    const webApps = [
-      { base: '/core/', dir: join(tmpdir(), 'rollcall-web-does-not-exist') },
-      { base: '/producer/', dir: build('producer', ['overlay']), pages: { overlay: 'overlay.html' } },
-    ];
+    const webApps = { coreWebDir: missing, apps: [producerWith(build('producer', ['overlay']))] };
     expect((await get(webApps, '/producer/screens/3')).body).toContain('<div id="producer-root">');
     expect((await get(webApps, '/producer/overlay')).body).toContain('<div id="producer-overlay">');
     expect((await get(webApps, '/core/')).statusCode).toBe(404);
   });
 
   it('still serves the API when there is no web build yet', async () => {
-    const webApps = [{ base: '/core/', dir: join(tmpdir(), 'rollcall-web-does-not-exist') }];
-    const { app } = testApp({ webApps });
-    expect((await app.inject({ method: 'GET', url: '/api/health' })).statusCode).toBe(200);
+    const { app } = testApp({ coreWebDir: missing });
+    expect((await app.inject({ method: 'GET', url: '/api/core/health' })).statusCode).toBe(200);
     const res = await app.inject({ method: 'GET', url: '/core/' });
     expect(res.statusCode).toBe(404);
     expect(res.json()).toMatchObject({ error: 'Not Found' });

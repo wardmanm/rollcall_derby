@@ -1,27 +1,32 @@
 import Fastify, { type FastifyInstance, type RouteOptions } from 'fastify';
 import fastifyCookie from '@fastify/cookie';
 import fastifyRateLimit from '@fastify/rate-limit';
-import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fastify-type-provider-zod';
-import { APP_NAME, HealthResponseSchema, type HealthResponse } from '@rollcall/core-contract';
+import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
+import type { AppModule } from '@rollcall/app-sdk';
+import { hostApps, type HostedApps } from './apps.ts';
+import { coreApp } from './core-app.ts';
 import type { AppDatabase } from './db.ts';
-import { ERROR_RESPONSES, sendApiError } from './http.ts';
-import { createPermissions, enforceRouteAccess, type Permissions } from './auth/access.ts';
+import { sendApiError } from './http.ts';
+import { enforceRouteAccess } from './auth/access.ts';
 import { installAuth } from './auth/guard.ts';
-import { CORE_APP_ID, CORE_PERMISSIONS } from './auth/permissions.ts';
 import { registerApiDocs } from './openapi.ts';
-import { registerAuthRoutes } from './routes/auth.ts';
-import { registerSetupRoutes } from './routes/setup.ts';
-import { registerUserRoutes } from './routes/users.ts';
-import { serveWebApps, type WebApp } from './web-apps.ts';
+import { serveWebApps } from './web-apps.ts';
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    /** The rcl apps this server hosts, core first (ADR-0019). */
+    hostedApps: HostedApps;
+  }
+}
 
 export interface AppOptions {
   version: string;
   logger?: boolean;
-  /** The rcl apps' web builds to serve, each below its own base. `/` redirects to the first one. */
-  webApps?: readonly WebApp[];
   db: AppDatabase;
-  /** Every permission routes may need (ADR-0018). Defaults to core's own; tests add others. */
-  permissions?: Permissions;
+  /** rcl-core's own web build, served at /core/. */
+  coreWebDir?: string;
+  /** The rcl apps to host besides core: INSTALLED_APPS in production, the tests' own apps in tests. */
+  apps?: readonly AppModule[];
   /** Registers routes inside the authenticated /api plugin, after cookie, rate-limit and auth are wired up (for tests). */
   registerRoutes?: (api: FastifyInstance) => void;
   /** Called for each route as it's registered; the route inventory test uses it. */
@@ -30,26 +35,36 @@ export interface AppOptions {
   apiDocs?: boolean;
 }
 
-// The HTTP API. Kept free of listening and sockets so routes can be tested with app.inject().
+const API_PATH = /^\/api(\/|$)/;
+
+// The HTTP API and web builds of every hosted rcl app. Kept free of listening and sockets so routes can be tested
+// with app.inject().
 export function buildApp({
   version,
   logger = false,
-  webApps = [],
   db,
+  coreWebDir,
+  apps = [],
   registerRoutes,
   onRoute,
   apiDocs = false,
-  permissions = createPermissions(CORE_PERMISSIONS),
 }: AppOptions): FastifyInstance {
   const app = Fastify({ logger });
+  const hosted = hostApps({
+    core: coreApp({ version, db, webDir: coreWebDir }),
+    apps,
+    coreVersion: version,
+    db,
+    log: app.log,
+  });
+  app.decorate('hostedApps', hosted);
   // Added first, so they see every route, including those inside the /api plugin.
   if (onRoute) app.addHook('onRoute', onRoute);
-  enforceRouteAccess(app, { appId: CORE_APP_ID, permissions });
-  // Routes validate requests and serialize replies with the shared Zod schemas they declare (ADR-0007, ADR-0014).
+  enforceRouteAccess(app, { appIds: hosted.modules.map((module) => module.id), permissions: hosted.permissions });
+  // Routes validate requests and serialize replies with the Zod schemas they declare (ADR-0014, ADR-0019).
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
-  registerApiDocs(app, { version, apiDocs, permissions });
-  const startedAt = performance.now();
+  registerApiDocs(app, { version, apiDocs, permissions: hosted.permissions });
 
   // JSON bodies only: removing the text/plain parser turns form-style cross-site posts into 415s.
   app.removeContentTypeParser('text/plain');
@@ -57,36 +72,28 @@ export function buildApp({
   // ipv6Subnet: 128 counts each IPv6 device on its own; by default the plugin lumps a whole /64 network together.
   void app.register(fastifyRateLimit, { global: false, ipv6Subnet: 128 });
 
-  // Every /api route lives in this one plugin, registered after cookie and rate-limit, so each one shares
-  // the same error handler and auth checks.
+  // Every /api route lives in this one plugin, registered after cookie and rate-limit, so each one shares the same
+  // error handler, CSRF check and caller lookup. Each hosted app's routes are a child plugin below /api/<id>.
   void app.register(async (api) => {
     api.setErrorHandler(sendApiError);
-    installAuth(api, { db, permissions });
-    api.withTypeProvider<ZodTypeProvider>().get(
-      '/api/health',
-      {
-        config: { access: { public: 'Shows whether the server is up, before anyone signs in' } },
-        schema: {
-          tags: ['health'],
-          summary: 'Check that the server is up',
-          response: { 200: HealthResponseSchema, ...ERROR_RESPONSES },
-        },
-      },
-      async () =>
-        ({
-          status: 'ok',
-          name: APP_NAME,
-          version,
-          uptimeSeconds: (performance.now() - startedAt) / 1000,
-        }) satisfies HealthResponse,
-    );
-    registerSetupRoutes(api, db);
-    registerAuthRoutes(api, db);
-    registerUserRoutes(api, db);
+    installAuth(api, { db, permissions: hosted.permissions });
+    for (const module of hosted.modules) {
+      const ctx = hosted.contextFor(module);
+      void api.register(async (scope) => module.register?.(scope, ctx), { prefix: `/api/${module.id}` });
+    }
     registerRoutes?.(api);
   });
 
-  serveWebApps(app, webApps);
+  const webPage = serveWebApps(app, hosted.webApps);
+  app.setNotFoundHandler((request, reply) => {
+    const path = request.url.split('?')[0] ?? '';
+    if (API_PATH.test(path)) return reply.code(404).send({ error: 'not_found' });
+    const page = request.method === 'GET' || request.method === 'HEAD' ? webPage(path) : undefined;
+    if (page) return reply.type('text/html').sendFile(page.file, page.dir);
+    return reply
+      .code(404)
+      .send({ message: `Route ${request.method}:${request.url} not found`, error: 'Not Found', statusCode: 404 });
+  });
 
   return app;
 }

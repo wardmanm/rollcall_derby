@@ -10,7 +10,7 @@ export const api = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: `${window.location.origin}/api/` }),
   endpoints: (build) => ({
     getHealth: build.query<HealthResponse, void>({
-      query: () => 'health',
+      query: () => 'core/health',
       transformResponse: (response: unknown) => parseHealth(response),
     }),
   }),
