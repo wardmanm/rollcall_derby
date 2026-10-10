@@ -2,5 +2,6 @@
 // Types come from z.infer. Naming: `FooSchema` for the schema, `Foo` for its type.
 export const APP_NAME = 'Rollcall';
 
+export * from './apps.ts';
 export * from './health.ts';
 export * from './auth.ts';

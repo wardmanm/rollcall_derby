@@ -43,6 +43,7 @@ export function registerApiDocs(
       info: { title: 'Rollcall API', version, description: DESCRIPTION },
       tags: [
         { name: 'core/health', description: 'Is the server up?' },
+        { name: 'core/apps', description: 'The rcl apps this server hosts' },
         { name: 'core/setup', description: 'Creating the first Admin' },
         { name: 'core/auth', description: 'Logging in and out, and your own password' },
         { name: 'core/users', description: 'User management (Admin only)' },

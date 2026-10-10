@@ -1,6 +1,12 @@
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import type { AppModule } from '@rollcall/app-sdk';
-import { APP_NAME, HealthResponseSchema, type HealthResponse } from '@rollcall/core-contract';
+import {
+  APP_NAME,
+  HealthResponseSchema,
+  HostedAppSchema,
+  type HealthResponse,
+  type HostedApp,
+} from '@rollcall/core-contract';
 import type { AppDatabase } from './db.ts';
 import { ERROR_RESPONSES } from './http.ts';
 import { CORE_APP_ID, CORE_PERMISSIONS } from './auth/permissions.ts';
@@ -37,6 +43,24 @@ export function coreApp({ version, db, webDir }: { version: string; db: AppDatab
             version,
             uptimeSeconds: (performance.now() - startedAt) / 1000,
           }) satisfies HealthResponse,
+      );
+      fastify.withTypeProvider<ZodTypeProvider>().get(
+        '/apps',
+        {
+          config: { access: { signedIn: true } },
+          schema: {
+            tags: ['core/apps'],
+            summary: 'The rcl apps this server hosts, for the app launcher',
+            response: { 200: HostedAppSchema.array(), ...ERROR_RESPONSES },
+          },
+        },
+        async (request) =>
+          request.server.hostedApps.modules.map((module): HostedApp => ({
+            id: module.id,
+            title: module.title,
+            version: module.version,
+            url: module.web ? `/${module.id}/` : null,
+          })),
       );
       registerSetupRoutes(fastify, db);
       registerAuthRoutes(fastify, db);
