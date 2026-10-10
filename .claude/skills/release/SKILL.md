@@ -21,6 +21,8 @@ The full process is in `docs/guides/releasing.md`.
    - `node scripts/release.mjs prepare <version>`
    - `node scripts/release.mjs check <version>`
    - `node scripts/check-docs.mjs`
+
+   If the new version is outside an app's `rollcall.requiresCore` range in `rcl-*/server/package.json` (before 1.0, any new minor version), ask the user whether that app works with it. Widen the range only if they confirm (ADR-0019); `yarn check` fails until it covers the new version.
 6. **Review.** Show `git diff`. Ask the user whether the notes read well for the people who run the app. Edit wording in the new version section only if they ask.
 7. **Commit** once the user confirms: `chore(obs-producer): prepare v<version>`, including `CHANGELOG.md` and any `package.json` files.
 8. **Hand off, then stop.** Tell the user the remaining deliberate steps:

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ROLES } from '@rollcall/core-contract';
+import { INSTALLED_APPS } from '../installed-apps.ts';
 import { createPermissions } from './access.ts';
 import { CORE_APP_ID, CORE_PERMISSIONS } from './permissions.ts';
 
@@ -26,10 +27,13 @@ describe('core permissions', () => {
     const permissions = createPermissions(CORE_PERMISSIONS);
     for (const { key } of permissions.all) expect(key.startsWith(`${CORE_APP_ID}:`), key).toBe(true);
   });
+});
 
+describe("every installed app's permissions, core's first", () => {
   it('match the table on the users-and-access feature page', () => {
-    const permissions = createPermissions(CORE_PERMISSIONS);
-    const expected = CORE_PERMISSIONS.map(({ key, summary }) =>
+    const defs = [...CORE_PERMISSIONS, ...INSTALLED_APPS.flatMap((app) => app.permissions)];
+    const permissions = createPermissions(defs);
+    const expected = defs.map(({ key, summary }) =>
       [`\`${key}\``, summary].concat(ROLES.map((role) => (permissions.granted(role, key) ? '✅' : '—'))),
     );
     expect(documentedPermissions()).toEqual(expected);

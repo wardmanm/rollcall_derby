@@ -64,6 +64,8 @@ git diff                                 # read the notes the way users will
 git commit -am "chore(obs-producer): prepare v0.2.0"
 ```
 
+If the new version is outside an app's `rollcall.requiresCore` range in `rcl-*/server/package.json` (before 1.0, any new minor version such as 0.2.0), decide whether that app works with it and widen the range before you commit ([ADR-0019](../decisions/0019-rcl-apps-as-modules.md)). Until you do, `yarn check` fails in `rcl-core/server/src/installed-apps.test.ts`.
+
 Get the commit onto `main` your usual way.
 
 ### 2. Dry run

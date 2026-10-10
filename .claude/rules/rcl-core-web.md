@@ -4,7 +4,7 @@ paths:
 ---
 # rcl-core web app (`rcl-core/web/`)
 
-- **Served at `/core/`**, and `/` redirects there (split spec). `src/base.ts` holds that path for Vite and the router; the server's list of web apps is `rcl-core/server/src/web-apps.ts`.
+- **Served at `/core/`**, and `/` redirects there (ADR-0019). `src/base.ts` holds that path for Vite and the router; core's own module (`rcl-core/server/src/core-app.ts`) tells the server where the build is.
 - **In development this Vite server is the front door** (port 5173): it passes `/producer` on to the Producer app's Vite (port 5174) and the server's paths to the server. Its proxy comes from `@rollcall/web-sdk/vite`; `src/dev-proxy.test.ts` pins it.
 - **The shell, the server badge, the store and the base API come from `@rollcall/web-sdk`.** Add endpoints to the base API with `api.injectEndpoints` rather than creating a second API.
 - **Server data lives only in RTK Query**, never copied into slices (hard rule 6, ADR-0003).
