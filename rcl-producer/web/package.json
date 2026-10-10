@@ -15,6 +15,7 @@
     "@mantine/hooks": "^9.6.3",
     "@reduxjs/toolkit": "^2.13.0",
     "@rollcall/core-contract": "workspace:^",
+    "@rollcall/producer-contract": "workspace:^",
     "@rollcall/web-sdk": "workspace:^",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

@@ -1,7 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 import { io } from 'socket.io-client';
-import { SERVER_HELLO_EVENT, ServerHelloSchema, type ServerHello } from '@rollcall/core-contract';
+import { SERVER_HELLO_EVENT, ServerHelloSchema, type ServerHello } from '@rollcall/producer-contract';
 
 // The overlay's live state comes only from the server over Socket.IO (ADR-0004), held in the RTK Query
 // cache rather than a slice (hard rule 6, ADR-0003). A reload starts empty and rebuilds from what the
@@ -50,8 +50,8 @@ export const liveApi = createApi({
 export const { useGetLiveStateQuery } = liveApi;
 
 // The overlay's own lean store; it shares nothing with the admin store (ADR-0003, ADR-0006). It connects to the
-// public /overlay namespace, because OBS browser sources can't log in (ADR-0018).
-export function makeOverlayStore(connect: ConnectLive = () => io('/overlay')) {
+// public /producer/overlay namespace, because OBS browser sources can't log in (ADR-0018).
+export function makeOverlayStore(connect: ConnectLive = () => io('/producer/overlay')) {
   return configureStore({
     reducer: { [liveApi.reducerPath]: liveApi.reducer },
     middleware: (getDefaultMiddleware) =>

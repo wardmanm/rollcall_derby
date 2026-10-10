@@ -1844,12 +1844,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@rollcall/producer-contract@workspace:^, @rollcall/producer-contract@workspace:rcl-producer/contract":
+  version: 0.0.0-use.local
+  resolution: "@rollcall/producer-contract@workspace:rcl-producer/contract"
+  dependencies:
+    zod: "npm:^4.6.5"
+  languageName: unknown
+  linkType: soft
+
 "@rollcall/producer-server@workspace:^, @rollcall/producer-server@workspace:rcl-producer/server":
   version: 0.0.0-use.local
   resolution: "@rollcall/producer-server@workspace:rcl-producer/server"
   dependencies:
     "@rollcall/app-sdk": "workspace:^"
     "@rollcall/core-contract": "workspace:^"
+    "@rollcall/producer-contract": "workspace:^"
     "@types/node": "npm:^24"
     typescript: "npm:^7.0.2"
   languageName: unknown
@@ -1863,6 +1872,7 @@ __metadata:
     "@mantine/hooks": "npm:^9.6.3"
     "@reduxjs/toolkit": "npm:^2.13.0"
     "@rollcall/core-contract": "workspace:^"
+    "@rollcall/producer-contract": "workspace:^"
     "@rollcall/web-sdk": "workspace:^"
     "@storybook/addon-a11y": "npm:^10.6.1"
     "@storybook/addon-docs": "npm:^10.6.1"

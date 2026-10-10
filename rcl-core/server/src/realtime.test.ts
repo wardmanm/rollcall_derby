@@ -4,14 +4,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { io as connect, type Socket } from 'socket.io-client';
 import type { FastifyBaseLogger } from 'fastify';
 import type { Server as SocketIoServer } from 'socket.io';
-import { APP_NAME, SERVER_HELLO_EVENT, ServerHelloSchema, type Role } from '@rollcall/core-contract';
-import { attachRealtime, type RealtimeOptions } from './realtime.ts';
+import type { Access, AppModule } from '@rollcall/app-sdk';
+import type { Role } from '@rollcall/core-contract';
+import { hostApps } from './apps.ts';
+import { coreApp } from './core-app.ts';
+import { attachRealtime } from './realtime.ts';
 import { openMemoryDatabase } from './db.ts';
-import { createPermissions, type Access } from './auth/access.ts';
 import { createSession } from './auth/sessions.ts';
 import { SESSION_COOKIE } from './auth/guard.ts';
-import { CORE_PERMISSIONS } from './auth/permissions.ts';
-import { addUser } from './testing.ts';
+import { INSTALLED_APPS } from './installed-apps.ts';
+import { addUser, CORE_VERSION } from './testing.ts';
 
 let httpServer: HttpServer | undefined;
 let io: SocketIoServer | undefined;
@@ -25,37 +27,68 @@ afterEach(async () => {
   io = httpServer = undefined;
 });
 
-const permissions = createPermissions(CORE_PERMISSIONS);
-const testLog = () =>
-  ({ error: vi.fn<(obj: { err: unknown }, msg: string) => void>() }) as unknown as FastifyBaseLogger;
+const testLog = (): FastifyBaseLogger =>
+  ({
+    error: vi.fn<(obj: { err: unknown }, msg: string) => void>(),
+    child: vi.fn<() => FastifyBaseLogger>(() => testLog()),
+  }) as unknown as FastifyBaseLogger;
 
-// Starts Socket.IO on a real port, with any extra namespaces, and records every namespace as it's created.
-async function startRealtime(options: Partial<RealtimeOptions> = {}) {
+// An app that only tests host: one namespace of each kind, so every kind of declaration has one to sweep.
+const PROBE_APP: AppModule = {
+  id: 'probe',
+  title: 'Probe',
+  version: '1.0.0',
+  requiresCore: '*',
+  permissions: [{ key: 'probe:watch', summary: 'Watch', roles: [] }],
+  realtime(rt) {
+    rt.namespace('/probe/open', { access: { public: 'test probe' } }).on('connection', (socket) => {
+      socket.emit('probe:hello', 'hi');
+    });
+    rt.namespace('/probe/signed-in', { access: { signedIn: true } });
+    rt.namespace('/probe/watch', { access: { permission: 'probe:watch' } });
+  },
+};
+
+// An app that only creates namespaces, with `realtime` doing whatever the test needs.
+const appWith = (realtime: AppModule['realtime']): AppModule => ({ ...PROBE_APP, realtime });
+
+// Hosts the installed apps and `apps` on a real port, and records every namespace as it's created.
+function attach(apps: readonly AppModule[] = [...INSTALLED_APPS, PROBE_APP]) {
   const database = openMemoryDatabase();
-  const namespaces: { name: string; access: Access }[] = [];
   const log = testLog();
-  httpServer = createServer();
-  io = attachRealtime(httpServer, {
-    version: '1.0.0',
+  const namespaces: { name: string; access: Access }[] = [];
+  const hosted = hostApps({
+    core: coreApp({ version: CORE_VERSION, db: database.db }),
+    apps,
+    coreVersion: CORE_VERSION,
     db: database.db,
     log,
-    permissions,
-    onNamespace: (name, access) => namespaces.push({ name, access }),
-    ...options,
   });
+  httpServer = createServer();
+  io = attachRealtime(httpServer, {
+    db: database.db,
+    log,
+    hosted,
+    onNamespace: (name, access) => namespaces.push({ name, access }),
+  });
+  return { ...database, log, hosted, namespaces };
+}
+
+async function startRealtime(apps?: readonly AppModule[]) {
+  const rt = attach(apps);
   await new Promise<void>((resolve) => httpServer!.listen(0, resolve));
-  const url = `http://127.0.0.1:${(httpServer.address() as AddressInfo).port}`;
+  const url = `http://127.0.0.1:${(httpServer!.address() as AddressInfo).port}`;
   let users = 0;
   const cookieFor = async (role: Role, { mustChangePassword = false } = {}) => {
-    const user = await addUser(database.db, `user${(users += 1)}`, 'correct horse', role, { mustChangePassword });
-    return `${SESSION_COOKIE}=${createSession(database.db, user.id).token}`;
+    const user = await addUser(rt.db, `user${(users += 1)}`, 'correct horse', role, { mustChangePassword });
+    return `${SESSION_COOKIE}=${createSession(rt.db, user.id).token}`;
   };
   const open = (name: string, headers: Record<string, string> = {}) => {
     const client = connect(`${url}${name}`, { transports: ['websocket'], reconnection: false, extraHeaders: headers });
     clients.push(client);
     return outcome(client);
   };
-  return { ...database, log, url, namespaces, cookieFor, open };
+  return { ...rt, url, cookieFor, open };
 }
 
 // 'connected', or the reason the server refused the connection.
@@ -65,12 +98,6 @@ function outcome(socket: Socket): Promise<string> {
     socket.once('connect_error', (error) => resolve(error.message));
   });
 }
-
-// Two namespaces that only tests create, so every kind of declaration has one to sweep.
-const probes: RealtimeOptions['registerNamespaces'] = (realtime) => {
-  realtime.namespace('/probe/signed-in', { access: { signedIn: true } });
-  realtime.namespace('/probe/users', { access: { permission: 'core:users.manage' } });
-};
 
 // The namespaces that don't refuse the client with `error`. Each connection gets fresh headers.
 async function notRefused(
@@ -88,13 +115,13 @@ async function notRefused(
 }
 
 describe('namespace inventory', () => {
-  it('pins the public namespaces', async () => {
-    const rt = await startRealtime();
-    expect(rt.namespaces.filter((n) => 'public' in n.access).map((n) => n.name)).toEqual(['/overlay']);
+  it('pins the public namespaces of the installed apps', () => {
+    const rt = attach(INSTALLED_APPS);
+    expect(rt.namespaces.filter((n) => 'public' in n.access).map((n) => n.name)).toEqual(['/producer/overlay']);
   });
 
   it('refuses an anonymous client on every namespace that is not public', async () => {
-    const rt = await startRealtime({ registerNamespaces: probes });
+    const rt = await startRealtime();
     const gated = rt.namespaces.filter((n) => !('public' in n.access)).map((n) => n.name);
     const asAdmin = async () => ({ cookie: await rt.cookieFor('admin') });
     expect(await notRefused(rt, gated, async () => ({}), 'unauthenticated')).toEqual([]);
@@ -102,7 +129,7 @@ describe('namespace inventory', () => {
   });
 
   it('refuses every namespace that is not public while a password change is pending', async () => {
-    const rt = await startRealtime({ registerNamespaces: probes });
+    const rt = await startRealtime();
     const gated = rt.namespaces.filter((n) => !('public' in n.access)).map((n) => n.name);
     const pending = async () => ({ cookie: await rt.cookieFor('producer', { mustChangePassword: true }) });
     const asAdmin = async () => ({ cookie: await rt.cookieFor('admin') });
@@ -111,13 +138,13 @@ describe('namespace inventory', () => {
   });
 
   it('refuses each role every namespace whose permission it lacks', async () => {
-    const rt = await startRealtime({ registerNamespaces: probes });
+    const rt = await startRealtime();
     const asAdmin = async () => ({ cookie: await rt.cookieFor('admin') });
     for (const role of ['producer', 'announcer'] as const) {
       const lacking = rt.namespaces
-        .filter((n) => 'permission' in n.access && !permissions.granted(role, n.access.permission))
+        .filter((n) => 'permission' in n.access && !rt.hosted.permissions.granted(role, n.access.permission))
         .map((n) => n.name);
-      expect(lacking, role).toContain('/probe/users');
+      expect(lacking, role).toContain('/probe/watch');
       const asRole = async () => ({ cookie: await rt.cookieFor(role) });
       expect(await notRefused(rt, lacking, asRole, 'forbidden'), role).toEqual([]);
       expect(await notRefused(rt, lacking, asAdmin, 'forbidden'), role).toHaveLength(lacking.length);
@@ -126,12 +153,16 @@ describe('namespace inventory', () => {
 });
 
 describe('attachRealtime', () => {
-  it('lets anyone into /overlay and says hello', async () => {
+  it("lets anyone into an app's public namespace", async () => {
     const rt = await startRealtime();
-    const client = connect(`${rt.url}/overlay`, { transports: ['websocket'], reconnection: false });
+    const client = connect(`${rt.url}/probe/open`, { transports: ['websocket'], reconnection: false });
     clients.push(client);
-    const hello = await new Promise((resolve) => client.once(SERVER_HELLO_EVENT, resolve));
-    expect(ServerHelloSchema.parse(hello)).toEqual({ name: APP_NAME, version: '1.0.0' });
+    expect(await new Promise((resolve) => client.once('probe:hello', resolve))).toBe('hi');
+  });
+
+  it('refuses the old /overlay namespace, which moved to /producer/overlay', async () => {
+    const rt = await startRealtime();
+    expect(await rt.open('/overlay')).toBe('Invalid namespace');
   });
 
   it('refuses everyone on the bare / namespace, even an Admin', async () => {
@@ -140,40 +171,54 @@ describe('attachRealtime', () => {
   });
 
   it('refuses a signed-in connection opened by another site', async () => {
-    const rt = await startRealtime({ registerNamespaces: probes });
+    const rt = await startRealtime();
     const cookie = await rt.cookieFor('admin');
     expect(await rt.open('/probe/signed-in', { cookie, origin: 'http://evil.example' })).toBe('cross_origin');
   });
 
-  it('refuses a namespace created without access', async () => {
-    await startRealtime();
+  it('refuses a namespace created without access', () => {
+    attach();
     expect(() => io!.of('/sneaky')).toThrow('Socket.IO namespace /sneaky has no access; use namespace()');
   });
 
-  it('refuses a namespace with a bad declaration, or one that already exists', () => {
-    const { db } = openMemoryDatabase();
-    for (const [name, access, message] of [
-      ['/typo', { permission: 'core:users.mange' }, "needs core:users.mange, which core doesn't declare"],
-      ['/overlay', { signedIn: true }, 'Socket.IO namespace /overlay already exists'],
-    ] as const) {
-      const options = { version: '1.0.0', db, log: testLog(), permissions };
-      const attach = () =>
-        attachRealtime(createServer(), { ...options, registerNamespaces: (rt) => rt.namespace(name, { access }) });
-      expect(attach, name).toThrow(message);
+  it("refuses a namespace outside the app's own /<id>, with a bad declaration, or that already exists", () => {
+    for (const [realtime, message] of [
+      [
+        (rt) => rt.namespace('/producer/overlay', { access: { public: 'x' } }),
+        "isn't at or below /probe, so probe can't create it",
+      ],
+      [
+        (rt) => rt.namespace('/probe/typo', { access: { permission: 'probe:wach' } }),
+        "needs probe:wach, which probe doesn't declare",
+      ],
+      [
+        (rt) => rt.namespace('/probe/watch', { access: { permission: 'core:users.manage' } }),
+        'but probe may only use its own probe:… permissions',
+      ],
+      [
+        (rt) => {
+          rt.namespace('/probe/twice', { access: { signedIn: true } });
+          rt.namespace('/probe/twice', { access: { signedIn: true } });
+        },
+        'Socket.IO namespace /probe/twice already exists',
+      ],
+    ] as const satisfies readonly (readonly [AppModule['realtime'], string])[]) {
+      expect(() => attach([appWith(realtime)]), message).toThrow(message);
+      io = undefined;
+      httpServer = undefined;
     }
   });
 
   it('refuses the connection instead of crashing when the session check throws', async () => {
-    const rt = await startRealtime({ registerNamespaces: probes });
+    const rt = await startRealtime();
     const cookie = await rt.cookieFor('admin');
     rt.sqlite.close(); // every query against the database now throws
     expect(await rt.open('/probe/signed-in', { cookie })).toBe('internal_error');
     expect(rt.log.error).toHaveBeenCalledOnce();
 
-    // The process and the server are still up: /overlay still works on the same server.
-    const overlayClient = connect(`${rt.url}/overlay`, { transports: ['websocket'], reconnection: false });
-    clients.push(overlayClient);
-    const hello = await new Promise((resolve) => overlayClient.once(SERVER_HELLO_EVENT, resolve));
-    expect(ServerHelloSchema.parse(hello)).toEqual({ name: APP_NAME, version: '1.0.0' });
+    // The process and the server are still up: the public namespace still works on the same server.
+    const open = connect(`${rt.url}/probe/open`, { transports: ['websocket'], reconnection: false });
+    clients.push(open);
+    expect(await new Promise((resolve) => open.once('probe:hello', resolve))).toBe('hi');
   });
 });

@@ -1,7 +1,6 @@
-// Shared contract for server and web (ADR-0007): Zod schemas are the source of truth,
-// and types come from z.infer. Naming: `FooSchema` for the schema, `Foo` for its type.
+// rcl-core's contract (ADR-0019): Zod schemas for /api/core, shared by its server, its web app and the web SDK.
+// Types come from z.infer. Naming: `FooSchema` for the schema, `Foo` for its type.
 export const APP_NAME = 'Rollcall';
 
 export * from './health.ts';
-export * from './realtime.ts';
 export * from './auth.ts';

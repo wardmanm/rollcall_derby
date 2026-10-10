@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import Database from 'better-sqlite3';
 import { io as connect, type Socket } from 'socket.io-client';
-import { APP_NAME, SERVER_HELLO_EVENT, ServerHelloSchema } from '@rollcall/core-contract';
+import { inc } from 'semver';
+import { APP_NAME } from '@rollcall/core-contract';
 import { startServer, type RunningServer } from './server.ts';
 import { openDatabase } from './db.ts';
 import { sessions } from './db/schema.ts';
@@ -13,12 +14,18 @@ import { dummyHash } from './auth/passwords.ts';
 import type * as Passwords from './auth/passwords.ts';
 import { createSession } from './auth/sessions.ts';
 import { createUser } from './auth/users.ts';
+import { CORE_VERSION } from './testing.ts';
 
 // Wraps dummyHash in a spy that still hashes, so a test can see when startServer first asks for it.
 vi.mock('./auth/passwords.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof Passwords>();
   return { ...actual, dummyHash: vi.fn<typeof actual.dummyHash>(actual.dummyHash) };
 });
+
+// The OBS overlay's live connection belongs to the Producer app (/producer/overlay), which greets each client with
+// this event. A core version it accepts, and a later one it still accepts, so it's hosted before and after a restart.
+const HELLO = 'server:hello';
+const NEXT_VERSION = inc(CORE_VERSION, 'patch') ?? CORE_VERSION;
 
 let running: RunningServer | undefined;
 let client: Socket | undefined;
@@ -56,50 +63,50 @@ describe('startServer', () => {
     dataDir = mkdtempSync(join(tmpdir(), 'op-server-'));
     running = await startServer(
       { host: '127.0.0.1', port: 0, dataDir, webDir: join(dataDir, 'no-web-build') },
-      { version: '9.9.9', logger: false },
+      { version: CORE_VERSION, logger: false },
     );
 
     const health = await fetch(`${running.url}/api/core/health`);
     expect(health.status).toBe(200);
 
-    client = connect(`${running.url}/overlay`, { transports: ['websocket'] });
-    const hello = await new Promise((resolve) => client!.once(SERVER_HELLO_EVENT, resolve));
-    expect(ServerHelloSchema.parse(hello)).toEqual({ name: APP_NAME, version: '9.9.9' });
+    client = connect(`${running.url}/producer/overlay`, { transports: ['websocket'] });
+    const hello = await new Promise((resolve) => client!.once(HELLO, resolve));
+    expect(hello).toEqual({ name: APP_NAME, version: CORE_VERSION });
   });
 
   it('lets clients reconnect on their own after the server restarts', async () => {
     dataDir = mkdtempSync(join(tmpdir(), 'op-server-'));
     const config = { host: '127.0.0.1', port: 0, dataDir, webDir: join(dataDir, 'no-web-build') };
-    running = await startServer(config, { version: '1.0.0', logger: false });
+    running = await startServer(config, { version: CORE_VERSION, logger: false });
     const port = Number(new URL(running.url).port);
 
-    client = connect(`${running.url}/overlay`, {
+    client = connect(`${running.url}/producer/overlay`, {
       transports: ['websocket'],
       reconnectionDelay: 50,
       reconnectionDelayMax: 100,
     });
-    await new Promise((resolve) => client!.once(SERVER_HELLO_EVENT, resolve));
+    await new Promise((resolve) => client!.once(HELLO, resolve));
     const disconnected = new Promise<string>((resolve) => client!.once('disconnect', resolve));
 
     await running.close();
     const reason = await disconnected;
-    running = await startServer({ ...config, port }, { version: '1.0.1', logger: false });
+    running = await startServer({ ...config, port }, { version: NEXT_VERSION, logger: false });
 
     const helloAgain = await Promise.race([
-      new Promise((resolve) => client!.once(SERVER_HELLO_EVENT, resolve)),
+      new Promise((resolve) => client!.once(HELLO, resolve)),
       new Promise((resolve) => setTimeout(() => resolve(`no reconnect (disconnect reason: ${reason})`), 3000)),
     ]);
-    expect(helloAgain).toEqual({ name: APP_NAME, version: '1.0.1' });
+    expect(helloAgain).toEqual({ name: APP_NAME, version: NEXT_VERSION });
   });
 
   it('closes cleanly while a client is still connected', async () => {
     dataDir = mkdtempSync(join(tmpdir(), 'op-server-'));
     running = await startServer(
       { host: '127.0.0.1', port: 0, dataDir, webDir: join(dataDir, 'no-web-build') },
-      { version: '9.9.9', logger: false },
+      { version: CORE_VERSION, logger: false },
     );
-    client = connect(`${running.url}/overlay`, { transports: ['websocket'] });
-    await new Promise((resolve) => client!.once(SERVER_HELLO_EVENT, resolve));
+    client = connect(`${running.url}/producer/overlay`, { transports: ['websocket'] });
+    await new Promise((resolve) => client!.once(HELLO, resolve));
     await expect(running.close()).resolves.toBeUndefined();
     running = undefined;
   });
@@ -110,7 +117,7 @@ describe('startServer', () => {
     try {
       running = await startServer(
         { host: '127.0.0.1', port: 0, dataDir, webDir: join(dataDir, 'no-web-build') },
-        { version: '9.9.9', logger: false },
+        { version: CORE_VERSION, logger: false },
       );
       const purge = spy.mock.calls.find(([, ms]) => ms === 60 * 60 * 1000)?.[0];
       expect(purge).toBeTypeOf('function');

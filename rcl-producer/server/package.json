@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@rollcall/app-sdk": "workspace:^",
-    "@rollcall/core-contract": "workspace:^"
+    "@rollcall/core-contract": "workspace:^",
+    "@rollcall/producer-contract": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24",

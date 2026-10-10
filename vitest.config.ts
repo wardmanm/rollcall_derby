@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
-// `yarn test` runs every workspace: Node for server and contract, jsdom + React for the web apps and the web SDK.
+// `yarn test` runs every workspace: Node for the apps' servers and contracts, jsdom + React for the web apps and the
+// web SDK.
 // Story tests have their own config (vitest.stories.config.ts), so this file never loads Storybook's plugin.
 export default defineConfig({
   test: {
@@ -8,7 +9,7 @@ export default defineConfig({
       {
         test: {
           name: 'node',
-          include: ['rcl-core/contract/src/**/*.test.ts', 'rcl-core/server/src/**/*.test.ts'],
+          include: ['rcl-*/contract/src/**/*.test.ts', 'rcl-*/server/src/**/*.test.ts'],
           environment: 'node',
         },
       },

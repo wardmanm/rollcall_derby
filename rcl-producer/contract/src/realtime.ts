@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// Sent by the server to every Socket.IO client as soon as it connects.
+// Sent by the server to every client of the /producer/overlay namespace as soon as it connects.
 export const SERVER_HELLO_EVENT = 'server:hello';
 export const ServerHelloSchema = z.strictObject({
   name: z.string(),

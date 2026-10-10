@@ -1,3 +1,4 @@
+import type { Server } from 'socket.io';
 import { buildApp } from './app.ts';
 import { dummyHash } from './auth/passwords.ts';
 import { purgeExpiredSessions } from './auth/sessions.ts';
@@ -25,7 +26,6 @@ export async function startServer(
     apps: INSTALLED_APPS,
     apiDocs: config.apiDocs,
   });
-  const io = attachRealtime(app.server, { version, db, log: app.log, permissions: app.hostedApps.permissions });
 
   // Expired sessions are already ignored; this just keeps the table small.
   purgeExpiredSessions(db);
@@ -44,8 +44,9 @@ export async function startServer(
   // Drop live connections first, or closing the HTTP server waits on them forever. Close the
   // transports rather than calling disconnectSockets(): clients treat a server "disconnect" as a
   // deliberate kick and never reconnect, which would leave OBS overlays stale after a restart.
+  let io: Server | undefined;
   app.addHook('preClose', async () => {
-    io.engine.close();
+    io?.engine.close();
   });
   app.addHook('onClose', async () => {
     clearInterval(purgeTimer);
@@ -53,11 +54,13 @@ export async function startServer(
   });
 
   try {
+    io = attachRealtime(app.server, { db, log: app.log, hosted: app.hostedApps });
     // Hash the stand-in password now, so the first failed login takes as long as later ones.
     await dummyHash();
     await app.listen({ host: config.host, port: config.port });
   } catch (error) {
-    // The port is taken, or a route's access declaration is wrong: release the database, timer and sockets.
+    // The port is taken, or a route's or namespace's access declaration is wrong: release the database, timer and
+    // sockets.
     await app.close();
     throw error;
   }
