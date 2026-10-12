@@ -1,7 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { ChangePasswordRequestSchema, LoginRequestSchema, SessionUserSchema } from '@rollcall/core-contract';
+import {
+  ChangePasswordRequestSchema,
+  CurrentUserSchema,
+  LoginRequestSchema,
+  SessionUserSchema,
+  type CurrentUser,
+} from '@rollcall/core-contract';
 import type { AppDatabase } from '../db.ts';
 import type { Access } from '../auth/access.ts';
 import { clearSessionCookie, setSessionCookie } from '../auth/guard.ts';
@@ -13,7 +19,7 @@ import { AUTH_RATE_LIMIT } from './setup.ts';
 
 const INVALID_CREDENTIALS = { error: 'invalid_credentials' };
 const UNAUTHENTICATED = { error: 'unauthenticated' };
-// `logout`, `me` and `password` must work while a password change is pending, or the user could never make it.
+// `me` and `password` must work while a password change is pending, or the user could never make it.
 const SIGNED_IN_PENDING_OK: Access = { signedIn: true, allowPendingPasswordChange: true };
 
 export function registerAuthRoutes(fastify: FastifyInstance, db: AppDatabase): void {
@@ -50,7 +56,9 @@ export function registerAuthRoutes(fastify: FastifyInstance, db: AppDatabase): v
   api.post(
     '/auth/logout',
     {
-      config: { access: SIGNED_IN_PENDING_OK },
+      config: {
+        access: { public: 'Logging out always works and clears the cookie, even when the session has already ended' },
+      },
       schema: { tags: ['core/auth'], summary: 'Log out', response: { 204: z.undefined(), ...ERROR_RESPONSES } },
     },
     async (request, reply) => {
@@ -64,9 +72,15 @@ export function registerAuthRoutes(fastify: FastifyInstance, db: AppDatabase): v
     '/auth/me',
     {
       config: { access: SIGNED_IN_PENDING_OK },
-      schema: { tags: ['core/auth'], summary: 'Who am I?', response: { 200: SessionUserSchema, ...ERROR_RESPONSES } },
+      schema: { tags: ['core/auth'], summary: 'Who am I?', response: { 200: CurrentUserSchema, ...ERROR_RESPONSES } },
     },
-    async (request, reply) => request.principal?.user ?? reply.code(401).send(UNAUTHENTICATED),
+    async (request, reply) => {
+      const user = request.principal?.user;
+      if (!user) return reply.code(401).send(UNAUTHENTICATED);
+      const { permissions } = request.server.hostedApps;
+      const held = permissions.all.filter((def) => permissions.granted(user.role, def.key)).map((def) => def.key);
+      return { ...user, permissions: held } satisfies CurrentUser;
+    },
   );
 
   api.post(

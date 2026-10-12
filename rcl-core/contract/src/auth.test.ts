@@ -3,6 +3,7 @@ import {
   ChangePasswordRequestSchema,
   CreateUserRequestSchema,
   CreateUserResponseSchema,
+  CurrentUserSchema,
   LoginRequestSchema,
   PasswordResetResponseSchema,
   PasswordSchema,
@@ -135,5 +136,26 @@ describe('user management schemas', () => {
     expect(PasswordResetResponseSchema.parse({ temporaryPassword: 'ABCDEFGHJKLMNPQRSTUV' })).toEqual({
       temporaryPassword: 'ABCDEFGHJKLMNPQRSTUV',
     });
+  });
+});
+
+describe('CurrentUserSchema', () => {
+  const me = {
+    id: 'u1',
+    username: 'admin',
+    role: 'admin',
+    mustChangePassword: false,
+    permissions: ['core:users.manage'],
+  };
+
+  it('is the session user plus the permissions their role holds', () => {
+    expect(CurrentUserSchema.parse(me)).toEqual(me);
+    expect(CurrentUserSchema.parse({ ...me, permissions: [] }).permissions).toEqual([]);
+  });
+
+  it('rejects a reply without permissions, or with unknown keys', () => {
+    const { permissions: _permissions, ...withoutPermissions } = me;
+    expect(CurrentUserSchema.safeParse(withoutPermissions).success).toBe(false);
+    expect(CurrentUserSchema.safeParse({ ...me, extra: true }).success).toBe(false);
   });
 });

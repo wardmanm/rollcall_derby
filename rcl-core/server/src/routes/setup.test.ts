@@ -62,17 +62,17 @@ describe('POST /api/core/setup', () => {
     expect(countUsers(db)).toBe(1);
   });
 
-  it('validates the username and password', async () => {
+  it('validates the username and password, saying what is wrong in words a person can act on', async () => {
     const { app } = testApp();
-    for (const payload of [
-      { username: 'ab', password: 'correct horse' },
-      { username: 'admin', password: 'short' },
-      { username: 'admin', password: 'x'.repeat(300) },
-      { username: 'producer01', password: 'Producer01' },
-    ]) {
+    for (const [payload, message] of [
+      [{ username: 'ab', password: 'correct horse' }, 'Use 3–32 letters, digits, dots, dashes or underscores'],
+      [{ username: 'admin', password: 'short' }, 'Use at least 10 characters'],
+      [{ username: 'admin', password: 'x'.repeat(300) }, 'Use at most 256 characters'],
+      [{ username: 'producer01', password: 'Producer01' }, 'The password must not be the username'],
+    ] as const) {
       const res = await app.inject({ method: 'POST', url: '/api/core/setup', payload });
-      expect(res.statusCode, JSON.stringify(payload)).toBe(400);
-      expect(res.json()).toMatchObject({ error: 'validation_failed' });
+      expect(res.statusCode, message).toBe(400);
+      expect(res.json(), message).toEqual({ error: 'validation_failed', message });
     }
   });
 

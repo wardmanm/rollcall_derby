@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SessionUserSchema } from '@rollcall/core-contract';
+import { CurrentUserSchema, SessionUserSchema } from '@rollcall/core-contract';
 import { SESSION_COOKIE } from '../auth/guard.ts';
 import { verifyPassword } from '../auth/passwords.ts';
 import { createSession, revokeUserSessions, SESSION_LIFETIME_MS } from '../auth/sessions.ts';
@@ -74,7 +74,7 @@ describe('GET /api/core/auth/me and POST /api/core/auth/logout', () => {
     const token = sessionCookie(await login(app, 'admin', PASSWORD));
     const cookies = { [SESSION_COOKIE]: token };
     const me = await app.inject({ method: 'GET', url: '/api/core/auth/me', cookies });
-    expect(me.json()).toMatchObject({ username: 'admin', mustChangePassword: false });
+    expect(CurrentUserSchema.parse(me.json())).toMatchObject({ username: 'admin', mustChangePassword: false });
 
     const out = await app.inject({ method: 'POST', url: '/api/core/auth/logout', cookies });
     expect(out.statusCode).toBe(204);
@@ -82,12 +82,33 @@ describe('GET /api/core/auth/me and POST /api/core/auth/logout', () => {
     expect((await app.inject({ method: 'GET', url: '/api/core/auth/me', cookies })).statusCode).toBe(401);
   });
 
-  it('requires a session', async () => {
+  it("lists the permissions your role holds, so the web app can hide what you can't use", async () => {
+    const { app, db } = await withAdmin();
+    await addUser(db, 'producer1', PASSWORD, 'producer');
+    const permissionsOf = async (username: string) => {
+      const cookies = { [SESSION_COOKIE]: sessionCookie(await login(app, username, PASSWORD)) };
+      const me = await app.inject({ method: 'GET', url: '/api/core/auth/me', cookies });
+      return CurrentUserSchema.parse(me.json()).permissions;
+    };
+    expect(await permissionsOf('admin')).toEqual(['core:users.manage']);
+    expect(await permissionsOf('producer1')).toEqual([]);
+  });
+
+  it('needs a session to say who you are', async () => {
     const { app } = await withAdmin();
     expect((await app.inject({ method: 'GET', url: '/api/core/auth/me' })).json()).toEqual({
       error: 'unauthenticated',
     });
-    expect((await app.inject({ method: 'POST', url: '/api/core/auth/logout' })).statusCode).toBe(401);
+  });
+
+  it('logs out with no session or an expired one too, and always clears the cookie', async () => {
+    const { app } = await withAdmin();
+    const noSession: Record<string, string>[] = [{}, { [SESSION_COOKIE]: 'expired-or-revoked' }];
+    for (const cookies of noSession) {
+      const out = await app.inject({ method: 'POST', url: '/api/core/auth/logout', cookies });
+      expect(out.statusCode, JSON.stringify(cookies)).toBe(204);
+      expect(out.cookies.find((c) => c.name === SESSION_COOKIE)?.value, JSON.stringify(cookies)).toBe('');
+    }
   });
 });
 

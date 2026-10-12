@@ -103,11 +103,11 @@ describe('route inventory', () => {
       'GET /api/core/health',
       'GET /api/core/setup',
       'POST /api/core/auth/login',
+      'POST /api/core/auth/logout',
       'POST /api/core/setup',
     ]);
     expect(keysOf(where(routes, allowsPendingChange))).toEqual([
       'GET /api/core/auth/me',
-      'POST /api/core/auth/logout',
       'POST /api/core/auth/password',
     ]);
   });

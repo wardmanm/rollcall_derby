@@ -42,6 +42,11 @@ export const SessionUserSchema = z.strictObject({
 });
 export type SessionUser = z.infer<typeof SessionUserSchema>;
 
+// GET /api/core/auth/me: you, plus the permissions your role holds (`core:users.manage`, …), so the web app can hide
+// what you can't use. Only for convenience: the server checks every request (ADR-0018).
+export const CurrentUserSchema = SessionUserSchema.extend({ permissions: z.array(z.string()) });
+export type CurrentUser = z.infer<typeof CurrentUserSchema>;
+
 // The new password must differ from the current one, or a temporary password could be "changed" to itself.
 export const ChangePasswordRequestSchema = z
   .strictObject({ currentPassword: z.string().min(1).max(256), newPassword: PasswordSchema })
