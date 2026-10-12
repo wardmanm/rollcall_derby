@@ -6,6 +6,8 @@ import { expect, test, type Page } from '@playwright/test';
 test.describe.configure({ mode: 'serial' });
 
 const ADMIN = { username: 'admin', password: 'admin password 1' };
+const PRODUCER = { username: 'producer1', password: 'producer password 1' };
+let temporaryPassword = '';
 
 async function signIn(page: Page, { username, password }: { username: string; password: string }) {
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
@@ -41,4 +43,41 @@ test('another app sends you to sign in and back, and logging out there asks you 
   await expect(page).toHaveURL(/\/core\/login\?next=%2Fproducer%2F$/);
   await page.goto('/core/');
   await expect(page).toHaveURL(/\/core\/login\?next=%2Fcore%2F$/);
+});
+
+test('an Admin creates a Producer, and sees their temporary password once', async ({ page }) => {
+  await page.goto('/core/users');
+  await signIn(page, ADMIN);
+  await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible();
+  await page.getByLabel('Username').fill(PRODUCER.username);
+  await page.getByLabel('Role', { exact: true }).selectOption('producer');
+  await page.getByRole('button', { name: 'Create' }).click();
+  const dialog = page.getByRole('dialog', { name: `Temporary password for ${PRODUCER.username}` });
+  temporaryPassword = await dialog.getByLabel('Temporary password').inputValue();
+  expect(temporaryPassword).toMatch(/^.{20}$/);
+  await dialog.getByRole('button', { name: 'Done' }).click();
+  await expect(page.getByRole('row', { name: new RegExp(PRODUCER.username) })).toContainText('Temporary password');
+});
+
+test('the Producer must choose a password first, then reaches the Producer app but not user management', async ({
+  page,
+  baseURL,
+}) => {
+  await page.goto('/producer/');
+  await expect(page).toHaveURL(/\/core\/login\?next=%2Fproducer%2F$/);
+  await signIn(page, { username: PRODUCER.username, password: temporaryPassword });
+  await expect(page.getByRole('heading', { name: 'Choose your own password' })).toBeVisible();
+  await page.getByLabel('Temporary password').fill(temporaryPassword);
+  await page.getByLabel('New password', { exact: true }).fill(PRODUCER.password);
+  await page.getByLabel('Repeat new password').fill(PRODUCER.password);
+  await page.getByRole('button', { name: 'Change password' }).click();
+  await expect(page).toHaveURL(/\/producer\/$/);
+  await expect(page.getByRole('heading', { name: 'Rollcall Producer' })).toBeVisible();
+  await expect(page.getByText(`${baseURL}/producer/overlay`)).toBeVisible();
+
+  await page.goto('/core/');
+  await expect(page.getByRole('heading', { name: 'Apps' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Users' })).toHaveCount(0);
+  // Hiding the link is only for convenience: the server refuses anyway.
+  expect((await page.request.get('/api/core/users')).status()).toBe(403);
 });
