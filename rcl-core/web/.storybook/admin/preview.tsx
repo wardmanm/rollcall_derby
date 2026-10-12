@@ -1,8 +1,9 @@
 import '@mantine/core/styles.css';
 import { MantineProvider } from '@mantine/core';
 import type { Preview } from '@storybook/react-vite';
+import { theme } from '@rollcall/web-sdk';
 
-// Every admin story renders inside MantineProvider, as App.tsx does. The toolbar switches light and dark.
+// Every admin story renders inside MantineProvider with the apps' theme, as App.tsx does. The toolbar switches light and dark.
 const preview: Preview = {
   globalTypes: {
     colorScheme: {
@@ -24,7 +25,7 @@ const preview: Preview = {
   tags: ['autodocs'],
   decorators: [
     (Story, { globals }) => (
-      <MantineProvider forceColorScheme={globals.colorScheme === 'dark' ? 'dark' : 'light'}>
+      <MantineProvider theme={theme} forceColorScheme={globals.colorScheme === 'dark' ? 'dark' : 'light'}>
         <Story />
       </MantineProvider>
     ),

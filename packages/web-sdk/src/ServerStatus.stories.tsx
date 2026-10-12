@@ -3,19 +3,9 @@ import { Provider } from 'react-redux';
 import { expect } from 'storybook/test';
 import { makeStore } from './store.ts';
 import { ServerStatus } from './ServerStatus.tsx';
+import { answerRequests } from './test/answer-requests.ts';
 
 const HEALTH = { status: 'ok', name: 'Rollcall', version: '0.2.0', uptimeSeconds: 42 };
-
-// Stories run without a server: each one answers the app's requests itself, then puts the real fetch back.
-function answerRequests(respond: () => Promise<Response>) {
-  return () => {
-    const realFetch = globalThis.fetch;
-    globalThis.fetch = respond;
-    return () => {
-      globalThis.fetch = realFetch;
-    };
-  };
-}
 
 const meta = {
   title: 'Components/ServerStatus',
