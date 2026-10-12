@@ -1,0 +1,44 @@
+import { expect, test, type Page } from '@playwright/test';
+
+// Accounts on a fresh install (users-and-access R1–R4), in order: each step needs the one before. Each run starts
+// from an empty data folder (playwright.config.ts), so the first step always finds first-run setup. Each test has its
+// own browser, so it signs in for itself.
+test.describe.configure({ mode: 'serial' });
+
+const ADMIN = { username: 'admin', password: 'admin password 1' };
+
+async function signIn(page: Page, { username, password }: { username: string; password: string }) {
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+  await page.getByLabel('Username').fill(username);
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Sign in' }).click();
+}
+
+test('a fresh install opens first-run setup, which creates the first Admin and signs them in', async ({ page }) => {
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/core\/setup$/);
+  await page.getByLabel('Username').fill(ADMIN.username);
+  await page.getByLabel('Password', { exact: true }).fill(ADMIN.password);
+  await page.getByLabel('Repeat password').fill(ADMIN.password);
+  await page.getByRole('button', { name: 'Create Admin and sign in' }).click();
+  await expect(page).toHaveURL(/\/core\/$/);
+  await expect(page.getByRole('heading', { name: 'Apps' })).toBeVisible();
+  await expect(page.getByText(/^Server v\d+\.\d+\.\d+/)).toBeVisible();
+  await expect(page.getByRole('link', { name: /Rollcall Producer/ })).toHaveAttribute('href', '/producer/');
+});
+
+test('another app sends you to sign in and back, and logging out there asks you to sign in again', async ({
+  page,
+  baseURL,
+}) => {
+  await page.goto('/producer/');
+  await expect(page).toHaveURL(/\/core\/login\?next=%2Fproducer%2F$/);
+  await signIn(page, ADMIN);
+  await expect(page).toHaveURL(/\/producer\/$/);
+  await expect(page.getByText(`${baseURL}/producer/overlay`)).toBeVisible();
+  await page.getByRole('button', { name: 'admin Admin' }).click();
+  await page.getByRole('menuitem', { name: 'Log out' }).click();
+  await expect(page).toHaveURL(/\/core\/login\?next=%2Fproducer%2F$/);
+  await page.goto('/core/');
+  await expect(page).toHaveURL(/\/core\/login\?next=%2Fcore%2F$/);
+});
