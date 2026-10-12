@@ -30,6 +30,8 @@ What to test, where the tests live, and how to run them. New code is written tes
 - **Server routes:** `testApp()` from `rcl-core/server/src/testing.ts` builds the Fastify app on a private in-memory SQLite database without listening, so `app.inject({ method: 'GET', url: '/api/core/health' })` tests a route in memory. `addUser(db, username, password, role)` adds an account, and `createSession(db, userId)` gives you a token to send as the `rollcall_session` cookie. Pass `registerRoutes` to add a throwaway route below `/api/core/`, with `config: { access: … }` like any route, or `apps` to host a throwaway app module with its own routes, namespaces and permissions (see `rcl-core/server/src/auth/access.test.ts`). Use `startServer()` with `port: 0` only when you need a real socket or the on-disk data directory (see `rcl-core/server/src/server.test.ts`).
 - **Files and databases:** create a temp directory per test (`mkdtempSync(join(tmpdir(), '…'))`) and remove it in `afterEach`. Never touch `data/`.
 - **RTK Query:** stub `fetch` with `vi.stubGlobal('fetch', …)` and dispatch the endpoint (`packages/web-sdk/src/api.test.ts`). The API's base URL is absolute so Node's `fetch` accepts it.
+- **Pages that talk to the server:** `fakeServer` and `signedIn` from `@rollcall/web-sdk/testing` answer each request by `'METHOD /path'` and record what was sent; anything not listed gets `404 not_found`. Open rcl-core's app at an address with `openCore` (`rcl-core/web/src/test/open-core.tsx`). See `rcl-core/web/src/pages/*.test.tsx`.
+- **Mantine menus in jsdom:** jsdom has no layout, so Mantine may hide an open menu as if its button were off screen. Find its items with `{ hidden: true }`.
 - **Socket.IO in the overlay:** inject a fake socket through `makeOverlayStore(() => fakeSocket)` and emit events by hand (`rcl-producer/web/src/overlay/live.test.ts`).
 - **Components:** render with React Testing Library and query by role or text, as a user would. Wrap anything that uses Mantine in `MantineProvider`; the full `App` already does.
 - **Shared schemas:** every schema in `rcl-core/contract` gets tests for an accepted payload and for each rejected shape that matters.
@@ -60,10 +62,11 @@ Shared components get a story next to them (`Component.stories.tsx`), and every 
 
 ## Playwright
 
-- **What it tests:** the real production setup. `e2e/playwright.config.ts` builds every web app and starts the server on port **5590**, separate from the development port 5580, with a throwaway data directory under the OS temp folder. It stops the server afterwards.
+- **What it tests:** the real production setup. `e2e/playwright.config.ts` builds every web app and starts the server on port **5590**, separate from the development port 5580, with a fresh data folder for each run under the OS temp folder. It stops the server and removes the folder afterwards.
 - **First time on a machine:** run `yarn workspace @rollcall/e2e playwright install chromium`.
 - **Running:** `yarn test:e2e`, or `yarn test:e2e --grep overlay` for a subset.
-- **Scope:** end-to-end tests cover what only a real browser can show: `/` takes you to `/core/`, each app's shell loads, the overlay at `/producer/overlay` is transparent and loads no Mantine styles, and routes resolve. Logic belongs in Vitest.
+- **Scope:** end-to-end tests cover what only a real browser can show: the accounts flow on a fresh install (setup, signing in and out, a new Producer choosing their own password), each app's shell loading, the overlay at `/producer/overlay` staying public, transparent and free of Mantine styles, and routes resolving. Logic belongs in Vitest.
+- **`accounts.spec.ts` runs in order:** first-run setup must come first, and each test opens its own browser, so it signs in for itself.
 - **Failures in CI:** the workflow uploads the HTML report as the `playwright-report` artifact.
 
 ## What every change needs

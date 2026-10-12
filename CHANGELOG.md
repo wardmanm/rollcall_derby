@@ -12,6 +12,9 @@ All notable changes to Rollcall are documented here, newest first. The format fo
 - The API explorer shows who may call each route: anyone, any signed-in user, or the permission it needs, such as `core:users.manage` (#3)
 - The Producer app at `/producer/`. For now it shows the address to add to OBS for the overlay (#4)
 - The server lists the apps it hosts at `/api/core/apps`, for signed-in users (#5)
+- Sign-in, first-run setup and password changes in the web app. Every app asks you to sign in first, and someone given a temporary password chooses their own before anything else (#11)
+- A Users page for Admins: create users (each temporary password is shown once), change roles, reset passwords, sign users out and delete accounts (#11)
+- rcl-core's home page lists the other installed apps (#11)
 
 ### Changed
 
@@ -21,12 +24,14 @@ All notable changes to Rollcall are documented here, newest first. The format fo
 - Access is checked by permission instead of by role. Admins hold every permission, so who can do what is unchanged (#3)
 - Each app now has its own address: the admin app is at `/core/` (`/` takes you there) and the Producer app at `/producer/`. **The OBS overlay moved from `/overlay` to `/producer/overlay`, with no redirect:** change the URL of each OBS browser source (#4)
 - rcl-core now hosts each app as a module, so every API address starts with its app: `/api/health` is now `/api/core/health`, `/api/auth/login` is `/api/core/auth/login`, and so on. The OBS overlay's live connection moved too: after upgrading, refresh each OBS browser source (right-click ▸ Refresh) (#5)
+- The server explains a rejected form in plain words, such as "Use at least 10 characters" (#11)
 
 ### Fixed
 
 - The header's server badge has enough contrast to read (wardmanm/GROBS#17)
 - An Admin who is demoted, deleted or signed out while creating a user or resetting a password no longer completes the change, and a password change made after an Admin's reset no longer overwrites it (#8)
 - The first failed sign-in after the server starts takes as long as later ones, so it doesn't reveal whether the username exists (#8)
+- Logging out works even after the session has ended, and always clears the cookie (#11)
 
 ## [0.1.0] - 2026-10-02
 

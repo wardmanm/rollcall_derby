@@ -56,6 +56,7 @@ This page defines the terms used across the wiki, the UI and the code. Use them 
 |---|---|
 | **Rollcall** | This suite of apps for producing roller derby events and streams, in the `wardmanm/rollcall_derby` repository. It was called OBS Producer until [ADR-0016](../decisions/0016-obs-producer-becomes-rollcall.md). |
 | **rcl app** | One app in the suite. It's named `rcl-<app>` and kept in a root folder of the same name. |
+| **App launcher** | rcl-core's home page, which lists the other rcl apps on the server so you can open them. |
 | <a id="app-module"></a>**App module** | How rcl-core's server hosts an rcl app ([ADR-0019](../decisions/0019-rcl-apps-as-modules.md)): its routes below `/api/<id>/`, its live connections below `/<id>`, its web build at `/<id>/`, and its permissions and tables named after it. rcl-core is itself module `core`. |
 | **rcl-core** | The host app: the one server process, accounts, shared data such as teams, and the CRG and OBS connections, with an admin GUI for that data. |
 | **rcl-producer** | The app that builds and runs overlays: themes, screens, Live Mode and dashboards. Call it "the Producer app", never just "Producer", which is a [role](#roles). |

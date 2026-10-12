@@ -1,6 +1,6 @@
 ---
 title: Users and Access
-status: in-progress
+status: shipped
 summary: Username and password login with Admin, Producer and Announcer roles, enforced on the server.
 ---
 # Users and Access
@@ -49,19 +49,19 @@ The capabilities in the role matrix become permissions here as each feature is b
 
 How accounts work is decided in [ADR-0018](../decisions/0018-declared-access-and-permissions.md). What people see:
 
-- **First run.** While there are no accounts, the setup page creates the first Admin. It only works on the server machine itself, opened at a `localhost` address, so nobody else on the venue Wi-Fi can claim the Admin account first.
-- **Logging in.** A login lasts until you log out, up to 30 days, so nobody is logged out mid-game. A wrong username and a wrong password get the same answer. After 10 attempts in a minute from one device, further attempts are refused for a minute.
-- **New accounts.** An Admin picks a username and a role. The app shows a temporary password **once**; give it to the person. At their first login they must choose their own password, and they can't do anything else until they have.
+- **First run.** While there are no accounts, every page opens the setup page, which creates the first Admin and signs them in. It only works on the server machine itself, opened at a `localhost` address, so nobody else on the venue Wi-Fi can claim the Admin account first. On any other device, the page says which address to open on the server machine.
+- **Logging in.** Every rcl app sends you to rcl-core's sign-in page and then back to the page you wanted, as long as that page is on the same server. A login lasts until you log out, up to 30 days, so nobody is logged out mid-game. A wrong username and a wrong password get the same answer. After 10 attempts in a minute from one device, further attempts are refused for a minute.
+- **New accounts.** On the Users page, an Admin picks a username and a role. The app shows a temporary password **once**; give it to the person. It's in a box you can select, and on a `localhost` or HTTPS address there's also a Copy button, since browsers only allow copying there. At their first login they must choose their own password, and they can't do anything else until they have.
 - **Forgotten passwords.** An Admin resets the password. It works like a new account, and also signs the person out everywhere.
 - **Changing your password** signs you out on every other device. The new password must differ from the current one.
-- **Signing someone out.** An Admin can sign a user out on every device.
+- **Signing someone out.** An Admin can sign a user out on every device. The Users page asks you to confirm before it resets a password, signs someone out or deletes an account.
+- **Your account menu**, at the top right of every app, shows your username and role, and has All apps, Change password and Log out. Logging out always works, even if your session has already ended.
+- **Only Admins see Users.** Other roles don't get the link, and the server refuses them anyway (R4). The web app asks the server which permissions your role holds rather than guessing from the role.
 - **Losing access mid-request.** If an Admin is demoted, deleted or signed out while the server is creating a user or resetting a password, nothing changes and the request is refused. Changing your own password is refused the same way if an Admin reset it in the meantime.
 - **There's always an Admin.** The app refuses to delete or demote the last Admin, and an Admin can't delete their own account.
 - **Locked out?** If the only Admin forgets their password, run `yarn workspace @rollcall/core-server reset-password <username>` on the server machine. It prints a temporary password. It refuses if `ROLLCALL_DATA_DIR` has no `rollcall.db`, and prints the path it checked.
 - **Plain HTTP.** The app runs over HTTP on the venue network for now. HTTPS with your own certificate is planned.
 - **OBS outputs** don't log in. `/producer/overlay` is public until output token URLs arrive (R5).
-
-The pages for setup, login, changing your password and managing users are in progress. Until they ship, these work through the API.
 
 ## Open questions
 

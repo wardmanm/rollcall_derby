@@ -51,7 +51,7 @@ These workspaces are planned in [ADR-0017](../decisions/0017-rcl-app-workspace-l
 | `rcl-producer/contract` | Zod schemas and types for the Producer app's API and socket messages |
 | `rcl-producer/web` | React SPA for the builders, Live Mode and dashboards, served at `/producer/`. A separate lightweight **overlay entry** at `/producer/overlay` renders outputs for OBS |
 | `packages/app-sdk` | The types an app module is written against: `AppModule`, `AppContext`, `Access` and permissions |
-| `packages/web-sdk` | Code every app's Mantine GUI shares: the app shell, the server badge, the RTK Query base API and store, and the dev proxy. Overlay entries never use it |
+| `packages/web-sdk` | Code every app's Mantine GUI shares: the app shell, the sign-in gate that sends people to rcl-core's sign-in page and back, the account menu, the server badge, the RTK Query base API and store, and the dev proxy. Overlay entries never use it |
 
 ## How data flows
 

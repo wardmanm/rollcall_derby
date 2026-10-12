@@ -52,8 +52,8 @@ This starts three processes:
 Each Vite server reloads the browser when its web code changes, through the front door too.
 
 Then open:
-- **Admin app:** `http://localhost:5173`, which goes to `/core/`. The header badge shows `Server v…` once the server answers.
-- **Producer app:** `http://localhost:5173/producer/`.
+- **Admin app:** `http://localhost:5173`, which goes to `/core/`. On a fresh data folder it opens first-run setup: create the first Admin there. The header badge shows `Server v…` once the server answers.
+- **Producer app:** `http://localhost:5173/producer/`. It asks you to sign in first, like every app but the OBS overlay.
 - **OBS overlay:** `http://localhost:5173/producer/overlay`. A small card appears over a transparent page.
 - **API explorer:** `http://localhost:5173/docs`. See [Trying the API](#trying-the-api).
 
