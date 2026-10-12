@@ -197,7 +197,10 @@ function UserRow({ user, isYou, onRole, onReset, onSignOut, onDelete }: UserRowP
             </ActionIcon>
           </Menu.Target>
           <Menu.Dropdown>
-            <Menu.Item onClick={onReset}>Reset password</Menu.Item>
+            {/* Resetting your own password signs you out before you could read the new one: use Change password. */}
+            <Menu.Item onClick={onReset} disabled={isYou}>
+              Reset password
+            </Menu.Item>
             <Menu.Item onClick={onSignOut}>Sign out everywhere</Menu.Item>
             {/* The server refuses to delete your own account, so it isn't offered. */}
             <Menu.Item color="red" onClick={onDelete} disabled={isYou}>

@@ -18,7 +18,7 @@ paths:
   - Fastify validates and serializes with them, so don't parse bodies by hand.
   - Socket payloads are validated with shared schemas too.
 - **Every `/api` route declares who may call it** (hard rule 5, ADR-0018).
-  - Put it in `config.access`: `{ public: '<reason>' }`, `{ signedIn: true }` or `{ permission: 'core:<action>' }`. Only `me`, `password` and `logout` add `allowPendingPasswordChange: true`.
+  - Put it in `config.access`: `{ public: '<reason>' }`, `{ signedIn: true }` or `{ permission: 'core:<action>' }`. Only `me` and `password` add `allowPendingPasswordChange: true`; `logout` is public, so it always works.
   - A new permission goes in `CORE_PERMISSIONS` (`src/auth/permissions.ts`) and in the table on `docs/features/users-and-access.md`. A test keeps the two in step.
   - The server won't start with a missing or wrong declaration. Don't write your own role checks; read the caller from `request.principal`.
   - A handler that awaits before it writes calls `request.recheckAccess()` after the await.

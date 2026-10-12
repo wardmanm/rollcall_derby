@@ -160,6 +160,13 @@ describe('the Users page', () => {
     expect(item.hasAttribute('disabled') || item.getAttribute('data-disabled') === 'true').toBe(true);
   });
 
+  it("doesn't offer to reset your own password, which would sign you out before you saw the new one", async () => {
+    await openUsers();
+    fireEvent.click(within(rowOf('admin')).getByRole('button', { name: 'Actions for admin' }));
+    const item = await menuItem('Reset password');
+    expect(item.hasAttribute('disabled') || item.getAttribute('data-disabled') === 'true').toBe(true);
+  });
+
   it('tells someone without the permission that only Admins manage users', async () => {
     signedIn(PRODUCER);
     openCore('/core/users');

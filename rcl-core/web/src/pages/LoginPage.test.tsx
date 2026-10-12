@@ -66,6 +66,16 @@ describe('signing in', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
+  it('never goes on to another site, even with a tab hidden in the address', async () => {
+    const replace = vi.spyOn(browser, 'replace').mockImplementation(() => undefined);
+    signedOutServer();
+    const router = openCore('/core/login?next=%2F%09%2Fevil.example%2F');
+    await signIn('admin', PASSWORD);
+    expect(await screen.findByRole('heading', { name: 'Apps' })).toBeTruthy();
+    expect(whereIs(router)).toBe('/core/');
+    expect(replace).not.toHaveBeenCalled();
+  });
+
   it('says when the username or password is wrong, without saying which', async () => {
     signedOutServer();
     openCore('/core/login');

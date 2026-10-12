@@ -45,7 +45,7 @@ What to test, where the tests live, and how to run them. New code is written tes
 - **Access inventories (`rcl-core/server/src/auth/route-inventory.test.ts`, `rcl-core/server/src/realtime.test.ts`).** They record every `/api` route and every Socket.IO namespace as it's created, then send each one a request or connection. A route or namespace with no access declaration can't start at all (`src/auth/access.test.ts`). The inventories check that each declaration is enforced ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)):
   - **Pinned:** the public routes and namespaces, and the routes that work while a password change is pending, are listed in the tests, so changing them means changing a test.
   - **Anonymous:** everything that isn't public refuses with `unauthenticated` (401 for routes).
-  - **With a password change pending:** everything except `me`, `password` and `logout` refuses with `password_change_required`.
+  - **With a password change pending:** everything except `me`, `password` and the public routes (such as `logout`) refuses with `password_change_required`.
   - **Missing permission:** each role is refused with `forbidden` wherever it lacks the permission.
   - **Proof it works:** each sweep runs again as an Admin, who gets through everywhere, so the sweep must report every route.
 

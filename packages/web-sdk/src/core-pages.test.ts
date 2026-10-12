@@ -17,4 +17,10 @@ describe('safeNext', () => {
       expect(safeNext(next), String(next)).toBe(CORE_PAGES.home);
     }
   });
+
+  it('sees through a tab, newline or carriage return, which browsers drop before reading an address', () => {
+    for (const next of ['/\t/evil.example', '/\n/evil.example', '/\r/evil.example', '/\t\\evil.example']) {
+      expect(safeNext(next), JSON.stringify(next)).toBe(CORE_PAGES.home);
+    }
+  });
 });

@@ -13,7 +13,7 @@ export type Permission = `${string}:${string}`;
 export type Access =
   /** Anyone, signed in or not. The reason is shown in the API explorer. */
   | { public: string }
-  /** Any signed-in user. Only `me`, `password` and `logout` let a pending password change through. */
+  /** Any signed-in user. Only `me` and `password` let a pending password change through. */
   | { signedIn: true; allowPendingPasswordChange?: true }
   /** A signed-in user whose role holds this permission. Admins hold every permission. */
   | { permission: Permission };

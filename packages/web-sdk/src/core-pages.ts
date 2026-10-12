@@ -10,9 +10,12 @@ export const CORE_PAGES = {
 export const withNext = (page: string, next: string) => `${page}?${new URLSearchParams({ next })}`;
 
 /**
- * Where to go after signing in: `next` if it's a path on this server, otherwise rcl-core's home. A full URL, `//host`
- * or `/\host` (which browsers read as `//host`) would send a person to another site straight after they sign in.
+ * Where to go after signing in: `next` if it's a path on this server, otherwise rcl-core's home. It's read with the
+ * browser's own address rules, so nothing that leads to another site gets through: not a full URL, `//host`, `/\host`,
+ * nor `/<tab>/host` (browsers drop tabs and line breaks before reading an address).
  */
 export function safeNext(next: string | null): string {
-  return next && next.startsWith('/') && !/^\/[/\\]/.test(next) ? next : CORE_PAGES.home;
+  if (!next?.startsWith('/')) return CORE_PAGES.home;
+  const url = new URL(next, window.location.origin);
+  return url.origin === window.location.origin ? `${url.pathname}${url.search}${url.hash}` : CORE_PAGES.home;
 }
