@@ -83,6 +83,7 @@ Summaries only. The ADRs are canonical.
 - [ADR-0006](../decisions/0006-one-overlay-renderer-css-variable-theming.md): One overlay renderer; themes as CSS custom properties.
 - [ADR-0019](../decisions/0019-rcl-apps-as-modules.md): Shared Zod contract; versioned import/export.
 - [ADR-0018](../decisions/0018-declared-access-and-permissions.md): Server-side sessions; every route and namespace declares its access, checked by permission; a public overlay until output token URLs arrive.
+- [ADR-0020](../decisions/0020-api-keys.md): API keys for devices and scripts, with their own permissions and never people-only ones; the `Authorization` header beats the cookie.
 
 ## More
 

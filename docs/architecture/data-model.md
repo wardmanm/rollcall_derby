@@ -41,6 +41,7 @@ erDiagram
 | Automation rule | A CRG trigger plus an action on components or OBS | [CRG automation](../features/crg-automation.md) |
 | User | An account with a role (Admin, Producer, Announcer) | [Users and access](../features/users-and-access.md) |
 | Session | A login on one device: hashed token, 30-day expiry | [Users and access](../features/users-and-access.md) |
+| API key | A device's or script's credential: hashed key, its permissions, optional expiry, when it was last used | [Users and access](../features/users-and-access.md) |
 
 ## Persisted vs live state
 

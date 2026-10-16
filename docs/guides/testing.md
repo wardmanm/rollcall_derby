@@ -47,6 +47,10 @@ What to test, where the tests live, and how to run them. New code is written tes
   - **Anonymous:** everything that isn't public refuses with `unauthenticated` (401 for routes).
   - **With a password change pending:** everything except `me`, `password` and the public routes (such as `logout`) refuses with `password_change_required`.
   - **Missing permission:** each role is refused with `forbidden` wherever it lacks the permission.
+  - **API keys** ([ADR-0020](../decisions/0020-api-keys.md)):
+    - A key holding every permission a key may hold is refused with `forbidden` on routes for any signed-in user and on people-only permissions, and gets through elsewhere. A test app supplies a route a key may call.
+    - A wrong key is refused with `unauthenticated` everywhere but public routes.
+    - Namespaces ignore keys.
   - **Proof it works:** each sweep runs again as an Admin, who gets through everywhere, so the sweep must report every route.
 
   The route inventory also checks that every `/api` route declares a response schema (and a params schema when its path has parameters), and that the OpenAPI document behind `/docs` lists exactly the registered routes ([ADR-0014](../decisions/0014-route-schemas-and-api-explorer.md)).

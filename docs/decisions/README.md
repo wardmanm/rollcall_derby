@@ -29,4 +29,5 @@ To write a new one, follow [recording decisions](../wiki-guide.md#recording-deci
 | [0017](0017-rcl-app-workspace-layout.md) | Technology stack, with rcl apps in one workspace | accepted | 2026-10-08 |
 | [0018](0018-declared-access-and-permissions.md) | Declared access and per-app permissions | accepted | 2026-10-09 |
 | [0019](0019-rcl-apps-as-modules.md) | rcl-core hosts rcl apps as modules | accepted | 2026-10-10 |
+| [0020](0020-api-keys.md) | API keys for devices and scripts | accepted | 2026-10-16 |
 <!-- /generated:decisions -->

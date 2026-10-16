@@ -15,6 +15,7 @@ All notable changes to Rollcall are documented here, newest first. The format fo
 - Sign-in, first-run setup and password changes in the web app. Every app asks you to sign in first, and someone given a temporary password chooses their own before anything else (#11)
 - A Users page for Admins: create users (each temporary password is shown once), change roles, reset passwords, sign users out and delete accounts (#11)
 - rcl-core's home page lists the other installed apps (#11)
+- API keys for devices and scripts such as Bitfocus Companion. On the API keys page, Admins create keys scoped to permissions, with an optional expiry, and revoke them. A key is shown once, and never holds account-admin permissions (#7)
 
 ### Changed
 

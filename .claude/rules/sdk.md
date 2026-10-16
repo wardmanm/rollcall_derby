@@ -4,7 +4,7 @@ paths:
 ---
 # Shared packages (`packages/`)
 
-- **`@rollcall/app-sdk`** (`packages/app-sdk/`) is what an rcl app's server module is written against (ADR-0019): `AppModule`, `AppContext`, `Realtime`, and the `Access`, `Permission` and `PermissionDef` types. Types only: rcl-core's server does the hosting.
+- **`@rollcall/app-sdk`** (`packages/app-sdk/`) is what an rcl app's server module is written against (ADR-0019): `AppModule`, `AppContext`, `Realtime`, and the `Access`, `Permission` and `PermissionDef` types. `PermissionDef.peopleOnly` keeps a permission off API keys (ADR-0020). Types only: rcl-core's server does the hosting.
   - Change it with care: every app module and rcl-core's host depend on these shapes.
 - **`@rollcall/web-sdk`** (`packages/web-sdk/`) is the code every rcl app's Mantine GUI shares:
   - the app shell (`App`, `AppLayout` with its links and `UserMenu`, `PageNotFound`, the Mantine `theme`), `SignInGate` and `ServerStatus`;

@@ -22,7 +22,9 @@ paths:
   - A new permission goes in `CORE_PERMISSIONS` (`src/auth/permissions.ts`) and in the table on `docs/features/users-and-access.md`. A test keeps the two in step.
   - The server won't start with a missing or wrong declaration. Don't write your own role checks; read the caller from `request.principal`.
   - A handler that awaits before it writes calls `request.recheckAccess()` after the await.
-- **Socket.IO:** each app creates its namespaces with `rt.namespace(name, { access })` in its module's `realtime()`, at or below `/<id>`. `/` refuses everyone.
+  - Callers are signed-in sessions or API keys (ADR-0020). Read the person with `userOf(request.principal)`, never `request.principal.user`.
+  - A new permission sets `peopleOnly: true` if a leaked API key holding it could take over accounts or make more keys.
+- **Socket.IO:** each app creates its namespaces with `rt.namespace(name, { access })` in its module's `realtime()`, at or below `/<id>`. `/` refuses everyone, and namespaces take sessions only, never API keys.
 - **Database changes:**
   1. Edit `src/db/schema.ts`.
   2. Run `yarn workspace @rollcall/core-server db:generate --name <change>`.
