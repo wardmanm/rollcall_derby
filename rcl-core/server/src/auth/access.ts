@@ -1,6 +1,7 @@
 import type { FastifyInstance, preValidationAsyncHookHandler } from 'fastify';
 import type { Access, Permission, PermissionDef } from '@rollcall/app-sdk';
 import type { Role, SessionUser } from '@rollcall/core-contract';
+import type { ApiKeyHolder } from './api-keys.ts';
 
 // Who may call a route or join a Socket.IO namespace (ADR-0018). Every /api route declares it in `config.access`, and
 // the server refuses to start when a declaration is missing or wrong, so access is denied by default.
@@ -32,13 +33,24 @@ export function createPermissions(defs: readonly PermissionDef[]): Permissions {
   };
 }
 
-/** The caller behind a request or socket. API keys and output tokens join this union when they're built. */
+/** The caller behind a request or socket. Output tokens join this union when they're built. */
 export interface SessionPrincipal {
   kind: 'session';
   user: SessionUser;
   token: string;
 }
-export type Principal = SessionPrincipal;
+
+/** A device or script calling with an API key (ADR-0020): no user and no role, only the key's own permissions. */
+export interface ApiKeyPrincipal {
+  kind: 'apiKey';
+  key: ApiKeyHolder;
+}
+
+export type Principal = SessionPrincipal | ApiKeyPrincipal;
+
+/** The signed-in person behind a caller; undefined for an API key, or for nobody. */
+export const userOf = (principal: Principal | null | undefined): SessionUser | undefined =>
+  principal?.kind === 'session' ? principal.user : undefined;
 
 export interface Denial {
   status: 401 | 403;
@@ -53,6 +65,14 @@ export function deny(
 ): Denial | undefined {
   if ('public' in access) return undefined;
   if (!principal) return { status: 401, error: 'unauthenticated' };
+  if (principal.kind === 'apiKey') {
+    // A key isn't a person, so routes for any signed-in user refuse it. It holds exactly its own permissions, never
+    // a people-only one, even if it was given one before the permission became people-only.
+    if ('signedIn' in access) return { status: 403, error: 'forbidden' };
+    const def = permissions.find(access.permission);
+    const held = def !== undefined && !def.peopleOnly && principal.key.permissions.includes(access.permission);
+    return held ? undefined : { status: 403, error: 'forbidden' };
+  }
   const { user } = principal;
   if (user.mustChangePassword && !('signedIn' in access && access.allowPendingPasswordChange)) {
     return { status: 403, error: 'password_change_required' };

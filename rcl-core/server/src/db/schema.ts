@@ -34,3 +34,17 @@ export const sessions = sqliteTable(
   },
   (table) => [index('sessions_user_id_idx').on(table.userId)],
 );
+
+// API keys for devices and scripts (ADR-0020). Only the SHA-256 of each key is stored, with its first characters so a
+// person can tell keys apart. `created_by` keeps the creating Admin's username even after that account is deleted.
+export const apiKeys = sqliteTable('api_keys', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull().unique(),
+  tokenHash: text('token_hash').notNull().unique(),
+  tokenPrefix: text('token_prefix').notNull(),
+  permissions: text('permissions', { mode: 'json' }).$type<string[]>().notNull(),
+  createdAt: text('created_at').notNull(),
+  createdBy: text('created_by').notNull(),
+  expiresAt: text('expires_at'),
+  lastUsedAt: text('last_used_at'),
+});

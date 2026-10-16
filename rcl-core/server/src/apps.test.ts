@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { FastifyBaseLogger } from 'fastify';
 import type { AppModule } from '@rollcall/app-sdk';
+import coreJournal from '../drizzle/meta/_journal.json' with { type: 'json' };
 import { hostApps, migrationsTableFor } from './apps.ts';
 import { openMemoryDatabase } from './db.ts';
 import { tableNames, tablesCreatedBy } from './testing.ts';
@@ -84,7 +85,7 @@ describe('hostApps', () => {
     expect(hosted.modules.map((m) => m.id)).toEqual(['core', 'demo']);
     expect(tableNames(db)).toEqual(expect.arrayContaining(['demo_things', migrationsTableFor('demo')]));
     const coreMigrations = db.$client.prepare('SELECT count(*) AS n FROM __drizzle_migrations').get() as { n: number };
-    expect(coreMigrations.n).toBe(2);
+    expect(coreMigrations.n).toBe(coreJournal.entries.length);
   });
 
   it('skips an app whose migrations fail', () => {

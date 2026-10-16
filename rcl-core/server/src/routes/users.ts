@@ -9,7 +9,7 @@ import {
   UserSchema,
 } from '@rollcall/core-contract';
 import type { AppDatabase } from '../db.ts';
-import type { Access } from '../auth/access.ts';
+import { userOf, type Access } from '../auth/access.ts';
 import { generateTemporaryPassword, hashPassword } from '../auth/passwords.ts';
 import { revokeUserSessions } from '../auth/sessions.ts';
 import {
@@ -156,7 +156,7 @@ export function registerUserRoutes(fastify: FastifyInstance, db: AppDatabase): v
       const user = findUserById(db, request.params.id);
       if (!user) return reply.code(404).send(NOT_FOUND);
       if (isLastAdmin(db, user)) return reply.code(409).send(LAST_ADMIN);
-      if (user.id === request.principal?.user.id) {
+      if (user.id === userOf(request.principal)?.id) {
         return reply
           .code(409)
           .send({ error: 'cannot_delete_self', message: 'Another Admin has to delete your account.' });

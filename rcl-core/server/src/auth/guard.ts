@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { AppDatabase } from '../db.ts';
 import { deny, type Denial, type Permissions, type Principal } from './access.ts';
+import { findApiKey } from './api-keys.ts';
 import { findSession } from './sessions.ts';
 
 declare module 'fastify' {
@@ -32,28 +33,54 @@ export function isServerMachine(request: FastifyRequest): boolean {
   }
 }
 
-/** The caller these cookies identify. API keys and output tokens are resolved here too once they exist. */
-export function resolvePrincipal(db: AppDatabase, cookies: Record<string, string | undefined>): Principal | null {
+const BEARER = /^Bearer\s+(\S+)\s*$/i;
+
+/**
+ * The caller a request's credentials identify. An `Authorization` header, when present, is all that counts: a valid
+ * `Bearer` API key, or nobody, and the session cookie is ignored (ADR-0020). Otherwise it's the session cookie's user.
+ * Output tokens are resolved here too once they exist.
+ */
+export function resolvePrincipal(
+  db: AppDatabase,
+  { cookies, authorization }: { cookies: Record<string, string | undefined>; authorization?: string },
+): Principal | null {
+  if (authorization !== undefined) {
+    const bearer = BEARER.exec(authorization)?.[1];
+    const key = bearer ? findApiKey(db, bearer) : null;
+    return key ? { kind: 'apiKey', key } : null;
+  }
   const token = cookies[SESSION_COOKIE];
   const session = token ? findSession(db, token) : null;
   return token && session ? { kind: 'session', user: session.user, token } : null;
 }
+
+const credentials = (request: FastifyRequest) => ({
+  cookies: request.cookies,
+  authorization: request.headers.authorization,
+});
 
 // Runs inside the /api plugin: the CSRF check, then the caller onto the request. Each route's access is enforced
 // separately, by enforceRouteAccess in access.ts.
 export function installAuth(app: FastifyInstance, { db, permissions }: { db: AppDatabase; permissions: Permissions }) {
   app.decorateRequest('principal', null);
   app.decorateRequest('recheckAccess', function (this: FastifyRequest) {
-    this.principal = resolvePrincipal(db, this.cookies);
+    this.principal = resolvePrincipal(db, credentials(this));
     const { access } = this.routeOptions.config;
     return access ? deny(access, this.principal, permissions) : { status: 403, error: 'forbidden' };
   });
 
   app.addHook('onRequest', async (request, reply) => {
-    if (!SAFE_METHODS.has(request.method) && !isSameOrigin(request.headers.origin, request.headers.host)) {
+    // A request with an Authorization header comes from a device or script, not a forged cross-site form: browsers
+    // never add that header on their own, and the session cookie is ignored for it (ADR-0020).
+    const fromBrowser = request.headers.authorization === undefined;
+    if (
+      fromBrowser &&
+      !SAFE_METHODS.has(request.method) &&
+      !isSameOrigin(request.headers.origin, request.headers.host)
+    ) {
       return reply.code(403).send({ error: 'cross_origin' });
     }
-    request.principal = resolvePrincipal(db, request.cookies);
+    request.principal = resolvePrincipal(db, credentials(request));
     return undefined;
   });
 }

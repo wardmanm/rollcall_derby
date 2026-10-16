@@ -51,7 +51,8 @@ export function attachRealtime(httpServer: HttpServer, { db, log, hosted, onName
           try {
             const { headers } = socket.handshake;
             if (!isSameOrigin(headers.origin, headers.host)) return next(new Error('cross_origin'));
-            const principal = resolvePrincipal(db, headers.cookie ? parseCookie(headers.cookie) : {});
+            // Live connections take sessions only: an Authorization header is ignored here (ADR-0020).
+            const principal = resolvePrincipal(db, { cookies: headers.cookie ? parseCookie(headers.cookie) : {} });
             const denial = deny(access, principal, hosted.permissions);
             return next(denial ? new Error(denial.error) : undefined);
           } catch (error) {

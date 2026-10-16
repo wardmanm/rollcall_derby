@@ -9,6 +9,7 @@ import type { Role } from '@rollcall/core-contract';
 import { hostApps } from './apps.ts';
 import { coreApp } from './core-app.ts';
 import { attachRealtime } from './realtime.ts';
+import { createApiKey } from './auth/api-keys.ts';
 import { openMemoryDatabase } from './db.ts';
 import { createSession } from './auth/sessions.ts';
 import { SESSION_COOKIE } from './auth/guard.ts';
@@ -174,6 +175,17 @@ describe('attachRealtime', () => {
     const rt = await startRealtime();
     const cookie = await rt.cookieFor('admin');
     expect(await rt.open('/probe/signed-in', { cookie, origin: 'http://evil.example' })).toBe('cross_origin');
+  });
+
+  it('takes no API keys: a live connection needs a session', async () => {
+    const rt = await startRealtime();
+    const { key } = createApiKey(rt.db, {
+      name: 'device',
+      permissions: ['probe:watch'],
+      expiresIn: 'never',
+      createdBy: 'x',
+    });
+    expect(await rt.open('/probe/signed-in', { authorization: `Bearer ${key}` })).toBe('unauthenticated');
   });
 
   it('refuses a namespace created without access', () => {

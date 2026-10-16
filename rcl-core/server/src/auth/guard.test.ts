@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createSession } from './sessions.ts';
+import { userOf } from './access.ts';
 import { SESSION_COOKIE } from './guard.ts';
 import { addUser, testApp } from '../testing.ts';
 
@@ -8,7 +9,7 @@ function appWithProbe() {
   return testApp({
     registerRoutes: (api) => {
       api.post('/api/core/probe', { config: { access: { signedIn: true } } }, async (request) => ({
-        user: request.principal?.user.username,
+        user: userOf(request.principal)?.username,
       }));
     },
   });

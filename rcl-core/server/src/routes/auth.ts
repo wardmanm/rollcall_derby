@@ -9,7 +9,7 @@ import {
   type CurrentUser,
 } from '@rollcall/core-contract';
 import type { AppDatabase } from '../db.ts';
-import type { Access } from '../auth/access.ts';
+import { userOf, type Access } from '../auth/access.ts';
 import { clearSessionCookie, setSessionCookie } from '../auth/guard.ts';
 import { dummyHash, hashPassword, verifyPassword } from '../auth/passwords.ts';
 import { createSession, revokeSession, revokeUserSessions } from '../auth/sessions.ts';
@@ -45,7 +45,7 @@ export function registerAuthRoutes(fastify: FastifyInstance, db: AppDatabase): v
       if (!user || !ok) return reply.code(401).send(INVALID_CREDENTIALS);
 
       // Whoever was signed in on this browser is signed out, so a shared tablet doesn't keep their session alive.
-      if (request.principal) revokeSession(db, request.principal.token);
+      if (request.principal?.kind === 'session') revokeSession(db, request.principal.token);
 
       const session = createSession(db, user.id);
       setSessionCookie(reply, request, session.token, session.expiresAt);
@@ -62,7 +62,7 @@ export function registerAuthRoutes(fastify: FastifyInstance, db: AppDatabase): v
       schema: { tags: ['core/auth'], summary: 'Log out', response: { 204: z.undefined(), ...ERROR_RESPONSES } },
     },
     async (request, reply) => {
-      if (request.principal) revokeSession(db, request.principal.token);
+      if (request.principal?.kind === 'session') revokeSession(db, request.principal.token);
       clearSessionCookie(reply);
       return reply.code(204).send();
     },
@@ -75,7 +75,7 @@ export function registerAuthRoutes(fastify: FastifyInstance, db: AppDatabase): v
       schema: { tags: ['core/auth'], summary: 'Who am I?', response: { 200: CurrentUserSchema, ...ERROR_RESPONSES } },
     },
     async (request, reply) => {
-      const user = request.principal?.user;
+      const user = userOf(request.principal);
       if (!user) return reply.code(401).send(UNAUTHENTICATED);
       const { permissions } = request.server.hostedApps;
       const held = permissions.all.filter((def) => permissions.granted(user.role, def.key)).map((def) => def.key);
@@ -95,7 +95,7 @@ export function registerAuthRoutes(fastify: FastifyInstance, db: AppDatabase): v
       },
     },
     async (request, reply) => {
-      const user = request.principal?.user;
+      const user = userOf(request.principal);
       if (!user) return reply.code(401).send(UNAUTHENTICATED);
       const { currentPassword, newPassword } = request.body;
       if (newPassword.toLowerCase() === user.username) {
@@ -110,7 +110,9 @@ export function registerAuthRoutes(fastify: FastifyInstance, db: AppDatabase): v
       const denial = request.recheckAccess();
       if (denial) return reply.code(denial.status).send({ error: denial.error });
       setPassword(db, record.id, passwordHash, { mustChangePassword: false });
-      if (request.principal) revokeUserSessions(db, record.id, { exceptToken: request.principal.token });
+      if (request.principal?.kind === 'session') {
+        revokeUserSessions(db, record.id, { exceptToken: request.principal.token });
+      }
       return { ...user, mustChangePassword: false };
     },
   );

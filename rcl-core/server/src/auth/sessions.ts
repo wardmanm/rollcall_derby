@@ -1,17 +1,15 @@
-import { createHash, randomBytes } from 'node:crypto';
 import { and, eq, gt, lte, ne } from 'drizzle-orm';
 import type { SessionUser } from '@rollcall/core-contract';
 import type { AppDatabase } from '../db.ts';
 import { sessions, users } from '../db/schema.ts';
+import { hashToken, newToken } from './tokens.ts';
 
 // Sessions last a fixed 30 days from login; using them doesn't extend them (ADR-0018).
 export const SESSION_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
 const LAST_SEEN_RESOLUTION_MS = 60_000;
 
-const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
-
 export function createSession(db: AppDatabase, userId: string, now = new Date()): { token: string; expiresAt: Date } {
-  const token = randomBytes(32).toString('base64url');
+  const token = newToken();
   const expiresAt = new Date(now.getTime() + SESSION_LIFETIME_MS);
   db.insert(sessions)
     .values({
