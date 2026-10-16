@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { FastifySchema, HTTPMethods, InjectOptions } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
+import type { AppModule } from '@rollcall/app-sdk';
 import type { Role } from '@rollcall/core-contract';
 import type { AppOptions } from '../app.ts';
 import { ERROR_RESPONSES } from '../http.ts';
 import { INSTALLED_APPS } from '../installed-apps.ts';
 import { addUser, CORE_VERSION, testApp } from '../testing.ts';
 import type { Access } from './access.ts';
+import { createApiKey } from './api-keys.ts';
 import { SESSION_COOKIE } from './guard.ts';
 import { createSession } from './sessions.ts';
 
@@ -18,8 +20,25 @@ import { createSession } from './sessions.ts';
 const ANY_ID = '00000000-0000-4000-8000-000000000000';
 const byName = (a: string, b: string) => a.localeCompare(b);
 
-type Cookies = Record<string, string>;
-const anonymous = async (): Promise<Cookies> => ({});
+// What a caller sends: a session cookie, an API key in an Authorization header, or nothing.
+interface Credentials {
+  cookies?: Record<string, string>;
+  headers?: Record<string, string>;
+}
+const anonymous = async (): Promise<Credentials> => ({});
+const wrongKey = async (): Promise<Credentials> => ({ headers: { authorization: 'Bearer rcl_not-a-real-key' } });
+
+// A hosted app with a permission an API key may hold, so the key sweeps have a route a key may call.
+const KEYS_PROBE_APP: AppModule = {
+  id: 'probe',
+  title: 'Probe',
+  version: '1.0.0',
+  requiresCore: '*',
+  permissions: [{ key: 'probe:things.read', summary: 'Read things', roles: [] }],
+  register(api) {
+    api.get('/things', { config: { access: { permission: 'probe:things.read' } } }, async () => ({ things: [] }));
+  },
+};
 
 interface ApiRoute {
   method: HTTPMethods;
@@ -51,22 +70,29 @@ async function inventory(options: Partial<AppOptions> = {}) {
     },
   });
   await app.ready();
-  const send = (route: ApiRoute, cookies: Cookies) =>
+  const send = (route: ApiRoute, { cookies, headers }: Credentials) =>
     app.inject({
       method: route.method as InjectOptions['method'],
       url: route.url.replaceAll(/:\w+/g, ANY_ID),
       cookies,
+      headers,
       ...(route.method === 'GET' || route.method === 'HEAD' ? {} : { payload: {} }),
     });
   // A new user and session for each request, since some routes (logout) end the session they're called with.
   let users = 0;
   const as =
     (role: Role, { mustChangePassword = false } = {}) =>
-    async (): Promise<Cookies> => {
+    async (): Promise<Credentials> => {
       const user = await addUser(db, `user${(users += 1)}`, 'correct horse', role, { mustChangePassword });
-      return { [SESSION_COOKIE]: createSession(db, user.id).token };
+      return { cookies: { [SESSION_COOKIE]: createSession(db, user.id).token } };
     };
-  return { app, routes, send, as };
+  // An API key holding `permissions`, made once and sent with every request.
+  let keys = 0;
+  const key = (permissions: readonly string[]) => {
+    const created = createApiKey(db, { name: `key${(keys += 1)}`, permissions, expiresIn: 'never', createdBy: 'test' });
+    return async (): Promise<Credentials> => ({ headers: { authorization: `Bearer ${created.key}` } });
+  };
+  return { app, routes, send, as, key };
 }
 
 type Inventory = Awaited<ReturnType<typeof inventory>>;
@@ -76,7 +102,7 @@ type Inventory = Awaited<ReturnType<typeof inventory>>;
 async function notRefused(
   { send }: Inventory,
   routes: readonly ApiRoute[],
-  caller: () => Promise<Cookies>,
+  caller: () => Promise<Credentials>,
   { status, error }: { status: number; error: string },
 ) {
   const found: string[] = [];
@@ -141,6 +167,33 @@ describe('route inventory', () => {
       expect(await notRefused(inv, lacking, inv.as(role), forbidden), role).toEqual([]);
       expect(await notRefused(inv, lacking, inv.as('admin'), forbidden), role).toHaveLength(lacking.length);
     }
+    await inv.app.close();
+  });
+
+  it('lets an API key call only routes needing a permission it holds, and never a people-only one', async () => {
+    const inv = await inventory({ apps: [...INSTALLED_APPS, KEYS_PROBE_APP] });
+    const grantable = inv.app.hostedApps.permissions.all.filter((def) => !def.peopleOnly).map((def) => def.key);
+    const keyMayCall = (access: Access) => 'permission' in access && grantable.includes(access.permission);
+    const refusedToKeys = where(inv.routes, (access) => !isPublic(access) && !keyMayCall(access));
+    const forbidden = { status: 403, error: 'forbidden' };
+    const key = inv.key(grantable);
+    expect(keysOf(refusedToKeys)).toEqual(
+      expect.arrayContaining(['GET /api/core/auth/me', 'GET /api/core/users', 'GET /api/core/api-keys']),
+    );
+    expect(await notRefused(inv, refusedToKeys, key, forbidden)).toEqual([]);
+    expect(await notRefused(inv, refusedToKeys, inv.as('admin'), forbidden)).toHaveLength(refusedToKeys.length);
+    const callable = where(inv.routes, keyMayCall);
+    expect(keysOf(callable)).toEqual(['GET /api/probe/things']);
+    for (const route of callable) expect((await inv.send(route, await key())).statusCode, route.key).toBe(200);
+    await inv.app.close();
+  });
+
+  it('refuses a wrong API key on every route that is not public', async () => {
+    const inv = await inventory();
+    const gated = where(inv.routes, (access) => !isPublic(access));
+    const unauthenticated = { status: 401, error: 'unauthenticated' };
+    expect(await notRefused(inv, gated, wrongKey, unauthenticated)).toEqual([]);
+    expect(await notRefused(inv, gated, inv.as('admin'), unauthenticated)).toHaveLength(gated.length);
     await inv.app.close();
   });
 

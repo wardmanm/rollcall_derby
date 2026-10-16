@@ -12,6 +12,8 @@ const DESCRIPTION = [
   '',
   '**Who may call what.** Each operation says so: public, any signed-in user, or a permission such as `core:users.manage`. Admins hold every permission; the users-and-access feature page lists which other roles hold each one.',
   '',
+  '**API keys.** Devices and scripts send `Authorization: Bearer rcl_…` instead of signing in; choose "Authorize" to try one here. A key holds only its own permissions, never a people-only one, and is refused by operations for any signed-in user. With a key, the session cookie is ignored.',
+  '',
   '**Checks, in order:** a state-changing request from another site gets `403 cross_origin`; no session gets `401 unauthenticated`; a pending password change gets `403 password_change_required`; a missing permission gets `403 forbidden`. Login, setup and password changes allow 10 attempts a minute, then `429 rate_limited`.',
   '',
   '**Errors** look like `{ "error": "<code>", "message"?: "…" }`. A body that fails its schema gets `400 validation_failed`.',
@@ -24,11 +26,13 @@ function describeAccess(access: Access, permissions: Permissions): string {
   if ('public' in access) return `**Public:** ${access.public}.`;
   if ('signedIn' in access) {
     return access.allowPendingPasswordChange
-      ? '**Any signed-in user**, even with a password change pending.'
-      : '**Any signed-in user.**';
+      ? '**Any signed-in user**, even with a password change pending. Not API keys.'
+      : '**Any signed-in user.** Not API keys.';
   }
-  const roles = ['admin' as const, ...(permissions.find(access.permission)?.roles ?? [])].map((r) => ROLE_NAMES[r]);
-  return `**Needs \`${access.permission}\`:** ${roles.join(', ')}.`;
+  const def = permissions.find(access.permission);
+  const roles = ['admin' as const, ...(def?.roles ?? [])].map((r) => ROLE_NAMES[r]);
+  const keys = def?.peopleOnly ? 'Not API keys: people only.' : 'Also API keys that hold it.';
+  return `**Needs \`${access.permission}\`:** ${roles.join(', ')}. ${keys}`;
 }
 
 // The OpenAPI document is built from the schemas every route declares (ADR-0014), plus who may call each operation.
@@ -47,9 +51,15 @@ export function registerApiDocs(
         { name: 'core/setup', description: 'Creating the first Admin' },
         { name: 'core/auth', description: 'Logging in and out, and your own password' },
         { name: 'core/users', description: 'User management (Admin only)' },
+        { name: 'core/api-keys', description: 'API keys for devices and scripts (Admin only)' },
       ],
-      components: { securitySchemes: { session: { type: 'apiKey', in: 'cookie', name: SESSION_COOKIE } } },
-      security: [{ session: [] }],
+      components: {
+        securitySchemes: {
+          session: { type: 'apiKey', in: 'cookie', name: SESSION_COOKIE },
+          bearer: { type: 'http', scheme: 'bearer', description: 'An API key, `rcl_…`' },
+        },
+      },
+      security: [{ session: [] }, { bearer: [] }],
     },
     transform: (input) => {
       const { schema, url } = jsonSchemaTransform(input);

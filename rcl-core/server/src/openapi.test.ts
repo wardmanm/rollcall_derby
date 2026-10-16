@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { AppModule } from '@rollcall/app-sdk';
 import { testApp } from './testing.ts';
 
 // Reads a nested value from parsed JSON without a type for every level.
@@ -60,15 +61,36 @@ describe('API explorer', () => {
   it('says who may call each operation, and that public ones need no session', async () => {
     const { app } = testApp({ apiDocs: true });
     const doc = (await app.inject({ method: 'GET', url: '/docs/json' })).json<unknown>();
-    expect(at(doc, 'security')).toEqual([{ session: [] }]);
+    expect(at(doc, 'security')).toEqual([{ session: [] }, { bearer: [] }]);
+    expect(at(doc, 'components', 'securitySchemes', 'bearer')).toMatchObject({ type: 'http', scheme: 'bearer' });
     expect(at(doc, 'paths', '/api/core/health', 'get', 'security')).toEqual([]);
     expect(at(doc, 'paths', '/api/core/health', 'get', 'description')).toBe(
       '**Public:** Shows whether the server is up, before anyone signs in.',
     );
     expect(at(doc, 'paths', '/api/core/auth/me', 'get', 'description')).toBe(
-      '**Any signed-in user**, even with a password change pending.',
+      '**Any signed-in user**, even with a password change pending. Not API keys.',
     );
-    expect(at(doc, 'paths', '/api/core/users', 'get', 'description')).toBe('**Needs `core:users.manage`:** Admin.');
+    expect(at(doc, 'paths', '/api/core/users', 'get', 'description')).toBe(
+      '**Needs `core:users.manage`:** Admin. Not API keys: people only.',
+    );
     expect(at(doc, 'paths', '/api/core/users', 'get', 'security')).toBeUndefined();
+  });
+
+  it('says when an API key that holds the permission may call an operation too', async () => {
+    const demo: AppModule = {
+      id: 'demo',
+      title: 'Demo',
+      version: '1.0.0',
+      requiresCore: '*',
+      permissions: [{ key: 'demo:things.read', summary: 'Read things', roles: ['producer'] }],
+      register(api) {
+        api.get('/things', { config: { access: { permission: 'demo:things.read' } } }, async () => ({ things: [] }));
+      },
+    };
+    const { app } = testApp({ apiDocs: true, apps: [demo] });
+    const doc = (await app.inject({ method: 'GET', url: '/docs/json' })).json<unknown>();
+    expect(at(doc, 'paths', '/api/demo/things', 'get', 'description')).toBe(
+      '**Needs `demo:things.read`:** Admin, Producer. Also API keys that hold it.',
+    );
   });
 });

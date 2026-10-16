@@ -10,6 +10,7 @@ import {
 import type { AppDatabase } from './db.ts';
 import { ERROR_RESPONSES } from './http.ts';
 import { CORE_APP_ID, CORE_PERMISSIONS } from './auth/permissions.ts';
+import { registerApiKeyRoutes } from './routes/api-keys.ts';
 import { registerAuthRoutes } from './routes/auth.ts';
 import { registerSetupRoutes } from './routes/setup.ts';
 import { registerUserRoutes } from './routes/users.ts';
@@ -65,6 +66,7 @@ export function coreApp({ version, db, webDir }: { version: string; db: AppDatab
       registerSetupRoutes(fastify, db);
       registerAuthRoutes(fastify, db);
       registerUserRoutes(fastify, db);
+      registerApiKeyRoutes(fastify, db);
     },
   };
 }
