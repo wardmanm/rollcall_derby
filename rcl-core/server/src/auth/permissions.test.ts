@@ -7,7 +7,8 @@ import { CORE_APP_ID, CORE_PERMISSIONS } from './permissions.ts';
 
 const FEATURE_PAGE = new URL('../../../../docs/features/users-and-access.md', import.meta.url);
 
-// The rows of the feature page's Permissions table: permission, what it allows, then ✅ or — for each role.
+// The rows of the feature page's Permissions table: permission, what it allows, ✅ or — for each role, then ✅ or —
+// for whether an API key may hold it.
 function documentedPermissions(): string[][] {
   const page = readFileSync(FEATURE_PAGE, 'utf8');
   const section = page.split(/^## /m).find((s) => s.startsWith('Permissions\n')) ?? '';
@@ -33,8 +34,10 @@ describe("every installed app's permissions, core's first", () => {
   it('match the table on the users-and-access feature page', () => {
     const defs = [...CORE_PERMISSIONS, ...INSTALLED_APPS.flatMap((app) => app.permissions)];
     const permissions = createPermissions(defs);
-    const expected = defs.map(({ key, summary }) =>
-      [`\`${key}\``, summary].concat(ROLES.map((role) => (permissions.granted(role, key) ? '✅' : '—'))),
+    const expected = defs.map(({ key, summary, peopleOnly }) =>
+      [`\`${key}\``, summary]
+        .concat(ROLES.map((role) => (permissions.granted(role, key) ? '✅' : '—')))
+        .concat(peopleOnly ? '—' : '✅'),
     );
     expect(documentedPermissions()).toEqual(expected);
   });

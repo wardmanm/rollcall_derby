@@ -37,11 +37,12 @@ Basic user accounts and role-based access control. The app runs on a shared venu
 
 ## Permissions
 
-Routes and live connections check [permissions](../product/glossary.md#permission), not roles ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)). Each permission belongs to one rcl app and is named `<app>:<action>`. Admins hold every permission. This table says which other roles hold each one, and the API explorer at `/docs` shows the permission each route needs. A test keeps the table in step with the code.
+Routes and live connections check [permissions](../product/glossary.md#permission), not roles ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)). Each permission belongs to one rcl app and is named `<app>:<action>`. Admins hold every permission. This table says which other roles hold each one, and whether an API key may hold it. The API explorer at `/docs` shows the permission each route needs. A test keeps the table in step with the code.
 
-| Permission | Allows | Admin | Producer | Announcer |
-|---|---|---|---|---|
-| `core:users.manage` | Create users, change their roles, reset their passwords, sign them out and delete them | ✅ | — | — |
+| Permission | Allows | Admin | Producer | Announcer | API keys |
+|---|---|---|---|---|---|
+| `core:users.manage` | Create users, change their roles, reset their passwords, sign them out and delete them | ✅ | — | — | — |
+| `core:api-keys.manage` | Create, list and revoke API keys | ✅ | — | — | — |
 
 The capabilities in the role matrix become permissions here as each feature is built.
 

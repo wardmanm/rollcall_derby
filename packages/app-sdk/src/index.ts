@@ -30,6 +30,8 @@ export interface PermissionDef {
   summary: string;
   /** The roles it's granted to besides Admin, which holds every permission. */
   roles: readonly Role[];
+  /** Only people may hold it: it can never go on an API key. Account administration is people-only (ADR-0020). */
+  peopleOnly?: true;
 }
 
 /** An app's web build, served below `/<id>/`. index.html answers every path its pages don't. */

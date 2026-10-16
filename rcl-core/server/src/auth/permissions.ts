@@ -9,5 +9,12 @@ export const CORE_PERMISSIONS: readonly PermissionDef[] = [
     key: 'core:users.manage',
     summary: 'Create users, change their roles, reset their passwords, sign them out and delete them',
     roles: [],
+    peopleOnly: true,
+  },
+  {
+    key: 'core:api-keys.manage',
+    summary: 'Create, list and revoke API keys',
+    roles: [],
+    peopleOnly: true,
   },
 ];
