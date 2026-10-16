@@ -9,6 +9,9 @@ const ADMIN = { username: 'admin', password: 'admin password 1' };
 const PRODUCER = { username: 'producer1', password: 'producer password 1' };
 let temporaryPassword = '';
 
+// Request options sending `key` the way a device or script does.
+const withKey = (key: string) => ({ headers: { authorization: `Bearer ${key}` } });
+
 async function signIn(page: Page, { username, password }: { username: string; password: string }) {
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   await page.getByLabel('Username').fill(username);
@@ -80,4 +83,30 @@ test('the Producer must choose a password first, then reaches the Producer app b
   await expect(page.getByRole('link', { name: 'Users' })).toHaveCount(0);
   // Hiding the link is only for convenience: the server refuses anyway.
   expect((await page.request.get('/api/core/users')).status()).toBe(403);
+});
+
+test('an Admin creates an API key: it works for a device, never as the Admin, and stops when revoked', async ({
+  page,
+}) => {
+  await page.goto('/core/api-keys');
+  await signIn(page, ADMIN);
+  await expect(page.getByRole('heading', { name: 'API keys' })).toBeVisible();
+  await page.getByLabel('Name').fill('Companion');
+  await page.getByRole('button', { name: 'Create key' }).click();
+  const dialog = page.getByRole('dialog', { name: 'API key: Companion' });
+  const key = await dialog.getByLabel('API key').inputValue();
+  expect(key).toMatch(/^rcl_[\w-]{43}$/);
+  await dialog.getByRole('button', { name: 'Done' }).click();
+  await expect(page.getByRole('row', { name: /Companion/ })).toContainText(`${key.slice(0, 8)}…`);
+
+  // This page's requests carry the Admin's session cookie too: with a key, the cookie is ignored.
+  expect((await page.request.get('/api/core/health', withKey(key))).status()).toBe(200);
+  expect((await page.request.get('/api/core/users', withKey(key))).status()).toBe(403);
+  expect((await page.request.get('/api/core/users', withKey('rcl_made-up'))).status()).toBe(401);
+
+  await page.getByRole('button', { name: 'Actions for Companion' }).click();
+  await page.getByRole('menuitem', { name: 'Revoke' }).click();
+  await page.getByRole('dialog', { name: 'Revoke Companion?' }).getByRole('button', { name: 'Revoke' }).click();
+  await expect(page.getByText('No API keys yet.')).toBeVisible();
+  expect((await page.request.get('/api/core/users', withKey(key))).status()).toBe(401);
 });

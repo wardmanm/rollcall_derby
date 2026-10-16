@@ -1,12 +1,19 @@
 import {
+  ApiKeySchema,
+  CreateApiKeyResponseSchema,
   CreateUserResponseSchema,
+  GrantablePermissionSchema,
   HostedAppSchema,
   PasswordResetResponseSchema,
   SessionUserSchema,
   UserSchema,
+  type ApiKey,
   type ChangePasswordRequest,
+  type CreateApiKeyRequest,
+  type CreateApiKeyResponse,
   type CreateUserRequest,
   type CreateUserResponse,
+  type GrantablePermission,
   type HostedApp,
   type LoginRequest,
   type PasswordResetResponse,
@@ -19,7 +26,7 @@ import { api } from '@rollcall/web-sdk';
 
 // rcl-core's own endpoints, added to the shared base API. Each reply is checked against the contract (ADR-0019).
 // Body-less POSTs send `{}`: the server refuses an empty body labelled as JSON.
-const coreApi = api.enhanceEndpoints({ addTagTypes: ['Users'] }).injectEndpoints({
+const coreApi = api.enhanceEndpoints({ addTagTypes: ['Users', 'ApiKeys'] }).injectEndpoints({
   endpoints: (build) => ({
     setup: build.mutation<SessionUser, SetupRequest>({
       query: (body) => ({ url: 'core/setup', method: 'POST', body }),
@@ -70,6 +77,24 @@ const coreApi = api.enhanceEndpoints({ addTagTypes: ['Users'] }).injectEndpoints
       query: (id) => ({ url: `core/users/${encodeURIComponent(id)}`, method: 'DELETE' }),
       invalidatesTags: ['Users'],
     }),
+    getApiKeys: build.query<ApiKey[], void>({
+      query: () => 'core/api-keys',
+      transformResponse: (response: unknown) => ApiKeySchema.array().parse(response),
+      providesTags: ['ApiKeys'],
+    }),
+    getGrantablePermissions: build.query<GrantablePermission[], void>({
+      query: () => 'core/api-keys/grantable',
+      transformResponse: (response: unknown) => GrantablePermissionSchema.array().parse(response),
+    }),
+    createApiKey: build.mutation<CreateApiKeyResponse, CreateApiKeyRequest>({
+      query: (body) => ({ url: 'core/api-keys', method: 'POST', body }),
+      transformResponse: (response: unknown) => CreateApiKeyResponseSchema.parse(response),
+      invalidatesTags: ['ApiKeys'],
+    }),
+    revokeApiKey: build.mutation<void, string>({
+      query: (id) => ({ url: `core/api-keys/${encodeURIComponent(id)}`, method: 'DELETE' }),
+      invalidatesTags: ['ApiKeys'],
+    }),
   }),
 });
 
@@ -84,4 +109,8 @@ export const {
   useResetPasswordMutation,
   useSignOutUserMutation,
   useDeleteUserMutation,
+  useGetApiKeysQuery,
+  useGetGrantablePermissionsQuery,
+  useCreateApiKeyMutation,
+  useRevokeApiKeyMutation,
 } = coreApi;

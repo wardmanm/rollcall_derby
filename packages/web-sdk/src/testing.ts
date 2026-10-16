@@ -39,7 +39,7 @@ export const ADMIN: CurrentUser = {
   username: 'admin',
   role: 'admin',
   mustChangePassword: false,
-  permissions: ['core:users.manage'],
+  permissions: ['core:users.manage', 'core:api-keys.manage'],
 };
 export const PRODUCER: CurrentUser = {
   id: 'u-producer',

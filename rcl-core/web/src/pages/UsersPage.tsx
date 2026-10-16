@@ -26,7 +26,7 @@ import {
   useUpdateUserRoleMutation,
 } from '../api.ts';
 import { fieldErrors, problemWith } from '../forms.ts';
-import { TemporaryPassword, type ShownPassword } from './TemporaryPassword.tsx';
+import { ShowOnce, type ShownOnce } from './ShowOnce.tsx';
 
 const ROLE_OPTIONS = ROLES.map((role) => ({ value: role, label: ROLE_NAMES[role] }));
 const isRole = (value: string): value is Role => ROLES.some((role) => role === value);
@@ -35,6 +35,14 @@ const SENTENCES = {
   username_taken: 'That username is already taken.',
   not_found: 'That user no longer exists. The list has been refreshed.',
 };
+
+// A new temporary password, shown once (ADR-0018).
+const temporaryPassword = (username: string, password: string): ShownOnce => ({
+  title: `Temporary password for ${username}`,
+  text: `Give it to ${username} now: it won't be shown again. They'll choose their own password when they sign in.`,
+  label: 'Temporary password',
+  value: password,
+});
 
 interface Confirmation {
   title: string;
@@ -59,7 +67,7 @@ function ManageUsers({ me }: { me: CurrentUser }) {
   const [resetPassword] = useResetPasswordMutation();
   const [signOut] = useSignOutUserMutation();
   const [deleteUser] = useDeleteUserMutation();
-  const [shown, setShown] = useState<ShownPassword | null>(null);
+  const [shown, setShown] = useState<ShownOnce | null>(null);
   const [confirming, setConfirming] = useState<Confirmation | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
 
@@ -112,7 +120,7 @@ function ManageUsers({ me }: { me: CurrentUser }) {
                   action: 'Reset password',
                   run: async () => {
                     const result = await attempt(resetPassword(user.id));
-                    if (result.data) setShown({ username: user.username, password: result.data.temporaryPassword });
+                    if (result.data) setShown(temporaryPassword(user.username, result.data.temporaryPassword));
                   },
                 })
               }
@@ -149,7 +157,7 @@ function ManageUsers({ me }: { me: CurrentUser }) {
           </Group>
         </Stack>
       </Modal>
-      <TemporaryPassword shown={shown} onClose={() => setShown(null)} />
+      <ShowOnce shown={shown} onClose={() => setShown(null)} />
     </Stack>
   );
 }
@@ -213,7 +221,7 @@ function UserRow({ user, isYou, onRole, onReset, onSignOut, onDelete }: UserRowP
   );
 }
 
-function CreateUser({ onCreated }: { onCreated: (shown: ShownPassword) => void }) {
+function CreateUser({ onCreated }: { onCreated: (shown: ShownOnce) => void }) {
   const [createUser, { isLoading, error }] = useCreateUserMutation();
   const [username, setUsername] = useState('');
   const [role, setRole] = useState<Role>('producer');
@@ -227,7 +235,7 @@ function CreateUser({ onCreated }: { onCreated: (shown: ShownPassword) => void }
     const result = await createUser(checked.data);
     if (result.data) {
       setUsername('');
-      onCreated({ username: result.data.user.username, password: result.data.temporaryPassword });
+      onCreated(temporaryPassword(result.data.user.username, result.data.temporaryPassword));
     }
   };
 
