@@ -1,7 +1,7 @@
 // Tests for release.mjs. Run: node --test "scripts/*.test.mjs"
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -12,6 +12,7 @@ import {
   compareVersions,
   parseChangelog,
   formatChangelog,
+  isUnreleased,
   prepare,
   check,
   notes,
@@ -541,6 +542,36 @@ test('CLI milestone reads the API response on stdin and prints number and url', 
   });
   assert.equal(open.status, 1);
   assert.match(open.stderr, /still has 3 open issue\(s\)/);
+});
+
+// --- this repo's apps ---
+
+const REPO = join(dirname(fileURLToPath(import.meta.url)), '..');
+
+test('every rcl-* folder in this repo is an app with its own changelog, and the root has none', () => {
+  const folders = readdirSync(REPO, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && e.name.startsWith('rcl-'))
+    .map((e) => e.name)
+    .toSorted();
+  assert.deepEqual(folders, Object.keys(APPS).toSorted());
+  for (const app of folders) {
+    const log = parseChangelog(read(REPO, `${app}/CHANGELOG.md`));
+    assert.ok(log.sections.some(isUnreleased), `${app}/CHANGELOG.md has no Unreleased section`);
+  }
+  assert.equal(existsSync(join(REPO, 'CHANGELOG.md')), false, 'each app keeps its own CHANGELOG.md');
+});
+
+test("each app's changelog survives being prepared: the parser gives back exactly what it read", () => {
+  for (const app of Object.keys(APPS)) {
+    const text = read(REPO, `${app}/CHANGELOG.md`);
+    assert.equal(formatChangelog(parseChangelog(text)), text, app);
+  }
+});
+
+test("rcl-producer's changelog keeps OBS Producer 0.1.0, linked to its release in GROBS", () => {
+  const log = parseChangelog(read(REPO, 'rcl-producer/CHANGELOG.md'));
+  assert.ok(log.sections.some((s) => s.name === '0.1.0' && s.date === '2026-10-02'));
+  assert.ok(log.footer.includes('[0.1.0]: https://github.com/wardmanm/GROBS/releases/tag/obs-producer-v0.1.0'));
 });
 
 // --- patch releases: milestones only for x.y.0, issues tracked from the notes ---

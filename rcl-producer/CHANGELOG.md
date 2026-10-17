@@ -1,38 +1,22 @@
 # Changelog
 
-All notable changes to Rollcall are documented here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/). How entries become releases: [releasing guide](../docs/guides/releasing.md).
+All notable changes to rcl-producer, Rollcall's Producer app and its OBS overlay, are documented here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/). How entries become releases: [releasing guide](../docs/guides/releasing.md).
+
+rcl-producer runs on rcl-core, Rollcall's server, which has [its own changelog](../rcl-core/CHANGELOG.md). Before Rollcall, the Producer app and its server were one app, OBS Producer, released as 0.1.0 below.
 
 ## [Unreleased]
 
 ### Added
 
-- Accounts on the server: first-run Admin setup from the server machine, sign-in with 30-day sessions, sign-out and password changes (wardmanm/GROBS#13)
-- Admins can create users, change roles, reset passwords and sign users out. Every API route and live connection checks who's asking, and a reset-password command rescues a locked-out Admin (wardmanm/GROBS#14)
-- API explorer for developers: Swagger UI at `/docs`, generated from the shared schemas. It's on in `yarn dev`, and on a venue server only with `ROLLCALL_API_DOCS=1` (wardmanm/GROBS#16)
-- The API explorer shows who may call each route: anyone, any signed-in user, or the permission it needs, such as `core:users.manage` (#3)
 - The Producer app at `/producer/`. For now it shows the address to add to OBS for the overlay (#4)
-- The server lists the apps it hosts at `/api/core/apps`, for signed-in users (#5)
-- Sign-in, first-run setup and password changes in the web app. Every app asks you to sign in first, and someone given a temporary password chooses their own before anything else (#11)
-- A Users page for Admins: create users (each temporary password is shown once), change roles, reset passwords, sign users out and delete accounts (#11)
-- rcl-core's home page lists the other installed apps (#11)
-- API keys for devices and scripts such as Bitfocus Companion. On the API keys page, Admins create keys scoped to permissions, with an optional expiry, and revoke them. A key is shown once, and never holds account-admin permissions (#7)
+- The Producer app asks you to sign in first, on rcl-core's sign-in page, and brings you back afterwards (#11)
 
 ### Changed
 
-- OBS Producer is now **Rollcall**, in its own repository. Settings are renamed from `OBS_PRODUCER_*` to `ROLLCALL_*`; the server refuses to start while an old name is still set, so update any launch scripts. Sign in again after upgrading, because the session cookie is renamed (#2)
-- The database file is now `rollcall.db`. Rollcall is a new clone, so copy your old `obs-producer/data/` folder into the new clone's `data/` first; the server refuses to start while the data folder holds only the old `obs-producer.db`, and explains how to keep your accounts. `reset-password` refuses a folder with no database and prints the path it checked (#2)
+- OBS Producer is now **Rollcall**, in its own repository, and this is its Producer app. Its server is now rcl-core: read rcl-core's release notes before upgrading, because settings and the database file are renamed (#2)
 - The OBS overlay now uses its own public live connection. After upgrading, refresh each OBS browser source (right-click ▸ Refresh) so it picks up the change (wardmanm/GROBS#14)
-- Access is checked by permission instead of by role. Admins hold every permission, so who can do what is unchanged (#3)
-- Each app now has its own address: the admin app is at `/core/` (`/` takes you there) and the Producer app at `/producer/`. **The OBS overlay moved from `/overlay` to `/producer/overlay`, with no redirect:** change the URL of each OBS browser source (#4)
-- rcl-core now hosts each app as a module, so every API address starts with its app: `/api/health` is now `/api/core/health`, `/api/auth/login` is `/api/core/auth/login`, and so on. The OBS overlay's live connection moved too: after upgrading, refresh each OBS browser source (right-click ▸ Refresh) (#5)
-- The server explains a rejected form in plain words, such as "Use at least 10 characters" (#11)
-
-### Fixed
-
-- The header's server badge has enough contrast to read (wardmanm/GROBS#17)
-- An Admin who is demoted, deleted or signed out while creating a user or resetting a password no longer completes the change, and a password change made after an Admin's reset no longer overwrites it (#8)
-- The first failed sign-in after the server starts takes as long as later ones, so it doesn't reveal whether the username exists (#8)
-- Logging out works even after the session has ended, and always clears the cookie (#11)
+- **The OBS overlay moved from `/overlay` to `/producer/overlay`, with no redirect:** change the URL of each OBS browser source (#4)
+- The OBS overlay's live connection moved with the app. After upgrading, refresh each OBS browser source (right-click ▸ Refresh) (#5)
 
 ## [0.1.0] - 2026-10-02
 

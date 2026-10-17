@@ -10,7 +10,8 @@ These rules add to the repo-root [AGENTS.md](../AGENTS.md). Its hard rules apply
 rcl-producer/
 ├── server/    @rollcall/producer-server: the app module rcl-core hosts (depends only on @rollcall/app-sdk and contracts)
 ├── contract/  @rollcall/producer-contract: Zod schemas for /api/producer and its namespaces, such as the overlay's hello
-└── web/       @rollcall/producer-web: the Producer app at /producer/ (Mantine), and the OBS overlay at /producer/overlay (no Mantine)
+├── web/       @rollcall/producer-web: the Producer app at /producer/ (Mantine), and the OBS overlay at /producer/overlay (no Mantine)
+└── CHANGELOG.md  rcl-producer's release notes: add a line under Unreleased for each user-visible change
 ```
 
 The app shell, the server badge, the RTK Query base API and store, and the dev proxy come from `@rollcall/web-sdk` (`packages/web-sdk/`).

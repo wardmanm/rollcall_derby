@@ -24,7 +24,7 @@ How Rollcall work is tracked on GitHub, and how a release is cut. Releases are *
 
 ## Changelog
 
-[`CHANGELOG.md`](../../rcl-producer/CHANGELOG.md) follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Every user-visible change adds a line under `## [Unreleased]` in the same commit or PR. Put it under the right heading (`Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`) and end it with the issue number:
+Each rcl app keeps its own changelog, [`rcl-core/CHANGELOG.md`](../../rcl-core/CHANGELOG.md) and [`rcl-producer/CHANGELOG.md`](../../rcl-producer/CHANGELOG.md), following [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Every user-visible change adds a line under `## [Unreleased]` in the changelog of each app it changes, in the same commit or PR. A change to both apps gets a line in each, written for that app's users. Put it under the right heading (`Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`) and end it with the issue number:
 
 ```md
 ### Added
@@ -47,7 +47,7 @@ These lines become the release notes, so write them for the people who run the a
 
 - **On the issue:** the publish job comments `Released in OBS Producer v<version>: <link>`.
 - **Everything in one release:** search issues for `"Released in OBS Producer v0.1.1" in:comments`.
-- **In the repo:** the version's section in [`CHANGELOG.md`](../../rcl-producer/CHANGELOG.md) lists each entry with its issue number.
+- **In the repo:** the version's section in the app's changelog lists each entry with its issue number.
 
 ## Cutting a release
 

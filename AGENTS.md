@@ -44,10 +44,9 @@ Details and rationale are in the [ADRs](docs/decisions/README.md).
 rollcall_derby/
 ├── docs/              the wiki (living pages + ADRs)
 ├── design-docs/       dated specs and plans (working papers, not maintained after use)
-├── CHANGELOG.md       release notes; add a line under Unreleased for user-visible changes
 ├── scripts/           check-docs.mjs (docs lint), release.mjs (release helper) + tests
-├── rcl-core/          the host app: server, admin web app and contract (see rcl-core/AGENTS.md)
-├── rcl-producer/      the Producer app: its server module, contract, web app and the OBS overlay (see rcl-producer/AGENTS.md)
+├── rcl-core/          the host app: server, admin web app, contract and CHANGELOG.md (see rcl-core/AGENTS.md)
+├── rcl-producer/      the Producer app: its server module, contract, web app, the OBS overlay and CHANGELOG.md (see rcl-producer/AGENTS.md)
 ├── packages/          code shared across apps: app-sdk (@rollcall/app-sdk), web-sdk (@rollcall/web-sdk)
 ├── e2e/               @rollcall/e2e: Playwright tests against the real production build
 ├── package.json       Yarn 4 workspaces root (packageManager pins the Yarn version)
@@ -106,5 +105,5 @@ The full process is in the [wiki guide](docs/wiki-guide.md).
 - Behavior matches its feature page, and the page is updated if behavior changed.
 - Tests are added or updated, and `yarn check` passes. Changes to what users see also pass `yarn test:e2e`.
 - New shared components have a story, and `yarn test:stories` passes.
-- User-visible changes have a line under `## [Unreleased]` in [CHANGELOG.md](rcl-producer/CHANGELOG.md), ending with the issue number.
+- User-visible changes have a line under `## [Unreleased]` in the changelog of each app they change, [rcl-core's](rcl-core/CHANGELOG.md) or [rcl-producer's](rcl-producer/CHANGELOG.md), ending with the issue number.
 - Every hard rule above still holds.

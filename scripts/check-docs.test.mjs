@@ -222,11 +222,25 @@ test('checks links in the root agent instruction files', () => {
   );
 });
 
-test('checks links in CHANGELOG.md but not its link reference definitions', () => {
+test("checks links in each rcl app's instruction files and changelog, but not the changelog's link references", () => {
   const changelog =
-    '# Changelog\n\nSee the [guide](docs/nope.md).\n\n## [Unreleased]\n\n[Unreleased]: https://example.com\n';
-  const errors = errorsFor({ 'CHANGELOG.md': changelog });
-  assert.deepEqual(errors, ['CHANGELOG.md: broken link "docs/nope.md"']);
+    '# Changelog\n\nSee the [guide](../docs/nope.md).\n\n## [Unreleased]\n\n[Unreleased]: https://example.com\n';
+  const errors = errorsFor({
+    'rcl-core/CHANGELOG.md': changelog,
+    'rcl-core/AGENTS.md': '# rcl-core\n\nSee the [wiki](../docs/README.md) and [nothing](nope.md).\n',
+    'rcl-producer/CLAUDE.md': '@AGENTS.md\n\n[nothing](../nope.md)\n',
+    'rcl-producer/README.md': '# rcl-producer\n\n[nothing](docs/nope.md)\n',
+    'packages/web-sdk/README.md': '[not an app, so not checked](nope.md)\n',
+  });
+  assert.deepEqual(
+    errors.toSorted((a, b) => a.localeCompare(b)),
+    [
+      'rcl-core/AGENTS.md: broken link "nope.md"',
+      'rcl-core/CHANGELOG.md: broken link "../docs/nope.md"',
+      'rcl-producer/CLAUDE.md: broken link "../nope.md"',
+      'rcl-producer/README.md: broken link "docs/nope.md"',
+    ],
+  );
 });
 
 // --- reachability ---

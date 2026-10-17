@@ -147,7 +147,7 @@ Upgrading from OBS Producer? Rollcall is a new clone, so copy your old checkout'
 
 1. Run `yarn check`: type-check, lint, format check, unit tests, script tests and docs lint. `yarn format` fixes formatting.
 2. If you changed something users see, run `yarn test:e2e` too.
-3. Update the wiki and `CHANGELOG.md` in the same change. See the [wiki guide](../wiki-guide.md) and [AGENTS.md](../../AGENTS.md#definition-of-done).
+3. Update the wiki and the changelog of each app you changed (`rcl-core/CHANGELOG.md`, `rcl-producer/CHANGELOG.md`) in the same change. See the [wiki guide](../wiki-guide.md) and [AGENTS.md](../../AGENTS.md#definition-of-done).
 
 How tests are organized is in [Testing](testing.md).
 

@@ -16,7 +16,9 @@ const FEATURE_STATUSES = new Set(['planned', 'in-progress', 'shipped', 'deprecat
 const ADR_STATUSES = new Set(['proposed', 'accepted', 'superseded', 'deprecated']);
 const ADR_FILENAME = /^(\d{4})-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-const ROOT_FILES = ['AGENTS.md', 'CLAUDE.md', 'README.md', 'CHANGELOG.md']; // link-checked only
+// Link-checked only: these files at the repo root, and APP_FILES in each rcl-* app folder.
+const ROOT_FILES = ['AGENTS.md', 'CLAUDE.md', 'README.md'];
+const APP_FILES = ['AGENTS.md', 'CLAUDE.md', 'README.md', 'CHANGELOG.md'];
 const EXEMPT = /^docs\/templates\//;
 const HOME = 'docs/README.md';
 
@@ -45,6 +47,13 @@ function parseFrontmatter(text) {
 function loadPage(root, abs) {
   const text = readFileSync(abs, 'utf8');
   return { abs, rel: toPosix(relative(root, abs)), text, ...parseFrontmatter(text) };
+}
+
+function appFiles(root) {
+  return readdirSync(root, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && e.name.startsWith('rcl-'))
+    .toSorted((a, b) => a.name.localeCompare(b.name))
+    .flatMap((e) => APP_FILES.map((f) => join(root, e.name, f)));
 }
 
 function loadDocs(root) {
@@ -251,7 +260,7 @@ export function checkDocs(root, { fix = false } = {}) {
   syncGenerated(root, loadDocs(root), fix, errors, fixed);
   const pages = loadDocs(root); // reload: --fix may have rewritten index pages
   const adrs = pages.filter(isAdr);
-  const rootFiles = ROOT_FILES.map((f) => join(root, f))
+  const rootFiles = [...ROOT_FILES.map((f) => join(root, f)), ...appFiles(root)]
     .filter(existsSync)
     .map((abs) => loadPage(root, abs));
 
