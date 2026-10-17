@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 // Release helper for Rollcall. Zero dependencies — Node built-ins only.
-// Process and rules: docs/guides/releasing.md · docs/decisions/0010-deliberate-releases-patch-tracking.md
+// Process and rules: docs/guides/releasing.md · docs/decisions/0021-per-app-releases.md
 //
-//   node scripts/release.mjs prepare <version> [--date YYYY-MM-DD]   move Unreleased → <version>, bump package.json
-//   node scripts/release.mjs check <version>                         verify CHANGELOG and package versions are ready
-//   node scripts/release.mjs notes <version>                         print the release notes for <version>
-//   node scripts/release.mjs tag-absent <version>                    exit 1 unless the release tag is absent on origin
-//   node scripts/release.mjs milestone <version> < milestones.json   exit 1 unless the milestone is ready (required for x.y.0)
-//   node scripts/release.mjs issues <version>                        print the issue numbers referenced in <version>'s notes
-//   --root <dir>                                                     project root (default: this script's parent)
+// Each rcl app is released on its own (ADR-0021), so every command names one with --app rcl-core|rcl-producer:
+//   node scripts/release.mjs prepare <version> --app <app> [--date YYYY-MM-DD]  move Unreleased → <version>, bump the app's package.json files
+//   node scripts/release.mjs check <version> --app <app>                        verify the app's CHANGELOG and package versions are ready
+//   node scripts/release.mjs notes <version> --app <app>                        print the release notes for <version>
+//   node scripts/release.mjs name <version> --app <app>                         print the release's name, e.g. "Rollcall Core v0.1.0"
+//   node scripts/release.mjs tag-absent <version> --app <app>                   exit 1 unless the release tag is absent on origin
+//   node scripts/release.mjs milestone <version> --app <app> < milestones.json  exit 1 unless the milestone is ready (required for x.y.0)
+//   node scripts/release.mjs issues <version> --app <app>                       print the issue numbers referenced in <version>'s notes
+//   --root <dir>                                                                project root (default: this script's parent)
 
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
@@ -16,8 +18,21 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 export const REPO_URL = 'https://github.com/wardmanm/rollcall_derby';
-export const TAG_PREFIX = 'obs-producer-v';
-export const MILESTONE_PREFIX = 'obs-producer v';
+
+// The rcl apps released on their own, and the names their releases go by. Each has its own folder, CHANGELOG.md,
+// package.json files, tags (`rcl-core-v0.1.0`) and milestones (`rcl-core v0.1.0`).
+export const APPS = { 'rcl-core': 'Rollcall Core', 'rcl-producer': 'Rollcall Producer' };
+
+// Error text for an app that isn't released on its own, or null. JSON-escaped, like versionError.
+export function appError(app) {
+  if (Object.hasOwn(APPS, app)) return null;
+  return `unknown app ${JSON.stringify(app ?? '')}: use ${Object.keys(APPS).join(' or ')}`;
+}
+
+export const tagPrefix = (app) => `${app}-v`;
+export const milestonePrefix = (app) => `${app} v`;
+export const releaseName = (app, version) => `${APPS[app]} v${version}`;
+const changelogFile = (app) => `${app}/CHANGELOG.md`;
 
 // ---------- versions (SemVer 2.0 precedence, no build metadata) ----------
 
@@ -99,9 +114,9 @@ export function formatChangelog({ preamble, sections, footer }) {
   return parts.join('\n\n') + '\n';
 }
 
-export function readChangelog(root) {
-  const file = join(root, 'CHANGELOG.md');
-  if (!existsSync(file)) throw new Error(`CHANGELOG.md not found in ${root}`);
+export function readChangelog(root, app) {
+  const file = join(root, changelogFile(app));
+  if (!existsSync(file)) throw new Error(`${changelogFile(app)} not found in ${root}`);
   return readFileSync(file, 'utf8');
 }
 
@@ -113,42 +128,27 @@ export function latestVersion(versions) {
   return versions.reduce((best, v) => (best === null || compareVersions(v, best) > 0 ? v : best), null);
 }
 
-// package.json files that carry the app version: the root plus every workspace it lists
-// (`dir/*` or a plain folder); apps/* and packages/* when the root lists none.
-const DEFAULT_WORKSPACES = ['apps/*', 'packages/*'];
-
-export function packageFiles(root) {
-  const rootFile = join(root, 'package.json');
-  const listed = existsSync(rootFile) ? JSON.parse(readFileSync(rootFile, 'utf8')).workspaces : undefined;
-  const files = ['package.json'];
-  for (const pattern of listed ?? DEFAULT_WORKSPACES) {
-    if (pattern.endsWith('/*') && !pattern.slice(0, -2).includes('*')) {
-      const dir = pattern.slice(0, -2);
-      if (!existsSync(join(root, dir))) continue;
-      const entries = readdirSync(join(root, dir), { withFileTypes: true }).toSorted((a, b) =>
-        a.name.localeCompare(b.name),
-      );
-      for (const e of entries) if (e.isDirectory()) files.push(`${dir}/${e.name}/package.json`);
-    } else if (pattern.includes('*')) {
-      throw new Error(`unsupported workspaces pattern ${JSON.stringify(pattern)}: use "dir/*" or a folder name`);
-    } else {
-      files.push(`${pattern.replace(/\/$/, '')}/package.json`);
-    }
-  }
-  return files.filter((f) => existsSync(join(root, f)));
+// The package.json files that carry an app's version: one in each of its folders (`rcl-core/server`, `rcl-core/web`,
+// …). Shared packages and the repo root aren't released, so they keep their own versions.
+export function packageFiles(root, app) {
+  if (!existsSync(join(root, app))) return [];
+  return readdirSync(join(root, app), { withFileTypes: true })
+    .filter((e) => e.isDirectory() && existsSync(join(root, app, e.name, 'package.json')))
+    .map((e) => `${app}/${e.name}/package.json`)
+    .toSorted((a, b) => a.localeCompare(b));
 }
 
 // ---------- prepare ----------
 
-export function prepare(root, version, { date = new Date().toISOString().slice(0, 10) } = {}) {
-  const bad = versionError(version);
+export function prepare(root, app, version, { date = new Date().toISOString().slice(0, 10) } = {}) {
+  const bad = appError(app) ?? versionError(version);
   if (bad) throw new Error(bad);
   if (!DATE.test(date)) throw new Error(`invalid date ${JSON.stringify(date)}: use YYYY-MM-DD`);
-  const log = parseChangelog(readChangelog(root));
+  const file = changelogFile(app);
+  const log = parseChangelog(readChangelog(root, app));
   const unreleased = log.sections.find(isUnreleased);
-  if (!unreleased) throw new Error('CHANGELOG.md has no "## [Unreleased]" section');
-  if (log.sections.some((s) => s.name === version))
-    throw new Error(`CHANGELOG.md already has a section for ${version}`);
+  if (!unreleased) throw new Error(`${file} has no "## [Unreleased]" section`);
+  if (log.sections.some((s) => s.name === version)) throw new Error(`${file} already has a section for ${version}`);
   if (!hasEntries(unreleased.body)) throw new Error('the Unreleased section has no entries to release');
   const previous = latestVersion(releasedVersions(log.sections));
   if (previous && compareVersions(version, previous) <= 0) {
@@ -157,42 +157,45 @@ export function prepare(root, version, { date = new Date().toISOString().slice(0
 
   log.sections.splice(log.sections.indexOf(unreleased) + 1, 0, { name: version, date, body: unreleased.body });
   unreleased.body = '';
+  const tag = `${tagPrefix(app)}${version}`;
   log.footer = [
-    `[${unreleased.name}]: ${REPO_URL}/compare/${TAG_PREFIX}${version}...HEAD`,
-    `[${version}]: ${REPO_URL}/releases/tag/${TAG_PREFIX}${version}`,
+    `[${unreleased.name}]: ${REPO_URL}/compare/${tag}...HEAD`,
+    `[${version}]: ${REPO_URL}/releases/tag/${tag}`,
     ...log.footer.filter((l) => !['unreleased', version.toLowerCase()].includes(linkLabel(l))),
   ];
-  writeFileSync(join(root, 'CHANGELOG.md'), formatChangelog(log));
+  writeFileSync(join(root, file), formatChangelog(log));
 
-  const packages = packageFiles(root);
-  for (const file of packages) {
-    const data = JSON.parse(readFileSync(join(root, file), 'utf8'));
+  const packages = packageFiles(root, app);
+  for (const pkgFile of packages) {
+    const data = JSON.parse(readFileSync(join(root, pkgFile), 'utf8'));
     data.version = version;
-    writeFileSync(join(root, file), JSON.stringify(data, null, 2) + '\n');
+    writeFileSync(join(root, pkgFile), JSON.stringify(data, null, 2) + '\n');
   }
   return { packages };
 }
 
 // ---------- check / notes ----------
 
-export function check(root, version) {
-  const bad = versionError(version);
+export function check(root, app, version) {
+  const bad = appError(app) ?? versionError(version);
   if (bad) return [bad];
   let log;
   try {
-    log = parseChangelog(readChangelog(root));
+    log = parseChangelog(readChangelog(root, app));
   } catch (e) {
     return [e.message];
   }
+  const file = changelogFile(app);
+  const prepareCommand = `node scripts/release.mjs prepare ${version} --app ${app}`;
   const errors = [];
   const unreleased = log.sections.find(isUnreleased);
-  if (!unreleased) errors.push('CHANGELOG.md has no "## [Unreleased]" section');
+  if (!unreleased) errors.push(`${file} has no "## [Unreleased]" section`);
   else if (hasEntries(unreleased.body)) {
-    errors.push(`the Unreleased section still has entries; run: node scripts/release.mjs prepare ${version}`);
+    errors.push(`the Unreleased section of ${file} still has entries; run: ${prepareCommand}`);
   }
   const section = log.sections.find((s) => s.name === version);
   if (!section) {
-    errors.push(`CHANGELOG.md has no section for ${version}; run: node scripts/release.mjs prepare ${version}`);
+    errors.push(`${file} has no section for ${version}; run: ${prepareCommand}`);
   } else {
     if (!hasEntries(section.body)) errors.push(`the ${version} section has no entries`);
     if (!section.date || !DATE.test(section.date))
@@ -202,24 +205,26 @@ export function check(root, version) {
   if (previous && compareVersions(version, previous) <= 0) {
     errors.push(`${version} is not greater than the previous release ${previous}`);
   }
-  for (const file of packageFiles(root)) {
-    const { version: actual } = JSON.parse(readFileSync(join(root, file), 'utf8'));
-    if (actual !== version) errors.push(`${file} has version ${actual ?? '(none)'}, expected ${version}`);
+  for (const pkgFile of packageFiles(root, app)) {
+    const { version: actual } = JSON.parse(readFileSync(join(root, pkgFile), 'utf8'));
+    if (actual !== version) errors.push(`${pkgFile} has version ${actual ?? '(none)'}, expected ${version}`);
   }
   return errors;
 }
 
-export function notes(root, version) {
-  const section = parseChangelog(readChangelog(root)).sections.find((s) => s.name === version);
-  if (!section) throw new Error(`CHANGELOG.md has no section for ${version}`);
+export function notes(root, app, version) {
+  const bad = appError(app);
+  if (bad) throw new Error(bad);
+  const section = parseChangelog(readChangelog(root, app)).sections.find((s) => s.name === version);
+  if (!section) throw new Error(`${changelogFile(app)} has no section for ${version}`);
   return section.body;
 }
 
 // ---------- tag and milestone guards (run by both workflow jobs) ----------
 
 // 'exists' | 'absent'. Throws when the remote can't be read: a failed lookup must never pass as "absent".
-export function tagStatus(version, { cwd, remote = 'origin' } = {}) {
-  const ref = `refs/tags/${TAG_PREFIX}${version}`;
+export function tagStatus(app, version, { cwd, remote = 'origin' } = {}) {
+  const ref = `refs/tags/${tagPrefix(app)}${version}`;
   const r = spawnSync('git', ['ls-remote', '--exit-code', '--tags', remote, ref], { cwd, encoding: 'utf8' });
   if (r.status === 0) return 'exists';
   if (r.status === 2) return 'absent';
@@ -234,8 +239,8 @@ export function milestoneRequired(version) {
 
 // milestones: the GitHub API's milestone list (null when the API returned nothing).
 // A milestone that exists is always enforced, even for a patch release.
-export function milestoneCheck(milestones, version) {
-  const title = `${MILESTONE_PREFIX}${version}`;
+export function milestoneCheck(milestones, app, version) {
+  const title = `${milestonePrefix(app)}${version}`;
   const found = (milestones ?? []).find((m) => m.title === title);
   if (!found && !milestoneRequired(version)) return { milestone: null, errors: [] };
   if (!found)
@@ -263,49 +268,51 @@ export function issueRefs(text) {
 
 // ---------- CLI ----------
 
-const USAGE =
-  'usage: node scripts/release.mjs <prepare|check|notes|tag-absent|milestone|issues> <version> [--date YYYY-MM-DD] [--root dir]';
+const COMMANDS = ['prepare', 'check', 'notes', 'name', 'tag-absent', 'milestone', 'issues'];
+const USAGE = `usage: node scripts/release.mjs <${COMMANDS.join('|')}> <version> --app <${Object.keys(APPS).join('|')}> [--date YYYY-MM-DD] [--root dir]`;
 
 function main(args) {
   const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
   const [command, version] = args.filter((a, i) => !a.startsWith('--') && !args[i - 1]?.startsWith('--'));
   const root = option('--root') ? resolve(option('--root')) : resolve(dirname(fileURLToPath(import.meta.url)), '..');
-  if (!['prepare', 'check', 'notes', 'tag-absent', 'milestone', 'issues'].includes(command) || !version) {
+  const app = option('--app');
+  if (!COMMANDS.includes(command) || !version || app === undefined) {
     console.error(USAGE);
     return 2;
   }
   try {
+    const bad = appError(app) ?? versionError(version);
+    if (bad) throw new Error(bad);
     if (command === 'prepare') {
-      const { packages } = prepare(root, version, option('--date') ? { date: option('--date') } : {});
-      console.log(`prepared ${version}: CHANGELOG.md${packages.map((p) => `, ${p}`).join('')}`);
-      console.log(`review the diff, then commit: chore(obs-producer): prepare v${version}`);
+      const { packages } = prepare(root, app, version, option('--date') ? { date: option('--date') } : {});
+      console.log(`prepared ${app} ${version}: ${changelogFile(app)}${packages.map((p) => `, ${p}`).join('')}`);
+      console.log(`review the diff, then commit: chore(${app}): prepare v${version}`);
       return 0;
     }
     if (command === 'notes') {
-      console.log(notes(root, version));
+      console.log(notes(root, app, version));
       return 0;
     }
-    if (command === 'tag-absent' || command === 'milestone' || command === 'issues') {
-      const bad = versionError(version);
-      if (bad) throw new Error(bad);
+    if (command === 'name') {
+      console.log(releaseName(app, version));
+      return 0;
     }
     if (command === 'issues') {
       // Print strings: console.log colours numbers when FORCE_COLOR is set, even into a pipe.
-      for (const n of issueRefs(notes(root, version))) console.log(String(n));
+      for (const n of issueRefs(notes(root, app, version))) console.log(String(n));
       return 0;
     }
+    const tag = `${tagPrefix(app)}${version}`;
     if (command === 'tag-absent') {
-      if (tagStatus(version, { cwd: root }) === 'exists') {
-        console.error(
-          `tag ${TAG_PREFIX}${version} already exists; that version is already released. Pick the next one.`,
-        );
+      if (tagStatus(app, version, { cwd: root }) === 'exists') {
+        console.error(`tag ${tag} already exists; that version is already released. Pick the next one.`);
         return 1;
       }
-      console.log(`tag ${TAG_PREFIX}${version} does not exist yet`);
+      console.log(`tag ${tag} does not exist yet`);
       return 0;
     }
     if (command === 'milestone') {
-      const { milestone, errors } = milestoneCheck(JSON.parse(readFileSync(0, 'utf8') || 'null'), version);
+      const { milestone, errors } = milestoneCheck(JSON.parse(readFileSync(0, 'utf8') || 'null'), app, version);
       if (errors.length) {
         console.error(errors.join('\n'));
         return 1;
@@ -313,14 +320,14 @@ function main(args) {
       console.log(JSON.stringify(milestone));
       return 0;
     }
-    const errors = check(root, version);
+    const errors = check(root, app, version);
     if (errors.length) {
       console.error(
-        `release check failed for ${JSON.stringify(version)}:\n${errors.map((e) => `  - ${e}`).join('\n')}`,
+        `release check failed for ${app} ${JSON.stringify(version)}:\n${errors.map((e) => `  - ${e}`).join('\n')}`,
       );
       return 1;
     }
-    console.log(`release check OK for ${version}`);
+    console.log(`release check OK for ${app} ${version}`);
     return 0;
   } catch (e) {
     console.error(`release ${command} failed: ${e.message}`);
