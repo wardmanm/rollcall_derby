@@ -35,7 +35,7 @@ How this wiki is organized and how to keep it true. Humans and AI agents follow 
 | A technical decision and its trade-offs | A new [ADR](decisions/README.md) |
 | A hard rule that must never be broken | Its ADR (canonical), repeated word for word in [AGENTS.md](../AGENTS.md#hard-rules) with the ADR number |
 | Commands, git workflow, definition of done | [AGENTS.md](../AGENTS.md) |
-| What changed in each release | [CHANGELOG.md](../CHANGELOG.md), under `Unreleased` until released |
+| What changed in each release | [CHANGELOG.md](../rcl-producer/CHANGELOG.md), under `Unreleased` until released |
 | Tracking work: issues and milestones | GitHub, linking to the wiki page. See [releasing](guides/releasing.md#issues) |
 | How to do a task step by step | A [guide](guides/README.md) |
 

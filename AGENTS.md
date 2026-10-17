@@ -106,5 +106,5 @@ The full process is in the [wiki guide](docs/wiki-guide.md).
 - Behavior matches its feature page, and the page is updated if behavior changed.
 - Tests are added or updated, and `yarn check` passes. Changes to what users see also pass `yarn test:e2e`.
 - New shared components have a story, and `yarn test:stories` passes.
-- User-visible changes have a line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md), ending with the issue number.
+- User-visible changes have a line under `## [Unreleased]` in [CHANGELOG.md](rcl-producer/CHANGELOG.md), ending with the issue number.
 - Every hard rule above still holds.
