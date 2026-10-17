@@ -1,5 +1,6 @@
 ---
 title: CRG Automation
+app: rcl-producer
 status: planned
 summary: Use CRG scoreboard state (read-only) to show and hide components and to display live game data.
 ---

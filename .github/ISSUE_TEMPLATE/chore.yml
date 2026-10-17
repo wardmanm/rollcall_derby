@@ -18,6 +18,17 @@ body:
         - Other
     validations:
       required: true
+  - type: dropdown
+    id: app
+    attributes:
+      label: App
+      description: The rcl app this is for. Choose Both for repo-wide work such as CI or tooling. rcl-core is the server and the admin app at /core/. rcl-producer is the Producer app at /producer/ and the OBS overlay.
+      options:
+        - rcl-core
+        - rcl-producer
+        - Both
+    validations:
+      required: true
   - type: textarea
     id: what
     attributes:

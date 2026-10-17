@@ -1,5 +1,6 @@
 ---
 title: Screen Builder
+app: rcl-producer
 status: planned
 summary: Design overlay screens by dragging pre-made components onto a canvas of any size; each screen goes into OBS as a browser source.
 ---

@@ -1,5 +1,6 @@
 ---
 title: Overlay Components
+app: rcl-producer
 status: planned
 summary: Pre-made, configurable building blocks placed on screens, such as rosters, game info and skater spotlights.
 ---

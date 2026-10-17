@@ -37,13 +37,14 @@ title: Features
 # Features
 
 <!-- generated:features -->
-| Feature | Status | Summary |
-| --- | --- | --- |
-| [Alpha](alpha.md) | planned | The alpha feature |
+| Feature | App | Status | Summary |
+| --- | --- | --- | --- |
+| [Alpha](alpha.md) | rcl-core | planned | The alpha feature |
 <!-- /generated:features -->
 `,
   'docs/features/alpha.md': `---
 title: Alpha
+app: rcl-core
 status: planned
 summary: The alpha feature
 ---
@@ -151,6 +152,33 @@ test('reports a feature without a summary', () => {
     errorsFor({ 'docs/features/alpha.md': page }),
     'docs/features/alpha.md: missing frontmatter field "summary"',
   );
+});
+
+test('reports a feature that does not say which app it belongs to', () => {
+  const page = BASELINE['docs/features/alpha.md'].replace('app: rcl-core\n', '');
+  assertError(errorsFor({ 'docs/features/alpha.md': page }), 'docs/features/alpha.md: missing frontmatter field "app"');
+});
+
+test('reports a feature with an app that is not rcl-core, rcl-producer or both', () => {
+  for (const app of ['core', 'obs-producer', 'rcl-core, rcl-producer']) {
+    const page = BASELINE['docs/features/alpha.md'].replace('app: rcl-core', `app: ${app}`);
+    assertError(
+      errorsFor({ 'docs/features/alpha.md': page }),
+      `docs/features/alpha.md: invalid app "${app}" (use rcl-core, rcl-producer or both)`,
+    );
+  }
+});
+
+test('accepts each app a feature can belong to, and lists it in the features table', () => {
+  for (const app of ['rcl-core', 'rcl-producer', 'both']) {
+    const root = makeTree({ 'docs/features/alpha.md': BASELINE['docs/features/alpha.md'].replace('rcl-core', app) });
+    assert.deepEqual(checkDocs(root, { fix: true }).errors, []);
+    assert.match(
+      readFileSync(join(root, 'docs/features/README.md'), 'utf8'),
+      new RegExp(`\\| \\[Alpha\\]\\(alpha\\.md\\) \\| ${app} \\| planned \\| The alpha feature \\|`),
+      app,
+    );
+  }
 });
 
 test('reports an ADR without a valid date', () => {

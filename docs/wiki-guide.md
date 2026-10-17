@@ -46,7 +46,7 @@ Every wiki page starts with YAML frontmatter. Keep it minimal:
 | Page type | Required fields |
 |---|---|
 | Any page | `title` |
-| Feature (`features/*.md`) | `title`, `status` (`planned` · `in-progress` · `shipped` · `deprecated`), `summary` (one sentence; shown in the feature index) |
+| Feature (`features/*.md`) | `title`, `app` (the rcl app it belongs to: `rcl-core` · `rcl-producer` · `both`), `status` (`planned` · `in-progress` · `shipped` · `deprecated`), `summary` (one sentence; shown in the feature index) |
 | ADR (`decisions/NNNN-*.md`) | `title`, `status` (`proposed` · `accepted` · `superseded` · `deprecated`), `date` (`YYYY-MM-DD`), and `superseded_by` (e.g. `"0012"`) when superseded |
 
 Status lives **only** in frontmatter. The tables in the [feature index](features/README.md) and [decision index](decisions/README.md) are generated from it by `node scripts/check-docs.mjs --fix`. Don't edit anything between `<!-- generated:… -->` markers by hand.
@@ -107,7 +107,7 @@ Brainstorm specs and implementation plans are working papers. They live in `desi
 | `node scripts/check-docs.mjs --next-adr` | Print the next ADR number |
 
 It checks:
-1. **Frontmatter.** Required fields are present and status values are valid.
+1. **Frontmatter.** Required fields are present, and status and app values are valid.
 2. **Links.** Every relative link and `#anchor` resolves: in the wiki, in the root `AGENTS.md`, `CLAUDE.md` and `README.md`, and in each `rcl-*` app's `AGENTS.md`, `CLAUDE.md`, `README.md` and `CHANGELOG.md`.
 3. **Reachability.** Every page can be reached by following links from the [wiki home](README.md).
 4. **ADR numbering.** ADR filenames and numbers are well formed, unique and sequential.

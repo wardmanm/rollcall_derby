@@ -7,7 +7,7 @@ How Rollcall work is tracked on GitHub, and how a release is cut. Each rcl app, 
 
 ## Issues
 
-- File Rollcall work with the **Rollcall: feature** or **Rollcall: bug** issue forms. Add the app label (`rcl-core` or `rcl-producer`) when triaging. The forms ask which wiki page and requirement numbers the issue covers, e.g. [Team Builder](../features/team-builder.md) R3.
+- File Rollcall work with the **Rollcall: feature** or **Rollcall: bug** issue forms. Every form asks which app the issue is for. Forms can't set labels from that answer, so add the app's label (`rcl-core`, `rcl-producer` or both) when triaging; the label puts the issue on the app's board. The forms ask which wiki page and requirement numbers the issue covers, e.g. [Team Builder](../features/team-builder.md) R3.
 - Use the **Rollcall: chore** form for maintenance with no user-visible change: dependencies, tooling and CI, refactoring, docs upkeep. It adds the `chore` label. Chores don't need a CHANGELOG line unless users would notice.
 - **The wiki page is the spec.** If an issue changes what a feature should do, the PR that implements it updates the page. Issues link to wiki pages; wiki pages don't list issues, because that list would go stale.
 - An open question on a wiki page can get its own issue for discussion. Link back to the page; the answer goes onto the page.

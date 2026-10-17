@@ -13,6 +13,7 @@ import { join, relative, dirname, resolve, basename, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const FEATURE_STATUSES = new Set(['planned', 'in-progress', 'shipped', 'deprecated']);
+const FEATURE_APPS = ['rcl-core', 'rcl-producer', 'both']; // the rcl app a feature belongs to (ADR-0021)
 const ADR_STATUSES = new Set(['proposed', 'accepted', 'superseded', 'deprecated']);
 const ADR_FILENAME = /^(\d{4})-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -124,6 +125,12 @@ function checkFrontmatter(pages, adrNumbers, errors) {
     };
     need('title');
     if (isFeature(p)) {
+      const app = need('app');
+      if (app && !FEATURE_APPS.includes(app)) {
+        errors.push(
+          `${p.rel}: invalid app "${app}" (use ${FEATURE_APPS.slice(0, -1).join(', ')} or ${FEATURE_APPS.at(-1)})`,
+        );
+      }
       const status = need('status');
       if (status && !FEATURE_STATUSES.has(status)) errors.push(`${p.rel}: invalid status "${status}"`);
       need('summary');
@@ -207,8 +214,13 @@ const table = (head, rows) =>
 function renderFeatures(pages) {
   const rows = pages
     .filter(isFeature)
-    .map((p) => [`[${cell(p.meta.title)}](${basename(p.rel)})`, cell(p.meta.status), cell(p.meta.summary)]);
-  return table(['Feature', 'Status', 'Summary'], rows);
+    .map((p) => [
+      `[${cell(p.meta.title)}](${basename(p.rel)})`,
+      cell(p.meta.app),
+      cell(p.meta.status),
+      cell(p.meta.summary),
+    ]);
+  return table(['Feature', 'App', 'Status', 'Summary'], rows);
 }
 
 function renderDecisions(pages) {

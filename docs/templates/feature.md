@@ -1,5 +1,6 @@
 ---
 title: Feature name
+app: rcl-core
 status: planned
 summary: One sentence describing the feature. It appears in the feature index.
 ---

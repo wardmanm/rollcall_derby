@@ -1,5 +1,6 @@
 ---
 title: OBS Control
+app: rcl-producer
 status: planned
 summary: Switch scenes, trigger hotkeys and toggle sources in OBS from producer dashboards.
 ---

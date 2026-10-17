@@ -1,5 +1,6 @@
 ---
 title: Users and Access
+app: rcl-core
 status: shipped
 summary: Username and password login with Admin, Producer and Announcer roles, enforced on the server.
 ---

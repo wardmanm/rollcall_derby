@@ -1,5 +1,6 @@
 ---
 title: Live Mode
+app: rcl-producer
 status: planned
 summary: Set up and run events with several games and concurrent tracks, from producer dashboards with live previews.
 ---
