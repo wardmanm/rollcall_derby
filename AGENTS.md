@@ -4,7 +4,7 @@ Rollcall is a suite of apps for producing roller derby events and streams, hoste
 - **rcl-core** is the server: accounts, shared data such as teams, the CRG and OBS connections, and an admin GUI for that data.
 - **rcl-producer** builds and runs overlays: themes, screens, Live Mode and producer dashboards. Each screen is loaded into OBS as a browser source.
 
-**Status:** moved from GROBS, where it was OBS Producer, and being split into rcl-core and rcl-producer ([spec](design-docs/specs/2026-10-07-rollcall-split-design.md)). [rcl-core](rcl-core/AGENTS.md)'s server hosts each app as a module, including [rcl-producer](rcl-producer/AGENTS.md)'s ([ADR-0019](docs/decisions/0019-rcl-apps-as-modules.md)). Code shared across apps is in `packages/`. Features start with Phase 1 on the [roadmap](docs/product/roadmap.md). To run it locally, see [local development](docs/guides/local-development.md).
+**Status:** moved from GROBS, where it was OBS Producer, and split into rcl-core and rcl-producer ([spec](design-docs/specs/2026-10-07-rollcall-split-design.md)), each released on its own ([ADR-0021](docs/decisions/0021-per-app-releases.md)). [rcl-core](rcl-core/AGENTS.md)'s server hosts each app as a module, including [rcl-producer](rcl-producer/AGENTS.md)'s ([ADR-0019](docs/decisions/0019-rcl-apps-as-modules.md)). Code shared across apps is in `packages/`. Features start with Phase 1 on the [roadmap](docs/product/roadmap.md). To run it locally, see [local development](docs/guides/local-development.md).
 
 These rules apply to AI agents and human contributors alike.
 
@@ -24,7 +24,7 @@ These must never be broken. Each one is copied word for word from the ADR in bra
 4. **Works offline at the venue.** Nothing at runtime depends on the internet: no CDNs, no hosted fonts, no cloud APIs. The server serves every asset. ([ADR-0019](docs/decisions/0019-rcl-apps-as-modules.md))
 5. **Authorization happens on the server.** Every API route and socket event checks the caller's access. Hiding UI is not access control. ([ADR-0018](docs/decisions/0018-declared-access-and-permissions.md))
 6. **Server data lives in RTK Query, never copied into slices.** Overlay components are presentational: they get data through props and never read the admin store. ([ADR-0003](docs/decisions/0003-client-state-with-redux-toolkit.md), [ADR-0006](docs/decisions/0006-one-overlay-renderer-css-variable-theming.md))
-7. **Releases are deliberate.** A release is cut only by a person running the release workflow and approving it. Agents never approve a release deployment, and never create release tags or GitHub Releases or start the release workflow (even as a dry run) unless the user explicitly asks them to for a specific version. ([ADR-0010](docs/decisions/0010-deliberate-releases-patch-tracking.md))
+7. **Releases are deliberate.** A release is cut only by a person running the release workflow and approving it. Agents never approve a release deployment, and never create release tags or GitHub Releases or start the release workflow (even as a dry run) unless the user explicitly asks them to for a specific version. ([ADR-0021](docs/decisions/0021-per-app-releases.md))
 
 ## Stack
 

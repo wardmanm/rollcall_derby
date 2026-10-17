@@ -12,7 +12,7 @@ Shared rules live in `AGENTS.md` (imported above) so every agent reads the same 
 - **Read wiki pages when a task needs them.** Don't `@`-import them into this file, because imports load into every session.
 - **Integration pages record the upstream versions they were checked against.** These are `docs/architecture/integrations/crg-scoreboard.md` and `obs-websocket.md`. If you build against a newer CRG or obs-websocket, re-check the facts you rely on and update the "Verified against" line.
 - **Path-scoped rules** in `.claude/rules/` map each code area to its hard rules, ADRs and wiki pages: one file per code area (each app's `CLAUDE.md` names its own), plus `sdk.md` for `packages/` and `e2e.md`. They load when Claude reads matching files. When code moves, docs are renamed or a new code area appears, update or add a rule in the same change.
-- **Releases:** `/release <version>` (`.claude/skills/release/`) prepares a release. Only the user can start it. Never publish (hard rule 7). The process is in `docs/guides/releasing.md`.
+- **Releases:** `/release <app> <version>` (`.claude/skills/release/`) prepares a release of one rcl app. Only the user can start it. Never publish (hard rule 7). The process is in `docs/guides/releasing.md`.
 
 ### Maintaining agent instructions
 

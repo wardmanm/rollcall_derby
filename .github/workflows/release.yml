@@ -1,12 +1,17 @@
-# Cuts an obs-producer release. Deliberate by design (ADR-0010):
-# manual start only, dry run by default, and publishing waits for approval
-# in the protected "release" environment.
+# Cuts a release of one rcl app. Each app starts it from its own workflow, rcl-core-release.yml or
+# rcl-producer-release.yml, which calls this one with the app's name (ADR-0021). Deliberate by design:
+# manual start only, dry run by default, and publishing waits for approval in the protected "release"
+# environment. Only callers in this repo can use it, and it can't be started on its own.
 # Guide: docs/guides/releasing.md
-name: obs-producer release
+name: release
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
+      app:
+        description: 'The rcl app to release: rcl-core or rcl-producer'
+        required: true
+        type: string
       version:
         description: 'Version to release, without a leading v (e.g. 0.2.0 or 0.3.0-beta.1)'
         required: true
@@ -15,17 +20,15 @@ on:
         description: 'Dry run: run every check, publish nothing'
         required: true
         type: boolean
-        default: true
-
-concurrency:
-  group: obs-producer-release
-  cancel-in-progress: false
 
 permissions: {}
 
+# Names as scripts/release.mjs builds them: tag rcl-core-v0.1.0, milestone 'rcl-core v0.1.0'.
 env:
-  TAG_PREFIX: obs-producer-v
-  MILESTONE_PREFIX: 'obs-producer v'
+  APP: ${{ inputs.app }}
+  VERSION: ${{ inputs.version }}
+  TAG: ${{ inputs.app }}-v${{ inputs.version }}
+  MILESTONE: ${{ inputs.app }} v${{ inputs.version }}
 
 jobs:
   preflight:
@@ -37,7 +40,6 @@ jobs:
     outputs:
       sha: ${{ steps.commit.outputs.sha }}
     env:
-      VERSION: ${{ inputs.version }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Must run on main
@@ -66,16 +68,16 @@ jobs:
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Tag must not exist yet
-        run: node scripts/release.mjs tag-absent "$VERSION"
+        run: node scripts/release.mjs tag-absent "$VERSION" --app "$APP"
 
-      - name: CHANGELOG and package versions are ready
-        run: node scripts/release.mjs check "$VERSION"
+      - name: The app's CHANGELOG and package versions are ready
+        run: node scripts/release.mjs check "$VERSION" --app "$APP"
 
       - name: Milestone is ready (required for x.y.0 releases)
         run: |
           gh api --paginate "repos/${GITHUB_REPOSITORY}/milestones?state=all&per_page=100" \
             | jq -s 'add' \
-            | node scripts/release.mjs milestone "$VERSION"
+            | node scripts/release.mjs milestone "$VERSION" --app "$APP"
 
       # The app itself must pass everything CI checks before anyone is asked to approve it.
       - name: Enable Corepack (Yarn 4 from packageManager)
@@ -90,17 +92,21 @@ jobs:
       - name: Build
         run: yarn build
 
+      - name: Install Playwright's Chromium
+        run: yarn workspace @rollcall/e2e playwright install --with-deps chromium
+
+      - name: Story tests
+        run: yarn test:stories
+
       - name: End-to-end tests
-        run: |
-          yarn workspace @rollcall/e2e playwright install --with-deps chromium
-          yarn test:e2e
+        run: yarn test:e2e
 
       - name: Show the release notes
         run: |
           {
-            echo "## Release notes for ${TAG_PREFIX}${VERSION}"
+            echo "## Release notes for ${TAG}"
             echo
-            node scripts/release.mjs notes "$VERSION"
+            node scripts/release.mjs notes "$VERSION" --app "$APP"
             echo
             if [ "${{ inputs.dry_run }}" = "true" ]; then
               echo "> **Dry run:** every check passed. Nothing was published."
@@ -119,7 +125,6 @@ jobs:
       contents: write
       issues: write
     env:
-      VERSION: ${{ inputs.version }}
       SHA: ${{ needs.preflight.outputs.sha }}
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -134,10 +139,10 @@ jobs:
       # Approval can come long after preflight: check again right before anything permanent happens.
       - name: Re-check the tag and milestone after approval
         run: |
-          node scripts/release.mjs tag-absent "$VERSION"
+          node scripts/release.mjs tag-absent "$VERSION" --app "$APP"
           milestone=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/milestones?state=all&per_page=100" \
             | jq -s 'add' \
-            | node scripts/release.mjs milestone "$VERSION")
+            | node scripts/release.mjs milestone "$VERSION" --app "$APP")
           # Patch and pre-releases may have no milestone; then the milestone env stays unset.
           if [ "$milestone" != "null" ]; then
             echo "MILESTONE_NUMBER=$(jq -r '.number' <<< "$milestone")" >> "$GITHUB_ENV"
@@ -148,7 +153,7 @@ jobs:
         run: |
           : > "$RUNNER_TEMP/milestone-issues.txt"
           {
-            node scripts/release.mjs notes "$VERSION"
+            node scripts/release.mjs notes "$VERSION" --app "$APP"
             if [ -n "${MILESTONE_NUMBER:-}" ]; then
               gh api --paginate "repos/${GITHUB_REPOSITORY}/issues?milestone=${MILESTONE_NUMBER}&state=closed&per_page=100" \
                 | jq -s '[add // [] | .[] | select(.pull_request | not)]' > "$RUNNER_TEMP/milestone-issues.json"
@@ -156,7 +161,7 @@ jobs:
               echo
               echo "---"
               echo
-              echo "**Milestone:** [${MILESTONE_PREFIX}${VERSION}](${MILESTONE_URL})"
+              echo "**Milestone:** [${MILESTONE}](${MILESTONE_URL})"
               echo
               echo "**Closed issues:**"
               echo
@@ -164,13 +169,16 @@ jobs:
             fi
           } > "$RUNNER_TEMP/notes.md"
 
+      - name: Name the release
+        run: echo "RELEASE_NAME=$(node scripts/release.mjs name "$VERSION" --app "$APP")" >> "$GITHUB_ENV"
+
       - name: Create the GitHub release
         run: |
           flags=()
           if [[ "$VERSION" == *-* ]]; then flags+=(--prerelease); fi
-          gh release create "${TAG_PREFIX}${VERSION}" \
+          gh release create "$TAG" \
             --target "$SHA" \
-            --title "OBS Producer v${VERSION}" \
+            --title "$RELEASE_NAME" \
             --notes-file "$RUNNER_TEMP/notes.md" \
             "${flags[@]}"
 
@@ -182,10 +190,10 @@ jobs:
       # so a missing or unexpected issue number is a warning, not a failure.
       - name: Mark issues as released
         run: |
-          url=$(gh release view "${TAG_PREFIX}${VERSION}" --json url --jq .url)
-          { node scripts/release.mjs issues "$VERSION"; cat "$RUNNER_TEMP/milestone-issues.txt"; } | sort -un |
+          url=$(gh release view "$TAG" --json url --jq .url)
+          { node scripts/release.mjs issues "$VERSION" --app "$APP"; cat "$RUNNER_TEMP/milestone-issues.txt"; } | sort -un |
             while read -r n; do
-              gh issue comment "$n" --body "Released in OBS Producer v${VERSION}: ${url}" \
+              gh issue comment "$n" --body "Released in ${RELEASE_NAME}: ${url}" \
                 || echo "::warning::Could not comment on #${n}"
               gh issue edit "$n" --remove-label patch > /dev/null 2>&1 || true
             done

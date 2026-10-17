@@ -19,7 +19,7 @@ To write a new one, follow [recording decisions](../wiki-guide.md#recording-deci
 | [0007](0007-shared-zod-contract.md) | Shared Zod contract | superseded by [0019](0019-rcl-apps-as-modules.md) | 2026-09-28 |
 | [0008](0008-auth-rbac-and-overlay-access.md) | Auth, RBAC and overlay access | superseded by [0018](0018-declared-access-and-permissions.md) | 2026-10-02 |
 | [0009](0009-deliberate-milestone-driven-releases.md) | Deliberate, milestone-driven releases | superseded by [0010](0010-deliberate-releases-patch-tracking.md) | 2026-09-28 |
-| [0010](0010-deliberate-releases-patch-tracking.md) | Deliberate releases, milestones for planned versions only | accepted | 2026-09-29 |
+| [0010](0010-deliberate-releases-patch-tracking.md) | Deliberate releases, milestones for planned versions only | superseded by [0021](0021-per-app-releases.md) | 2026-09-29 |
 | [0011](0011-technology-stack-with-yarn.md) | Technology stack, with Yarn workspaces | superseded by [0012](0012-typescript-7-and-oxlint.md) | 2026-09-29 |
 | [0012](0012-typescript-7-and-oxlint.md) | Technology stack, TypeScript 7 and Oxlint | superseded by [0017](0017-rcl-app-workspace-layout.md) | 2026-09-29 |
 | [0013](0013-run-typescript-natively-on-node.md) | Run TypeScript natively on Node | accepted | 2026-09-29 |
@@ -30,4 +30,5 @@ To write a new one, follow [recording decisions](../wiki-guide.md#recording-deci
 | [0018](0018-declared-access-and-permissions.md) | Declared access and per-app permissions | accepted | 2026-10-09 |
 | [0019](0019-rcl-apps-as-modules.md) | rcl-core hosts rcl apps as modules | accepted | 2026-10-10 |
 | [0020](0020-api-keys.md) | API keys for devices and scripts | accepted | 2026-10-16 |
+| [0021](0021-per-app-releases.md) | Each rcl app is released on its own | accepted | 2026-10-16 |
 <!-- /generated:decisions -->

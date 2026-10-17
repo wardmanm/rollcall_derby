@@ -1,0 +1,36 @@
+# Cuts an rcl-producer release: the shared release workflow, release.yml, run for rcl-producer (ADR-0021).
+# Start it from the Actions tab on main. It's a dry run unless you untick "Dry run".
+# Guide: docs/guides/releasing.md
+name: rcl-producer release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, without a leading v (e.g. 0.2.0 or 0.3.0-beta.1)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run: run every check, publish nothing'
+        required: true
+        type: boolean
+        default: true
+
+# One rcl-producer release at a time; a run waiting for approval holds the next one back.
+concurrency:
+  group: rcl-producer-release
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  release:
+    uses: ./.github/workflows/release.yml
+    # The most the release may do; its preflight job asks for less.
+    permissions:
+      contents: write
+      issues: write
+    with:
+      app: rcl-producer
+      version: ${{ inputs.version }}
+      dry_run: ${{ inputs.dry_run }}

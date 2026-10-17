@@ -1,9 +1,12 @@
 ---
 title: Deliberate releases, milestones for planned versions only
-status: accepted
+status: superseded
 date: 2026-09-29
+superseded_by: "0021"
 ---
 # 0010. Deliberate releases, milestones for planned versions only
+
+> **Superseded by [ADR-0021](0021-per-app-releases.md):** each rcl app is released on its own, with its own changelog, tags (`rcl-core-v<semver>`), milestones and release workflow. The rest of this process, and hard rule 7, are unchanged.
 
 Supersedes [ADR-0009](0009-deliberate-milestone-driven-releases.md).
 
