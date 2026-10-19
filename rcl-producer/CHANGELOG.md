@@ -6,6 +6,8 @@ rcl-producer runs on rcl-core, Rollcall's server, which has [its own changelog](
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-19
+
 ### Added
 
 - The Producer app at `/producer/`. For now it shows the address to add to OBS for the overlay (#4)
@@ -30,5 +32,6 @@ rcl-producer runs on rcl-core, Rollcall's server, which has [its own changelog](
 - Server with a health endpoint, and a web app shell that shows whether the server is reachable (wardmanm/GROBS#6, wardmanm/GROBS#8)
 - OBS overlay page at `/overlay`: transparent, fed live by the server, and reconnects on its own after a server restart (wardmanm/GROBS#9)
 
-[Unreleased]: https://github.com/wardmanm/rollcall_derby/commits/main
+[Unreleased]: https://github.com/wardmanm/rollcall_derby/compare/rcl-producer-v0.2.0...HEAD
+[0.2.0]: https://github.com/wardmanm/rollcall_derby/releases/tag/rcl-producer-v0.2.0
 [0.1.0]: https://github.com/wardmanm/GROBS/releases/tag/obs-producer-v0.1.0
