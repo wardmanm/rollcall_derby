@@ -6,6 +6,8 @@ rcl-core hosts the other rcl apps, which have their own changelogs, such as [rcl
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-19
+
 ### Added
 
 - Accounts on the server: first-run Admin setup from the server machine, sign-in with 30-day sessions, sign-out and password changes (wardmanm/GROBS#13)
@@ -34,4 +36,5 @@ rcl-core hosts the other rcl apps, which have their own changelogs, such as [rcl
 - The first failed sign-in after the server starts takes as long as later ones, so it doesn't reveal whether the username exists (#8)
 - Logging out works even after the session has ended, and always clears the cookie (#11)
 
-[Unreleased]: https://github.com/wardmanm/rollcall_derby/commits/main
+[Unreleased]: https://github.com/wardmanm/rollcall_derby/compare/rcl-core-v0.1.0...HEAD
+[0.1.0]: https://github.com/wardmanm/rollcall_derby/releases/tag/rcl-core-v0.1.0
