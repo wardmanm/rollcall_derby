@@ -26,3 +26,32 @@ How the instruction files are layered, so they stay small and don't contradict e
   - Reference material stays in the wiki and gets linked, never `@`-imported. Imports load into every session.
 - **`CLAUDE.local.md`** is for personal notes and is gitignored. The `@AGENTS.md` import keeps shared rules loading even if one exists.
 - Run `/doctor prompt-audit` to catch stale or conflicting instructions after large edits.
+
+## Session status log
+
+Keep `.claude/status.md` current so Mike's daily update knows where this project stands. Update it before every push and before ending a session, even if no code changed. Commit it on the same branch as the work.
+
+Keep the file under ~60 lines, in this structure:
+
+```markdown
+# Status: <project name>
+Updated: YYYY-MM-DD · Branch: <branch>
+
+## Current focus
+One or two sentences on what's being worked on right now.
+
+## Recent changes
+- YYYY-MM-DD: what changed, in plain language (keep the last ~10; drop older ones)
+
+## Pending decisions
+- **<the question>** (raised YYYY-MM-DD). Options: A / B / C. Leaning: <only if Mike has said>. Blocks: <what's waiting on it>
+
+## Loose ends
+- Unfinished work, known bugs, failing tests, PRs waiting on review
+```
+
+Rules:
+- Something is only decided when Mike says so. Your own recommendations go under Pending decisions as options, not outcomes.
+- When a decision is made, remove it from Pending decisions and note the outcome under Recent changes.
+- Delete loose ends once they're done. Stale items make the daily update wrong.
+- No secrets, credentials or client-confidential details. This repo is public.
