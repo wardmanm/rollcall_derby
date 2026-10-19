@@ -14,9 +14,9 @@ rcl-producer runs on rcl-core, Rollcall's server, which has [its own changelog](
 ### Changed
 
 - OBS Producer is now **Rollcall**, in its own repository, and this is its Producer app. Its server is now rcl-core: read rcl-core's release notes before upgrading, because settings and the database file are renamed (#2)
-- The OBS overlay now uses its own public live connection. After upgrading, refresh each OBS browser source (right-click ▸ Refresh) so it picks up the change (wardmanm/GROBS#14)
-- **The OBS overlay moved from `/overlay` to `/producer/overlay`, with no redirect:** change the URL of each OBS browser source (#4)
-- The OBS overlay's live connection moved with the app. After upgrading, refresh each OBS browser source (right-click ▸ Refresh) (#5)
+- **The OBS overlay moved from `/overlay` to `/producer/overlay`, with no redirect:** after upgrading, change the URL of each OBS browser source. Changing the URL also reloads the overlay, so it picks up the two changes below; there's nothing else to do in OBS (#4)
+- The OBS overlay now uses its own public live connection (wardmanm/GROBS#14)
+- The OBS overlay's live connection moved to the Producer app, alongside its new address (#5)
 
 ## [0.1.0] - 2026-10-02
 

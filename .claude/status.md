@@ -5,6 +5,7 @@ Updated: 2026-10-19 · Branch: main
 The first releases. rcl-core v0.1.0 is out; rcl-producer v0.2.0 is next.
 
 ## Recent changes
+- 2026-10-19: rcl-producer's 0.2.0 notes give one OBS step when upgrading: change each browser source's URL.
 - 2026-10-19: Published rcl-core v0.1.0, the first release of an rcl app on its own. Its milestone closed, and its issues got "Released in" comments.
 - 2026-10-19: Decided: a commit that changes only this log may go straight to `main` when no work branch is open.
 - 2026-10-19: Added this status log, and the rule to keep it current, to CLAUDE.md.
@@ -20,5 +21,4 @@ The first releases. rcl-core v0.1.0 is out; rcl-producer v0.2.0 is next.
 
 ## Loose ends
 - rcl-producer v0.2.0: `/release rcl-producer 0.2.0`, then its dry run and publish (Mike).
-- rcl-producer's 0.2.0 notes ask upgraders to refresh their OBS browser sources twice and change their URL once; the URL change covers all three. Worth tidying before its release.
 - About 25 small findings deferred from code reviews (Phases 3–5, #7, #11) aren't filed as issues yet. None blocks a release.
