@@ -31,6 +31,8 @@ How the instruction files are layered, so they stay small and don't contradict e
 
 Keep `.claude/status.md` current so Mike's daily update knows where this project stands. Update it before every push and before ending a session, even if no code changed. Commit it on the same branch as the work.
 
+When no work branch is open, a commit that changes only this file may go straight to main (docs(repo): status). It's the one exception to working on a branch (Mike, 2026-10-19).
+
 Keep the file under ~60 lines, in this structure:
 
 ```markdown

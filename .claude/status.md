@@ -1,5 +1,5 @@
 # Status: Rollcall
-Updated: 2026-10-19 · Branch: docs/status-log
+Updated: 2026-10-19 · Branch: main
 
 ## Current focus
 The first releases. rcl-core v0.1.0 is out; rcl-producer v0.2.0 is next.
@@ -19,8 +19,6 @@ The first releases. rcl-core v0.1.0 is out; rcl-producer v0.2.0 is next.
 - None.
 
 ## Loose ends
-- CLAUDE.md doesn't yet say that a status-only commit may go straight to `main`; adding it needs Mike's OK.
-- The `docs/status-log` branch (this log and its CLAUDE.md rule) isn't merged yet.
 - rcl-producer v0.2.0: `/release rcl-producer 0.2.0`, then its dry run and publish (Mike).
 - rcl-producer's 0.2.0 notes ask upgraders to refresh their OBS browser sources twice and change their URL once; the URL change covers all three. Worth tidying before its release.
 - About 25 small findings deferred from code reviews (Phases 3–5, #7, #11) aren't filed as issues yet. None blocks a release.
