@@ -55,7 +55,7 @@ export function buildApp({
 }: AppOptions): FastifyInstance {
   const app = Fastify({ logger });
   const hosted = hostApps({
-    core: coreApp({ version, db, webDir: coreWebDir }),
+    core: coreApp({ version, db, mediaDir, webDir: coreWebDir }),
     apps,
     coreVersion: version,
     db,

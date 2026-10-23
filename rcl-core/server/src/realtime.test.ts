@@ -59,7 +59,8 @@ function attach(apps: readonly AppModule[] = [...INSTALLED_APPS, PROBE_APP]) {
   const log = testLog();
   const namespaces: { name: string; access: Access }[] = [];
   const hosted = hostApps({
-    core: coreApp({ version: CORE_VERSION, db: database.db }),
+    // Live connections never touch images, so the media folder is never made.
+    core: coreApp({ version: CORE_VERSION, db: database.db, mediaDir: '/nonexistent/media' }),
     apps,
     coreVersion: CORE_VERSION,
     db: database.db,

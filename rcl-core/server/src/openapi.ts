@@ -52,6 +52,7 @@ export function registerApiDocs(
         { name: 'core/auth', description: 'Logging in and out, and your own password' },
         { name: 'core/users', description: 'User management (Admin only)' },
         { name: 'core/api-keys', description: 'API keys for devices and scripts (Admin only)' },
+        { name: 'core/teams', description: 'Teams, their skaters and bench staff, logos and photos' },
       ],
       components: {
         securitySchemes: {

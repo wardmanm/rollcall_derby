@@ -13,11 +13,22 @@ import { CORE_APP_ID, CORE_PERMISSIONS } from './auth/permissions.ts';
 import { registerApiKeyRoutes } from './routes/api-keys.ts';
 import { registerAuthRoutes } from './routes/auth.ts';
 import { registerSetupRoutes } from './routes/setup.ts';
+import { registerTeamRoutes } from './routes/teams.ts';
 import { registerUserRoutes } from './routes/users.ts';
 
 // rcl-core as an app module, hosted like any other (ADR-0019): its routes below /api/core and its web build at
 // /core/. It owns the database connection, so its routes use it directly rather than through AppContext.
-export function coreApp({ version, db, webDir }: { version: string; db: AppDatabase; webDir?: string }): AppModule {
+export function coreApp({
+  version,
+  db,
+  mediaDir,
+  webDir,
+}: {
+  version: string;
+  db: AppDatabase;
+  mediaDir: string;
+  webDir?: string;
+}): AppModule {
   const startedAt = performance.now();
   return {
     id: CORE_APP_ID,
@@ -67,6 +78,7 @@ export function coreApp({ version, db, webDir }: { version: string; db: AppDatab
       registerAuthRoutes(fastify, db);
       registerUserRoutes(fastify, db);
       registerApiKeyRoutes(fastify, db);
+      registerTeamRoutes(fastify, { db, mediaDir });
     },
   };
 }

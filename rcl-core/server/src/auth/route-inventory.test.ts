@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FastifySchema, HTTPMethods, InjectOptions } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
-import type { AppModule } from '@rollcall/app-sdk';
 import type { Role } from '@rollcall/core-contract';
 import type { AppOptions } from '../app.ts';
 import { ERROR_RESPONSES } from '../http.ts';
@@ -27,18 +26,6 @@ interface Credentials {
 }
 const anonymous = async (): Promise<Credentials> => ({});
 const wrongKey = async (): Promise<Credentials> => ({ headers: { authorization: 'Bearer rcl_not-a-real-key' } });
-
-// A hosted app with a permission an API key may hold, so the key sweeps have a route a key may call.
-const KEYS_PROBE_APP: AppModule = {
-  id: 'probe',
-  title: 'Probe',
-  version: '1.0.0',
-  requiresCore: '*',
-  permissions: [{ key: 'probe:things.read', summary: 'Read things', roles: [] }],
-  register(api) {
-    api.get('/things', { config: { access: { permission: 'probe:things.read' } } }, async () => ({ things: [] }));
-  },
-};
 
 interface ApiRoute {
   method: HTTPMethods;
@@ -171,7 +158,7 @@ describe('route inventory', () => {
   });
 
   it('lets an API key call only routes needing a permission it holds, and never a people-only one', async () => {
-    const inv = await inventory({ apps: [...INSTALLED_APPS, KEYS_PROBE_APP] });
+    const inv = await inventory();
     const grantable = inv.app.hostedApps.permissions.all.filter((def) => !def.peopleOnly).map((def) => def.key);
     const keyMayCall = (access: Access) => 'permission' in access && grantable.includes(access.permission);
     const refusedToKeys = where(inv.routes, (access) => !isPublic(access) && !keyMayCall(access));
@@ -183,8 +170,25 @@ describe('route inventory', () => {
     expect(await notRefused(inv, refusedToKeys, key, forbidden)).toEqual([]);
     expect(await notRefused(inv, refusedToKeys, inv.as('admin'), forbidden)).toHaveLength(refusedToKeys.length);
     const callable = where(inv.routes, keyMayCall);
-    expect(keysOf(callable)).toEqual(['GET /api/probe/things']);
-    for (const route of callable) expect((await inv.send(route, await key())).statusCode, route.key).toBe(200);
+    expect(keysOf(callable)).toEqual([
+      'DELETE /api/core/teams/:id',
+      'DELETE /api/core/teams/:id/members/:memberId',
+      'GET /api/core/teams',
+      'GET /api/core/teams/:id',
+      'PATCH /api/core/teams/:id',
+      'PATCH /api/core/teams/:id/members/:memberId',
+      'POST /api/core/teams',
+      'POST /api/core/teams/:id/members',
+    ]);
+    // A key gets through to each: no team exists, so most answer 404 or 400, but none refuses the key.
+    const refusals = [];
+    for (const route of callable) {
+      const { statusCode } = await inv.send(route, await key());
+      if (statusCode === 401 || statusCode === 403) refusals.push(`${route.key} → ${statusCode}`);
+    }
+    expect(refusals).toEqual([]);
+    const list = callable.find((route) => route.key === 'GET /api/core/teams' && route.method === 'GET')!;
+    expect((await inv.send(list, await key())).statusCode).toBe(200);
     await inv.app.close();
   });
 
