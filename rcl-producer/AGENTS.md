@@ -22,6 +22,6 @@ Run from the repo root.
 
 | Command | What it does |
 |---|---|
-| `yarn workspace @rollcall/producer-web dev` | Vite alone on port 5174, at `/producer/`, passing `/api`, `/socket.io` and `/docs` to `ROLLCALL_DEV_SERVER`. `yarn dev` starts it with everything else; open it through the front door, `http://localhost:5173/producer/` |
+| `yarn workspace @rollcall/producer-web dev` | Vite alone on port 5174, at `/producer/`, passing `/api`, `/socket.io`, `/docs` and `/media` to `ROLLCALL_DEV_SERVER`. `yarn dev` starts it with everything else; open it through the front door, `http://localhost:5173/producer/` |
 | `yarn workspace @rollcall/producer-web build` | Production build into `rcl-producer/web/dist/`, which the server serves at `/producer/` |
 | `yarn workspace @rollcall/producer-web storybook` | The overlay Storybook alone, on port 6007 |

@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { DEV_PORTS, frontDoorProxy, serverProxy } from './vite.ts';
 
 describe('serverProxy', () => {
-  it('passes the API, the API explorer and Socket.IO to the server, keeping Host as it is', () => {
+  it('passes the API, the API explorer, uploaded images and Socket.IO to the server, keeping Host as it is', () => {
     const proxy = serverProxy('http://localhost:5580');
-    expect(Object.keys(proxy)).toEqual(['/api', '/docs', '/socket.io']);
+    expect(Object.keys(proxy)).toEqual(['/api', '/docs', '/media', '/socket.io']);
     for (const [path, entry] of Object.entries(proxy)) {
       expect(entry.target, path).toBe('http://localhost:5580');
       expect(entry.changeOrigin, path).not.toBe(true);

@@ -4,7 +4,7 @@ import type { Plugin, ProxyOptions } from 'vite';
 export const DEV_PORTS = { core: 5173, producer: 5174 } as const;
 
 // Dev-server proxy entries for every rcl web app (ADR-0019): the browser talks only to Vite, which passes API,
-// API explorer (/docs) and Socket.IO traffic to the Rollcall server. Object entries, never the string shorthand:
+// API explorer (/docs), uploaded image (/media, ADR-0022) and Socket.IO traffic to the Rollcall server. Object entries, never the string shorthand:
 // the shorthand turns on `changeOrigin`, which rewrites `Host`, and the server's CSRF and socket checks compare
 // `Origin` with `Host` (ADR-0018).
 export function serverProxy(
@@ -13,6 +13,7 @@ export function serverProxy(
   return {
     '/api': { target },
     '/docs': { target },
+    '/media': { target },
     '/socket.io': { target, ws: true },
   };
 }

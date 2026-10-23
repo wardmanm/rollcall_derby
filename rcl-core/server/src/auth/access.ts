@@ -1,4 +1,4 @@
-import type { FastifyInstance, preValidationAsyncHookHandler } from 'fastify';
+import type { FastifyInstance, onRequestAsyncHookHandler } from 'fastify';
 import type { Access, Permission, PermissionDef } from '@rollcall/app-sdk';
 import type { Role, SessionUser } from '@rollcall/core-contract';
 import type { ApiKeyHolder } from './api-keys.ts';
@@ -97,8 +97,10 @@ export function accessProblem(access: Access, { appId, permissions }: { appId: s
 const API_ROUTE = /^\/api(\/|$)/;
 const APP_OF_ROUTE = /^\/api\/([^/]+)\//;
 
-// Checks each /api route's declaration as it's registered, then puts the route's guard first in its preValidation
-// hooks, so a refused caller never learns what a valid body looks like (ADR-0014). It's installed on the root
+// Checks each /api route's declaration as it's registered, then puts the route's guard first in its onRequest hooks,
+// so a refused caller is turned away before its body is read: it never learns what a valid body looks like (ADR-0014),
+// and can't make the server read an upload (ADR-0022). A route's own hooks run after the /api plugin's, which have
+// already set the caller and done the cross-site check. It's installed on the root
 // instance, so it sees /api routes wherever they're registered. A route belongs to the app named in its path,
 // /api/<id>/…, and may only use that app's permissions (ADR-0019). HEAD routes that Fastify adds for GET routes pass
 // through here too, with the same config.
@@ -118,11 +120,11 @@ export function enforceRouteAccess(
     const problem = accessProblem(access, { appId, permissions: options.permissions });
     if (problem) throw new Error(`${name} ${problem}`);
     if ('public' in access) return;
-    const guard: preValidationAsyncHookHandler = async (request, reply) => {
+    const guard: onRequestAsyncHookHandler = async (request, reply) => {
       const denial = deny(access, request.principal, options.permissions);
       if (denial) return reply.code(denial.status).send({ error: denial.error });
       return undefined;
     };
-    route.preValidation = [guard, ...[route.preValidation ?? []].flat()];
+    route.onRequest = [guard, ...[route.onRequest ?? []].flat()];
   });
 }

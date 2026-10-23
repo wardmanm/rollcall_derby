@@ -75,16 +75,22 @@ describe('CSRF protection', () => {
     expect(none.statusCode).toBe(401);
   });
 
-  it('refuses non-JSON bodies', async () => {
-    const { app } = appWithProbe();
+  it('refuses non-JSON bodies, even from someone signed in', async () => {
+    const { app, db } = appWithProbe();
+    const user = await addUser(db, 'admin', 'correct horse', 'admin');
+    const cookies = { [SESSION_COOKIE]: createSession(db, user.id).token };
     for (const contentType of ['text/plain', 'application/x-www-form-urlencoded']) {
-      const res = await app.inject({
-        method: 'POST',
-        url: '/api/core/probe',
-        payload: 'a=b',
-        headers: { 'content-type': contentType },
-      });
-      expect(res.statusCode, contentType).toBe(415);
+      const send = (withSession: boolean) =>
+        app.inject({
+          method: 'POST',
+          url: '/api/core/probe',
+          payload: 'a=b',
+          headers: { 'content-type': contentType },
+          ...(withSession ? { cookies } : {}),
+        });
+      expect((await send(true)).statusCode, contentType).toBe(415);
+      // Someone not signed in is turned away before the body is read.
+      expect((await send(false)).statusCode, contentType).toBe(401);
     }
   });
 

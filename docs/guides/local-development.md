@@ -46,7 +46,7 @@ yarn dev
 
 This starts three processes:
 - **the server** on port 5580, restarting when its code changes;
-- **rcl-core's Vite dev server** on port 5173, the front door. It serves rcl-core's web app at `/core/`, redirects `/` there, passes `/producer` on to the Producer app's Vite, and passes `/api`, `/socket.io` and `/docs` to the server. The browser only ever talks to port 5173;
+- **rcl-core's Vite dev server** on port 5173, the front door. It serves rcl-core's web app at `/core/`, redirects `/` there, passes `/producer` on to the Producer app's Vite, and passes `/api`, `/socket.io`, `/docs` and `/media` to the server. The browser only ever talks to port 5173;
 - **the Producer app's Vite dev server** on port 5174, reached through the front door.
 
 Each Vite server reloads the browser when its web code changes, through the front door too.
@@ -84,7 +84,7 @@ The server reads these environment variables:
 | `ROLLCALL_PORT` | `5580` | HTTP, API and Socket.IO port |
 | `ROLLCALL_DATA_DIR` | `data/` | SQLite database and uploaded media (git-ignored) |
 | `ROLLCALL_WEB_DIR` | `rcl-core/web/dist/` | rcl-core's web build, served at `/core/`; skipped if it doesn't exist. The Producer app's build is always `rcl-producer/web/dist/` |
-| `ROLLCALL_DEV_SERVER` | `http://localhost:5580` | Where the Vite dev servers send `/api`, `/socket.io` and `/docs` |
+| `ROLLCALL_DEV_SERVER` | `http://localhost:5580` | Where the Vite dev servers send `/api`, `/socket.io`, `/docs` and `/media` |
 | `ROLLCALL_API_DOCS` | off (`yarn dev` turns it on) | Serve the API explorer at `/docs`: `1` or `true` for on, `0` or `false` for off ([ADR-0014](../decisions/0014-route-schemas-and-api-explorer.md)) |
 
 The names are prefixed because shells such as zsh already set `HOST` to the machine's name.

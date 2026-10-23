@@ -32,6 +32,7 @@ Options considered:
   - At startup, the server deletes files with no row, rows with no file, and rows that nothing refers to.
 - **Images are cached for good** (`immutable`), because an id is never reused.
 - **`media` is a reserved app id,** so no app's web build at `/<id>/` can collide with `/media/`.
+- **Every route's access check runs when a request arrives,** before its body is read (`onRequest`). [ADR-0014](0014-route-schemas-and-api-explorer.md) and [ADR-0018](0018-declared-access-and-permissions.md) put it in `preValidation`, after the body is read. Their reason, that a refused caller never learns what a valid body looks like, holds better this way, and a refused caller can't make the server read a 5 MB upload.
 
 ## Consequences
 

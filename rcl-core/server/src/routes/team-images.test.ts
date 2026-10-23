@@ -148,4 +148,22 @@ describe('who may upload', () => {
     });
     expect(anonymous.json()).toEqual({ error: 'unauthenticated' });
   });
+
+  it("refuses a caller before reading the upload, so a refused caller can't learn what a valid body is", async () => {
+    const { app, upload, logo } = await withTeam('announcer');
+    for (const [body, type] of [
+      [padded(MAX_IMAGE_BYTES + 1), 'image/png'],
+      ['<svg/>', 'image/svg+xml'],
+      ['{not json', 'application/json'],
+    ] as const) {
+      expect((await upload(logo, body, type)).json(), type).toEqual({ error: 'forbidden' });
+      const anonymous = await app.inject({
+        method: 'PUT',
+        url: `/api/core${logo}`,
+        headers: { 'content-type': type },
+        payload: body,
+      });
+      expect(anonymous.json(), type).toEqual({ error: 'unauthenticated' });
+    }
+  });
 });

@@ -187,6 +187,27 @@ describe('the Team page', () => {
     );
   });
 
+  it('puts a new skater\u2019s photo on that skater, even when someone else added one meanwhile', async () => {
+    // This page hasn't seen Blocky, whom someone else added; the reply has both.
+    const both: Team = {
+      ...withMember('Blocky', '12'),
+      members: [...withMember('Blocky', '12').members, ...withMember('Pivot', '21').members.slice(-1)],
+    };
+    const { requests } = await openTeam(PRODUCER, {
+      'POST /api/core/teams/t1/members': json(both, 201),
+      'PUT /api/core/teams/t1/members/new-21/photo': json(both),
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add skater' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Add skater' });
+    fireEvent.change(within(dialog).getByLabelText('Name'), { target: { value: 'Pivot' } });
+    fireEvent.change(within(dialog).getByLabelText(/^Number/), { target: { value: '21' } });
+    pickFile(fileInput(dialog), png('pivot.png'));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    const photos = requests.filter((r) => r.method === 'PUT').map((r) => r.path);
+    expect(photos).toEqual(['/api/core/teams/t1/members/new-21/photo']);
+  });
+
   it("edits a member's roles", async () => {
     const { requests } = await openTeam(PRODUCER, { 'PATCH /api/core/teams/t1/members/m2': json(TEAM) });
     await chooseFor('Jammy', 'Edit');

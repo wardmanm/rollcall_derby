@@ -80,7 +80,12 @@ export function MemberForm({ team, kind, member, onClose }: MemberFormProps) {
       setProblem(problemWith(result.error, GONE));
       return;
     }
-    const added = result.data.members.find((m) => !before.has(m.id));
+    // The member just saved: new to this page, and as typed. Someone else may have added members meanwhile, and the
+    // reply lists them too.
+    const { kind: savedKind, name: savedName, number: savedNumber } = checked.data;
+    const added = result.data.members.find(
+      (m) => !before.has(m.id) && m.kind === savedKind && m.name === savedName && m.number === savedNumber,
+    );
     if (photo && added) {
       const uploaded = await setPhoto({ id: team.id, memberId: added.id, image: photo });
       if (uploaded.error) {
