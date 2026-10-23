@@ -9,6 +9,7 @@ import type { AppDatabase } from './db.ts';
 import { sendApiError } from './http.ts';
 import { enforceRouteAccess } from './auth/access.ts';
 import { installAuth } from './auth/guard.ts';
+import { serveMedia } from './media.ts';
 import { registerApiDocs } from './openapi.ts';
 import { serveWebApps } from './web-apps.ts';
 
@@ -23,6 +24,8 @@ export interface AppOptions {
   version: string;
   logger?: boolean;
   db: AppDatabase;
+  /** Where uploaded images live: media/ in the data folder (ADR-0022). Created when the first one is saved. */
+  mediaDir: string;
   /** rcl-core's own web build, served at /core/. */
   coreWebDir?: string;
   /** The rcl apps to host besides core: INSTALLED_APPS in production, the tests' own apps in tests. */
@@ -43,6 +46,7 @@ export function buildApp({
   version,
   logger = false,
   db,
+  mediaDir,
   coreWebDir,
   apps = [],
   registerRoutes,
@@ -84,6 +88,7 @@ export function buildApp({
     registerRoutes?.(api);
   });
 
+  serveMedia(app, { db, dir: mediaDir });
   const webPage = serveWebApps(app, hosted.webApps);
   app.setNotFoundHandler((request, reply) => {
     const path = request.url.split('?')[0] ?? '';

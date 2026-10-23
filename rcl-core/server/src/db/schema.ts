@@ -1,4 +1,5 @@
-import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { IMAGE_TYPES, MEMBER_KINDS, type MemberRole } from '@rollcall/core-contract';
 
 // Drizzle schema: the source of truth for tables (docs/architecture/data-model.md maps the concepts).
 
@@ -48,3 +49,54 @@ export const apiKeys = sqliteTable('api_keys', {
   expiresAt: text('expires_at'),
   lastUsedAt: text('last_used_at'),
 });
+
+// Uploaded images, such as team logos and member photos (ADR-0022). Each is a file named by its id in the data
+// folder's media/ folder. The id is 128 random bits, so an image's address can't be guessed.
+export const media = sqliteTable('media', {
+  id: text('id').primaryKey(),
+  contentType: text('content_type', { enum: IMAGE_TYPES }).notNull(),
+  size: integer('size').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+// Teams and their members (docs/features/team-builder.md).
+export const teams = sqliteTable('teams', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  leagueName: text('league_name'),
+  shortName: text('short_name'),
+  primaryColor: text('primary_color'),
+  secondaryColor: text('secondary_color'),
+  logoMediaId: text('logo_media_id').references(() => media.id, { onDelete: 'set null' }),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+// Skaters and bench staff. A number is text, so 00 and 07 keep their zeros; only skaters have one, and no two skaters
+// on a team share it (bench staff's null numbers never clash).
+export const teamMembers = sqliteTable(
+  'team_members',
+  {
+    id: text('id').primaryKey(),
+    teamId: text('team_id')
+      .notNull()
+      .references(() => teams.id, { onDelete: 'cascade' }),
+    kind: text('kind', { enum: MEMBER_KINDS }).notNull(),
+    name: text('name').notNull(),
+    number: text('number'),
+    pronouns: text('pronouns'),
+    roles: text('roles', { mode: 'json' }).$type<MemberRole[]>().notNull(),
+    customRoles: text('custom_roles', { mode: 'json' }).$type<string[]>().notNull(),
+    photoMediaId: text('photo_media_id').references(() => media.id, { onDelete: 'set null' }),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  // Also serves lookups of a team's members.
+  (table) => [uniqueIndex('team_members_team_number_idx').on(table.teamId, table.number)],
+);
+
+// Every column that refers to media. The startup sweep keeps only media that one of them refers to: add new ones here.
+export const MEDIA_REFERENCES = [
+  { table: teams, column: teams.logoMediaId },
+  { table: teamMembers, column: teamMembers.photoMediaId },
+] as const;

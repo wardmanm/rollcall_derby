@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -14,7 +14,8 @@ import { dummyHash } from './auth/passwords.ts';
 import type * as Passwords from './auth/passwords.ts';
 import { createSession } from './auth/sessions.ts';
 import { createUser } from './auth/users.ts';
-import { CORE_VERSION } from './testing.ts';
+import { saveMedia } from './media.ts';
+import { CORE_VERSION, IMAGES } from './testing.ts';
 
 // Wraps dummyHash in a spy that still hashes, so a test can see when startServer first asks for it.
 vi.mock('./auth/passwords.ts', async (importOriginal) => {
@@ -38,6 +39,23 @@ afterEach(async () => {
 });
 
 describe('startServer', () => {
+  it('sweeps leftover media at startup: an image nothing refers to is gone, and so is a half-saved upload', async () => {
+    dataDir = mkdtempSync(join(tmpdir(), 'op-server-'));
+    const mediaDir = join(dataDir, 'media');
+    const seed = openDatabase(dataDir);
+    const orphan = saveMedia(seed.db, mediaDir, IMAGES.png);
+    seed.sqlite.close();
+    mkdirSync(mediaDir, { recursive: true });
+    writeFileSync(join(mediaDir, 'half.uploading'), 'x');
+
+    running = await startServer(
+      { host: '127.0.0.1', port: 0, dataDir, webDir: join(dataDir, 'no-web-build') },
+      { version: '1.0.0', logger: false },
+    );
+    expect(readdirSync(mediaDir)).toEqual([]);
+    expect((await fetch(`${running.url}/media/${orphan}`)).status).toBe(404);
+  });
+
   it('purges expired sessions at startup and serves setup status from the data directory', async () => {
     dataDir = mkdtempSync(join(tmpdir(), 'op-server-'));
     const seed = openDatabase(dataDir);

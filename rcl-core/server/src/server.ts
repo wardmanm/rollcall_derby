@@ -1,9 +1,11 @@
+import { join } from 'node:path';
 import type { Server } from 'socket.io';
 import { buildApp } from './app.ts';
 import { dummyHash } from './auth/passwords.ts';
 import { purgeExpiredSessions } from './auth/sessions.ts';
 import type { ServerConfig } from './config.ts';
 import { openDatabase } from './db.ts';
+import { sweepMedia } from './media.ts';
 import { attachRealtime } from './realtime.ts';
 import { INSTALLED_APPS } from './installed-apps.ts';
 
@@ -18,14 +20,20 @@ export async function startServer(
   { version, logger = true }: { version: string; logger?: boolean },
 ): Promise<RunningServer> {
   const { db, sqlite } = openDatabase(config.dataDir);
+  const mediaDir = join(config.dataDir, 'media');
   const app = buildApp({
     version,
     logger,
     db,
+    mediaDir,
     coreWebDir: config.webDir,
     apps: INSTALLED_APPS,
     apiDocs: config.apiDocs,
   });
+
+  // Images a crash left half-saved or orphaned (ADR-0022).
+  const swept = sweepMedia(db, mediaDir);
+  if (swept.files > 0 || swept.rows > 0) app.log.info(swept, 'Removed leftover media');
 
   // Expired sessions are already ignored; this just keeps the table small.
   purgeExpiredSessions(db);

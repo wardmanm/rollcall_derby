@@ -1,3 +1,7 @@
+import { randomUUID } from 'node:crypto';
+import { rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { AppModule } from '@rollcall/app-sdk';
 import type { Role } from '@rollcall/core-contract';
 import { buildApp, type AppOptions } from './app.ts';
@@ -10,15 +14,25 @@ import { createUser, type UserRecord } from './auth/users.ts';
 /** This rcl-core's version, as main.ts passes it to the server. */
 export const CORE_VERSION = pkg.version;
 
-// Test helpers: an app on a private in-memory database, and a quick way to add users.
+// Test helpers: an app on a private in-memory database, with its own media folder (made only when an image is saved,
+// and deleted when the app closes), and a quick way to add users.
 export function testApp(options: Partial<AppOptions> = {}) {
   const { db, sqlite } = openMemoryDatabase();
-  const app = buildApp({ version: '1.0.0', db, ...options });
+  const mediaDir = join(tmpdir(), `rollcall-media-${randomUUID()}`);
+  const app = buildApp({ version: '1.0.0', db, mediaDir, ...options });
   app.addHook('onClose', async () => {
     sqlite.close();
+    rmSync(mediaDir, { recursive: true, force: true });
   });
-  return { app, db };
+  return { app, db, mediaDir };
 }
+
+/** The first bytes of each image type: enough for the server, which checks an image's bytes, not its pixels. */
+export const IMAGES = {
+  png: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52]),
+  jpeg: Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 16, 0x4a, 0x46, 0x49, 0x46]),
+  webp: Buffer.concat([Buffer.from('RIFF'), Buffer.from([26, 0, 0, 0]), Buffer.from('WEBPVP8 ')]),
+};
 
 export async function addUser(
   db: AppDatabase,

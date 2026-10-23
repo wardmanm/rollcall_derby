@@ -19,6 +19,8 @@ export interface HostedApps {
 }
 
 const APP_ID = /^[a-z][a-z0-9-]*$/;
+// Ids the server's own paths use, so no app's web build at /<id>/ can collide with them.
+const RESERVED_IDS = new Set(['media']);
 
 /** The migrations table for an app's own migrations. Core keeps Drizzle's default, so existing databases still open. */
 export const migrationsTableFor = (id: string) => `__drizzle_migrations_${id}`;
@@ -26,6 +28,7 @@ export const migrationsTableFor = (id: string) => `__drizzle_migrations_${id}`;
 // Why `app` can't be hosted next to the apps already accepted, or null when it can.
 function appProblem(app: AppModule, accepted: readonly AppModule[], coreVersion: string): string | null {
   if (!APP_ID.test(app.id)) return `its id "${app.id}" must be lowercase letters, digits and dashes`;
+  if (RESERVED_IDS.has(app.id)) return `its id "${app.id}" is a path the server uses itself`;
   if (accepted.some((other) => other.id === app.id)) return `another app already uses the id "${app.id}"`;
   if (!validRange(app.requiresCore)) return `its requiresCore "${app.requiresCore}" isn't a version range`;
   if (!satisfies(coreVersion, app.requiresCore)) {
