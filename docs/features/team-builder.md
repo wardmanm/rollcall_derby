@@ -1,7 +1,7 @@
 ---
 title: Team Builder
 app: rcl-core
-status: planned
+status: in-progress
 summary: Create teams with skaters and bench staff, including names, numbers, roles and photos.
 ---
 # Team Builder

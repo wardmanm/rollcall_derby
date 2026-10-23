@@ -44,6 +44,8 @@ describe('/api/core/api-keys', () => {
     const { app, cookies } = await asAdmin();
     const res = await app.inject({ method: 'GET', url: '/api/core/api-keys/grantable', cookies });
     expect(GrantablePermissionSchema.array().parse(res.json())).toEqual([
+      { key: 'core:teams.read', summary: 'View teams and their members' },
+      { key: 'core:teams.manage', summary: 'Create, edit and delete teams, members, logos and photos' },
       { key: 'demo:things.read', summary: 'Read things' },
     ]);
   });

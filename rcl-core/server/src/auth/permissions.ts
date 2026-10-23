@@ -17,4 +17,14 @@ export const CORE_PERMISSIONS: readonly PermissionDef[] = [
     roles: [],
     peopleOnly: true,
   },
+  {
+    key: 'core:teams.read',
+    summary: 'View teams and their members',
+    roles: ['producer', 'announcer'],
+  },
+  {
+    key: 'core:teams.manage',
+    summary: 'Create, edit and delete teams, members, logos and photos',
+    roles: ['producer'],
+  },
 ];

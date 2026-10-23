@@ -28,6 +28,7 @@ Basic user accounts and role-based access control. The app runs on a shared venu
 | Configure OBS and CRG connections | ✅ | — | — |
 | Create or edit themes | ✅ | — (uses existing) | — |
 | Create or edit screens, component layout and options | ✅ | — (uses existing) | — |
+| View teams | ✅ | ✅ | ✅ |
 | Create or edit teams | ✅ | ✅ | — |
 | Import or export teams | ✅ | ✅ | — |
 | Import or export themes and screens | ✅ | ❓ | — |
@@ -45,6 +46,8 @@ Routes and live connections check [permissions](../product/glossary.md#permissio
 |---|---|---|---|---|---|
 | `core:users.manage` | Create users, change their roles, reset their passwords, sign them out and delete them | ✅ | — | — | — |
 | `core:api-keys.manage` | Create, list and revoke API keys | ✅ | — | — | — |
+| `core:teams.read` | View teams and their members | ✅ | ✅ | ✅ | ✅ |
+| `core:teams.manage` | Create, edit and delete teams, members, logos and photos | ✅ | ✅ | — | ✅ |
 
 The capabilities in the role matrix become permissions here as each feature is built.
 
@@ -70,7 +73,7 @@ How accounts work is decided in [ADR-0018](../decisions/0018-declared-access-and
 - **What a key can do:** only what its permissions allow.
   - It never holds a people-only permission. Managing users and managing API keys are people-only, so a leaked key can't create accounts or make more keys.
   - It can't use routes meant for a signed-in person (who am I, my password, the app list), and it doesn't open live connections.
-  - Until features add permissions a key may hold, a key reaches public routes only.
+  - A key can be given the teams permissions, so a device can read rosters, or a script can keep them up to date.
 - **Revoking a key** stops every device using it at once. The list shows when each key was last used and which have expired. An expired key is refused like a revoked one.
 - **Plain HTTP.** The app runs over HTTP on the venue network for now, so passwords and API keys cross it unencrypted. HTTPS with your own certificate is planned.
 - **OBS outputs** don't log in. `/producer/overlay` is public until output token URLs arrive (R5).

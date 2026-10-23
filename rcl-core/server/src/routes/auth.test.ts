@@ -90,8 +90,13 @@ describe('GET /api/core/auth/me and POST /api/core/auth/logout', () => {
       const me = await app.inject({ method: 'GET', url: '/api/core/auth/me', cookies });
       return CurrentUserSchema.parse(me.json()).permissions;
     };
-    expect(await permissionsOf('admin')).toEqual(['core:users.manage', 'core:api-keys.manage']);
-    expect(await permissionsOf('producer1')).toEqual([]);
+    expect(await permissionsOf('admin')).toEqual([
+      'core:users.manage',
+      'core:api-keys.manage',
+      'core:teams.read',
+      'core:teams.manage',
+    ]);
+    expect(await permissionsOf('producer1')).toEqual(['core:teams.read', 'core:teams.manage']);
   });
 
   it('needs a session to say who you are', async () => {
