@@ -172,13 +172,17 @@ describe('route inventory', () => {
     const callable = where(inv.routes, keyMayCall);
     expect(keysOf(callable)).toEqual([
       'DELETE /api/core/teams/:id',
+      'DELETE /api/core/teams/:id/logo',
       'DELETE /api/core/teams/:id/members/:memberId',
+      'DELETE /api/core/teams/:id/members/:memberId/photo',
       'GET /api/core/teams',
       'GET /api/core/teams/:id',
       'PATCH /api/core/teams/:id',
       'PATCH /api/core/teams/:id/members/:memberId',
       'POST /api/core/teams',
       'POST /api/core/teams/:id/members',
+      'PUT /api/core/teams/:id/logo',
+      'PUT /api/core/teams/:id/members/:memberId/photo',
     ]);
     // A key gets through to each: no team exists, so most answer 404 or 400, but none refuses the key.
     const refusals = [];

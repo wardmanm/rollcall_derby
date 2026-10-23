@@ -76,6 +76,20 @@ describe('API explorer', () => {
     expect(at(doc, 'paths', '/api/core/users', 'get', 'security')).toBeUndefined();
   });
 
+  it("documents an upload's body as a file of each image type it accepts, so Try it out offers a file picker", async () => {
+    const { app } = testApp({ apiDocs: true });
+    const doc = (await app.inject({ method: 'GET', url: '/docs/json' })).json<unknown>();
+    for (const path of ['/api/core/teams/{id}/logo', '/api/core/teams/{id}/members/{memberId}/photo']) {
+      const content = at(doc, 'paths', path, 'put', 'requestBody', 'content');
+      expect(Object.keys(content ?? {}), path).toEqual(['image/png', 'image/jpeg', 'image/webp']);
+      expect(at(content, 'image/png', 'schema'), path).toEqual({ type: 'string', format: 'binary' });
+    }
+    // JSON operations keep their own schemas.
+    expect(
+      at(doc, 'paths', '/api/core/teams', 'post', 'requestBody', 'content', 'application/json', 'schema', 'required'),
+    ).toEqual(['name']);
+  });
+
   it('says when an API key that holds the permission may call an operation too', async () => {
     const demo: AppModule = {
       id: 'demo',

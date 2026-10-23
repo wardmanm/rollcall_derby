@@ -63,7 +63,11 @@ export function registerApiDocs(
       security: [{ session: [] }, { bearer: [] }],
     },
     transform: (input) => {
-      const { schema, url } = jsonSchemaTransform(input);
+      const { schema: converted, url } = jsonSchemaTransform(input);
+      // An upload's body is a file of one of the types it `consumes`, such as a team logo: documented as binary, so
+      // "Try it out" offers a file picker. Its route has no body schema, since it's a raw buffer, not JSON.
+      const uploads = converted?.consumes !== undefined && converted.body === undefined;
+      const schema = uploads ? { ...converted, body: { type: 'string', format: 'binary' } } : converted;
       const access = input.route.config?.access;
       if (!access) return { schema, url };
       const security = 'public' in access ? { security: [] } : {};

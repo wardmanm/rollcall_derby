@@ -13,6 +13,7 @@ import { CORE_APP_ID, CORE_PERMISSIONS } from './auth/permissions.ts';
 import { registerApiKeyRoutes } from './routes/api-keys.ts';
 import { registerAuthRoutes } from './routes/auth.ts';
 import { registerSetupRoutes } from './routes/setup.ts';
+import { registerTeamImageRoutes } from './routes/team-images.ts';
 import { registerTeamRoutes } from './routes/teams.ts';
 import { registerUserRoutes } from './routes/users.ts';
 
@@ -79,6 +80,7 @@ export function coreApp({
       registerUserRoutes(fastify, db);
       registerApiKeyRoutes(fastify, db);
       registerTeamRoutes(fastify, { db, mediaDir });
+      registerTeamImageRoutes(fastify, { db, mediaDir });
     },
   };
 }
