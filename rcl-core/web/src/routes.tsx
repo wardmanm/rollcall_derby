@@ -6,12 +6,15 @@ import { ChangePasswordPage } from './pages/ChangePasswordPage.tsx';
 import { HomePage } from './pages/HomePage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { SetupPage } from './pages/SetupPage.tsx';
+import { TeamPage } from './pages/TeamPage.tsx';
+import { TeamsPage } from './pages/TeamsPage.tsx';
 import { UsersPage } from './pages/UsersPage.tsx';
 
 // Pages behind the sign-in gate share the app's header. Setup, sign-in and choosing a password come before it, at
-// the addresses every rcl app sends people to (CORE_PAGES in the web SDK). Teams is added here when it's built.
+// the addresses every rcl app sends people to (CORE_PAGES in the web SDK).
 // Each is shown only to people holding its permission; the server checks every request anyway (hard rule 5).
 const LINKS: readonly AppLink[] = [
+  { label: 'Teams', to: '/teams', permission: 'core:teams.read' },
   { label: 'Users', to: '/users', permission: 'core:users.manage' },
   { label: 'API keys', to: '/api-keys', permission: 'core:api-keys.manage' },
 ];
@@ -26,6 +29,8 @@ export const routes: RouteObject[] = [
     ),
     children: [
       { index: true, element: <HomePage /> },
+      { path: 'teams', element: <TeamsPage /> },
+      { path: 'teams/:id', element: <TeamPage /> },
       { path: 'users', element: <UsersPage /> },
       { path: 'api-keys', element: <ApiKeysPage /> },
       { path: '*', element: <PageNotFound /> },

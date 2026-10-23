@@ -4,9 +4,7 @@ import type { StorybookConfig } from '@storybook/react-vite';
 // have their own Storybook, so Mantine never loads next to them (ADR-0006). Nothing here calls home: telemetry, crash
 // reports and update notices are off.
 const config: StorybookConfig = {
-  // rcl-core's own components add '../../src/**/*.stories.tsx' here with their first story: Storybook warns about a
-  // pattern that matches nothing.
-  stories: ['../../../../packages/web-sdk/src/**/*.stories.tsx'],
+  stories: ['../../../../packages/web-sdk/src/**/*.stories.tsx', '../../src/**/*.stories.tsx'],
   addons: ['@storybook/addon-docs', '@storybook/addon-a11y', '@storybook/addon-vitest'],
   framework: { name: '@storybook/react-vite', options: {} },
   core: { disableTelemetry: true, disableWhatsNewNotifications: true, enableCrashReports: false },

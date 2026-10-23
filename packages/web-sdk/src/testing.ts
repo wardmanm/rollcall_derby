@@ -5,18 +5,30 @@ import type { CurrentUser, SessionUser, SetupStatus } from '@rollcall/core-contr
 
 type Answer = (request: Request) => Response | Promise<Response>;
 
+/** A request the fake server received. A body that isn't JSON, such as an image, is its text, with its type. */
+export interface ReceivedRequest {
+  method: string;
+  path: string;
+  body: unknown;
+  contentType?: string | null;
+}
+
+const parse = (text: string, contentType: string | null) =>
+  contentType?.includes('json') ? { body: JSON.parse(text) as unknown } : { body: text, contentType };
+
 /**
  * Stands in for the Rollcall server: answers each request from `routes`, keyed `'METHOD /path'`, and records it.
  * Anything not listed gets `404 not_found`, as the real server answers an unknown API path.
  */
 export function fakeServer(routes: Record<string, Answer>) {
-  const requests: { method: string; path: string; body: unknown }[] = [];
+  const requests: ReceivedRequest[] = [];
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: Request) => {
       const path = new URL(input.url).pathname;
       const text = await input.clone().text();
-      requests.push({ method: input.method, path, body: text ? JSON.parse(text) : undefined });
+      const received = text ? parse(text, input.headers.get('content-type')) : { body: undefined };
+      requests.push({ method: input.method, path, ...received });
       const answer = routes[`${input.method} ${path}`];
       return answer ? answer(input) : Response.json({ error: 'not_found' }, { status: 404 });
     }),
@@ -39,14 +51,21 @@ export const ADMIN: CurrentUser = {
   username: 'admin',
   role: 'admin',
   mustChangePassword: false,
-  permissions: ['core:users.manage', 'core:api-keys.manage'],
+  permissions: ['core:users.manage', 'core:api-keys.manage', 'core:teams.read', 'core:teams.manage'],
 };
 export const PRODUCER: CurrentUser = {
   id: 'u-producer',
   username: 'producer1',
   role: 'producer',
   mustChangePassword: false,
-  permissions: [],
+  permissions: ['core:teams.read', 'core:teams.manage'],
+};
+export const ANNOUNCER: CurrentUser = {
+  id: 'u-announcer',
+  username: 'announcer1',
+  role: 'announcer',
+  mustChangePassword: false,
+  permissions: ['core:teams.read'],
 };
 
 /** The user as login, setup and password changes reply: without the permissions `me` adds. */
