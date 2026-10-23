@@ -110,3 +110,76 @@ test('an Admin creates an API key: it works for a device, never as the Admin, an
   await expect(page.getByText('No API keys yet.')).toBeVisible();
   expect((await page.request.get('/api/core/users', withKey(key))).status()).toBe(401);
 });
+
+// Teams (team-builder R1–R5), on the accounts made above.
+const ANNOUNCER = { username: 'announcer1', password: 'announcer password 1' };
+// A real 1×1 PNG, so the browser can show it.
+const PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+  'base64',
+);
+let photoUrl = '';
+
+test('an Admin creates a team, sets its logo and adds a skater with a photo', async ({ page }) => {
+  await page.goto('/core/teams');
+  await signIn(page, ADMIN);
+  await expect(page.getByRole('heading', { name: 'Teams' })).toBeVisible();
+  await page.getByLabel('New team').fill('All Stars');
+  await page.getByRole('button', { name: 'Create team' }).click();
+  await expect(page.getByRole('heading', { name: 'All Stars' })).toBeVisible();
+  await page.locator('input[type="file"]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: PNG });
+  await expect(page.getByRole('img', { name: 'All Stars logo' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Add skater' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Add skater' });
+  await dialog.getByLabel('Name').fill('Zero Cool');
+  await dialog.getByLabel(/^Number/).fill('00');
+  await dialog.locator('input[type="file"]').setInputFiles({ name: 'zero.png', mimeType: 'image/png', buffer: PNG });
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole('row', { name: /Zero Cool/ })).toContainText('00');
+  const photo = page.getByRole('img', { name: 'Photo of Zero Cool' });
+  await expect(photo).toBeVisible();
+  photoUrl = (await photo.getAttribute('src')) ?? '';
+  expect(photoUrl).toMatch(/^\/media\/[0-9a-f]{32}$/);
+});
+
+test("a team's images load without signing in, so OBS overlays can show them", async ({ playwright, baseURL }) => {
+  const anonymous = await playwright.request.newContext({ baseURL });
+  const image = await anonymous.get(photoUrl);
+  expect(image.status()).toBe(200);
+  expect(image.headers()['content-type']).toBe('image/png');
+  expect(Buffer.from(await image.body()).equals(PNG)).toBe(true);
+  // The team itself still needs signing in.
+  expect((await anonymous.get('/api/core/teams')).status()).toBe(401);
+  await anonymous.dispose();
+});
+
+test('an Announcer can look at a team, but not change it', async ({ page }) => {
+  await page.goto('/core/users');
+  await signIn(page, ADMIN);
+  await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible();
+  await page.getByLabel('Username').fill(ANNOUNCER.username);
+  await page.getByLabel('Role', { exact: true }).selectOption('announcer');
+  await page.getByRole('button', { name: 'Create' }).click();
+  const dialog = page.getByRole('dialog', { name: `Temporary password for ${ANNOUNCER.username}` });
+  const temporary = await dialog.getByLabel('Temporary password').inputValue();
+  await dialog.getByRole('button', { name: 'Done' }).click();
+  await page.getByRole('button', { name: 'admin Admin' }).click();
+  await page.getByRole('menuitem', { name: 'Log out' }).click();
+
+  await page.goto('/core/teams');
+  await signIn(page, { username: ANNOUNCER.username, password: temporary });
+  await expect(page.getByRole('heading', { name: 'Choose your own password' })).toBeVisible();
+  await page.getByLabel('Temporary password').fill(temporary);
+  await page.getByLabel('New password', { exact: true }).fill(ANNOUNCER.password);
+  await page.getByLabel('Repeat new password').fill(ANNOUNCER.password);
+  await page.getByRole('button', { name: 'Change password' }).click();
+  await expect(page).toHaveURL(/\/core\/teams$/);
+  await page.getByRole('link', { name: 'All Stars' }).click();
+  await expect(page.getByRole('heading', { name: 'All Stars' })).toBeVisible();
+  await expect(page.getByRole('row', { name: /Zero Cool/ })).toBeVisible();
+  for (const name of ['Save details', 'Add skater', 'Delete team', 'Actions for Zero Cool']) {
+    await expect(page.getByRole('button', { name })).toHaveCount(0);
+  }
+});

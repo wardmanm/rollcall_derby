@@ -10,6 +10,8 @@ This page covers the domain entities and how they relate. It deliberately lists 
 ```mermaid
 erDiagram
   TEAM ||--o{ TEAM_MEMBER : has
+  TEAM }o--o| MEDIA : "logo"
+  TEAM_MEMBER }o--o| MEDIA : "photo"
   THEME ||--o{ SCREEN : styles
   SCREEN ||--o{ COMPONENT_INSTANCE : places
   EVENT ||--o{ GAME : schedules
@@ -28,7 +30,8 @@ erDiagram
 | Entity | Meaning | Feature page |
 |---|---|---|
 | Team | A team with its identity and members | [Team Builder](../features/team-builder.md) |
-| Team member | A skater or a member of bench staff, with number, roles and photo | [Team Builder](../features/team-builder.md) |
+| Team member | A skater or a member of bench staff, with number, pronouns, roles and photo | [Team Builder](../features/team-builder.md) |
+| Media | An uploaded image, such as a team logo or a member photo: a file in the data folder's `media/`, with its type ([ADR-0022](../decisions/0022-public-media.md)) | [Team Builder](../features/team-builder.md) |
 | Theme | A named set of visual tokens | [Theme Builder](../features/theme-builder.md) |
 | Screen | An overlay canvas: size, theme, placed components | [Screen Builder](../features/screen-builder.md) |
 | Component instance | One overlay component placed on a screen, with position, size and options | [Overlay components](../features/overlay-components.md) |
@@ -45,7 +48,7 @@ erDiagram
 
 ## Persisted vs live state
 
-- **Persisted** (SQLite and media files): everything in the table above.
+- **Persisted** (SQLite, and media files in the data folder's `media/`): everything in the table above.
 - **Live** (held in memory on the server and broadcast over Socket.IO):
   - the current game on each track;
   - component visibility and live selections, such as the skater in the spotlight;

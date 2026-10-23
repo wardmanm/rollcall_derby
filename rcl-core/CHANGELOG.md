@@ -6,6 +6,10 @@ rcl-core hosts the other rcl apps, which have their own changelogs, such as [rcl
 
 ## [Unreleased]
 
+### Added
+
+- Team Builder: Admins and Producers create teams with a league, short name, colors and logo, and their skaters and bench staff, with numbers (`00` keeps its zeros), pronouns, roles and photos. **Save and add another** makes typing in a roster quick. Announcers can view teams, and API keys can be given access to them. Logos and photos are stored on the server and shown to OBS overlays without signing in, so don't upload anything private (#17)
+
 ## [0.1.0] - 2026-10-19
 
 ### Added

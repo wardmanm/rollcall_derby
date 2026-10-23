@@ -48,7 +48,7 @@ What to test, where the tests live, and how to run them. New code is written tes
   - **With a password change pending:** everything except `me`, `password` and the public routes (such as `logout`) refuses with `password_change_required`.
   - **Missing permission:** each role is refused with `forbidden` wherever it lacks the permission.
   - **API keys** ([ADR-0020](../decisions/0020-api-keys.md)):
-    - A key holding every permission a key may hold is refused with `forbidden` on routes for any signed-in user and on people-only permissions, and gets through elsewhere. A test app supplies a route a key may call.
+    - A key holding every permission a key may hold is refused with `forbidden` on routes for any signed-in user and on people-only permissions, and gets through elsewhere. The teams routes are the ones a key may call (`core:teams.read` and `core:teams.manage`).
     - A wrong key is refused with `unauthenticated` everywhere but public routes.
     - Namespaces ignore keys.
   - **Proof it works:** each sweep runs again as an Admin, who gets through everywhere, so the sweep must report every route.
@@ -59,7 +59,7 @@ What to test, where the tests live, and how to run them. New code is written tes
 
 Shared components get a story next to them (`Component.stories.tsx`), and every story is also a test, run through its own Vitest config, `vitest.stories.config.ts` ([ADR-0015](../decisions/0015-storybook-admin-and-overlay-kept-apart.md)). `yarn test:stories` renders each one in Chromium and fails on a render error, a failed `play` check, or an accessibility violation.
 
-- **Which Storybook:** the admin Storybook (`rcl-core/web/.storybook/admin`) shows the web SDK's components, and rcl-core's own once it has some: its first story also adds `../../src/**/*.stories.tsx` to that Storybook's `main.ts`, since Storybook warns about a pattern that matches nothing. Overlay components (`rcl-producer/web/src/overlay`) go in the overlay Storybook (`rcl-producer/web/.storybook/overlay`). The Producer app's other components get a dashboard Storybook with their first story.
+- **Which Storybook:** the admin Storybook (`rcl-core/web/.storybook/admin`) shows the web SDK's components and rcl-core's own (`rcl-core/web/src/**/*.stories.tsx`). Overlay components (`rcl-producer/web/src/overlay`) go in the overlay Storybook (`rcl-producer/web/.storybook/overlay`). The Producer app's other components get a dashboard Storybook with their first story.
 - **Server data:** give each story its own answer with a `beforeEach` that stubs `fetch` and restores it (see `packages/web-sdk/src/ServerStatus.stories.tsx`). A fresh `makeStore()` per story keeps RTK Query empty.
 - **Themes in CI:** a story pinned to a sample theme with `globals: { overlayTheme: 'light' }` is checked for contrast like any other.
 - **Isolation:** every overlay story checks for no Mantine variables or stylesheet on the page, and that theme variables reach it, the same check the e2e test makes on the real overlay page.

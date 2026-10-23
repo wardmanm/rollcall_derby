@@ -84,6 +84,7 @@ Summaries only. The ADRs are canonical.
 - [ADR-0019](../decisions/0019-rcl-apps-as-modules.md): Shared Zod contract; versioned import/export.
 - [ADR-0018](../decisions/0018-declared-access-and-permissions.md): Server-side sessions; every route and namespace declares its access, checked by permission; a public overlay until output token URLs arrive.
 - [ADR-0020](../decisions/0020-api-keys.md): API keys for devices and scripts, with their own permissions and never people-only ones; the `Authorization` header beats the cookie.
+- [ADR-0022](../decisions/0022-public-media.md): Uploaded images are files in the data folder, served to anyone at unguessable `/media/<id>` addresses, so OBS overlays can show them.
 
 ## More
 

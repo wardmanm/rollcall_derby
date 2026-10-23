@@ -31,4 +31,5 @@ To write a new one, follow [recording decisions](../wiki-guide.md#recording-deci
 | [0019](0019-rcl-apps-as-modules.md) | rcl-core hosts rcl apps as modules | accepted | 2026-10-10 |
 | [0020](0020-api-keys.md) | API keys for devices and scripts | accepted | 2026-10-16 |
 | [0021](0021-per-app-releases.md) | Each rcl app is released on its own | accepted | 2026-10-16 |
+| [0022](0022-public-media.md) | Uploaded images are public at unguessable addresses | accepted | 2026-10-23 |
 <!-- /generated:decisions -->

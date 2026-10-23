@@ -128,6 +128,8 @@ These follow from running TypeScript directly on Node ([ADR-0013](../decisions/0
 
 Migrations run automatically when the server starts. To start from an empty database, stop the server and delete `data/`.
 
+`data/` holds the database, `rollcall.db`, and uploaded images, `media/` ([ADR-0022](../decisions/0022-public-media.md)). Back them up together: each image belongs to the database row that names it.
+
 Upgrading from OBS Producer? Rollcall is a new clone, so copy your old checkout's `obs-producer/data/` folder to `data/` here (or point `ROLLCALL_DATA_DIR` at it). The server then refuses to start while `data/` holds only `obs-producer.db`: stop it and rename that file, plus any `-wal` and `-shm` files next to it, to `rollcall.db`, or delete it to start fresh.
 
 ### Adding dependencies
