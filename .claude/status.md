@@ -2,9 +2,11 @@
 Updated: 2026-10-24 · Branch: main
 
 ## Current focus
-The Team Builder (#17) is built and on `main`: teams, their skaters and bench staff, logos and photos, in rcl-core's admin app. It's unreleased, in the `rcl-core v0.2.0` milestone.
+The Team Builder (#17), and its polish from review (#18), are on `main`: teams, their skaters and bench staff, logos and photos, in rcl-core's admin app. Unreleased, in the `rcl-core v0.2.0` milestone.
 
 ## Recent changes
+- 2026-10-24: Fixed #18, the Team Builder polish: no double adds while a photo uploads, a clear limit on custom roles, a details form that keeps colleagues' changes, a changeable chosen photo, readable colors.
+- 2026-10-24: Decided: fix #18 before the next feature or release.
 - 2026-10-24: Filed the Team Builder review's seven small findings as #18.
 - 2026-10-24: Merged the Team Builder (#17).
   - Admins and Producers set up teams; Announcers view them.
@@ -19,15 +21,13 @@ The Team Builder (#17) is built and on `main`: teams, their skaters and bench st
 - 2026-10-21: Filed the deferred code-review findings as issues #12–#16, and added a note to #9.
 - 2026-10-19: Published rcl-producer v0.2.0, the first release since OBS Producer 0.1.0. Both release milestones are closed.
 - 2026-10-19: Published rcl-core v0.1.0, the first release of an rcl app on its own.
-- 2026-10-19: Decided: a commit that changes only this log may go straight to `main` when no work branch is open.
 
 ## Pending decisions
 - **What next after the Team Builder** (raised 2026-10-24). Options:
   - A. Release rcl-core v0.2.0 now: its milestone holds only #17.
   - B. Theme Builder (rcl-producer), next on the roadmap.
-  - C. Fix #18, the Team Builder polish, first.
 
   Blocks: the next piece of work.
 
 ## Loose ends
-- Issues #12–#16 and #18: small fixes from code reviews, not yet scheduled. None blocks a release.
+- Issues #12–#16: small fixes from earlier code reviews, not yet scheduled. None blocks a release.
