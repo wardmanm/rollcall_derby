@@ -5,6 +5,7 @@ Updated: 2026-10-24 · Branch: main
 The Team Builder (#17) is built and on `main`: teams, their skaters and bench staff, logos and photos, in rcl-core's admin app. It's unreleased, in the `rcl-core v0.2.0` milestone.
 
 ## Recent changes
+- 2026-10-24: Filed the Team Builder review's seven small findings as #18.
 - 2026-10-24: Merged the Team Builder (#17).
   - Admins and Producers set up teams; Announcers view them.
   - Logos and photos are served to OBS overlays without signing in (ADR-0022).
@@ -24,17 +25,9 @@ The Team Builder (#17) is built and on `main`: teams, their skaters and bench st
 - **What next after the Team Builder** (raised 2026-10-24). Options:
   - A. Release rcl-core v0.2.0 now: its milestone holds only #17.
   - B. Theme Builder (rcl-producer), next on the roadmap.
-  - C. File the Team Builder review's 7 small findings as an issue first.
+  - C. Fix #18, the Team Builder polish, first.
 
   Blocks: the next piece of work.
 
 ## Loose ends
-- Issues #12–#16: small fixes from earlier code reviews, not yet scheduled. None blocks a release.
-- Seven small findings from the Team Builder review aren't filed yet. They cover:
-  - a double save while a photo uploads;
-  - a fourth custom role dropped silently;
-  - the details form not taking the server's values after Save;
-  - one gray "No teams yet." note that fails the contrast check;
-  - color swatches screen readers may not announce;
-  - a picked photo that can't be un-picked;
-  - an extra team load when adding a member.
+- Issues #12–#16 and #18: small fixes from code reviews, not yet scheduled. None blocks a release.
