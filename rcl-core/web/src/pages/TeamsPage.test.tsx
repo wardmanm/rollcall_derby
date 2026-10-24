@@ -56,7 +56,7 @@ describe('the Teams page', () => {
     expect(stars.getByRole('link', { name: 'All Stars' }).getAttribute('href')).toBe('/core/teams/t1');
     expect(stars.getByText('Rose City Rollers')).toBeTruthy();
     expect(stars.getByText('RCR')).toBeTruthy();
-    expect(stars.getByLabelText('Color #aa0000')).toBeTruthy();
+    expect(stars.getByText('Color #aa0000')).toBeTruthy();
     expect(stars.getByText('14')).toBeTruthy();
     expect(stars.getByRole('img', { name: 'All Stars logo' }).getAttribute('src')).toBe(TEAMS[0]!.logoUrl);
     expect(screen.getByRole('link', { name: 'Teams' })).toBeTruthy();

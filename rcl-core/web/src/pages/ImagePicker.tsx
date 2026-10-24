@@ -11,8 +11,10 @@ export interface ImagePickerProps {
   alt: string;
   /** Called with a file that passed the checks below. */
   onPick: (file: File) => void;
-  /** Removes the image. Without it, there's no Remove button. */
+  /** Removes the image, or the file chosen. Without it, there's no Remove button. */
   onRemove?: () => void;
+  /** The name of a file chosen but not uploaded yet, such as a new member's photo before Save. */
+  chosen?: string | null;
   /** While an upload or removal is under way. */
   busy?: boolean;
 }
@@ -28,7 +30,7 @@ export function imageProblem(file: File): string | null {
 
 // A logo or photo: the image (or a note that there's none), a button to choose a new one, and Remove. A file is checked
 // in the browser before it's sent, so the person hears at once what's wrong with it.
-export function ImagePicker({ label, imageUrl, alt, onPick, onRemove, busy = false }: ImagePickerProps) {
+export function ImagePicker({ label, imageUrl, alt, onPick, onRemove, chosen = null, busy = false }: ImagePickerProps) {
   const [problem, setProblem] = useState<string | null>(null);
   const pick = (file: File | null) => {
     if (!file) return;
@@ -43,6 +45,8 @@ export function ImagePicker({ label, imageUrl, alt, onPick, onRemove, busy = fal
       </Text>
       {imageUrl ? (
         <Image src={imageUrl} alt={alt} w={96} h={96} fit="contain" radius="sm" />
+      ) : chosen ? (
+        <Text size="sm">{chosen} chosen. It’s uploaded when you save.</Text>
       ) : (
         <Text size="sm">No {label.toLowerCase()} yet.</Text>
       )}
@@ -50,11 +54,11 @@ export function ImagePicker({ label, imageUrl, alt, onPick, onRemove, busy = fal
         <FileButton onChange={pick} accept={IMAGE_TYPES.join(',')}>
           {(props) => (
             <Button {...props} variant="default" size="xs" loading={busy}>
-              {imageUrl ? `Change ${label.toLowerCase()}` : `Upload ${label.toLowerCase()}`}
+              {imageUrl || chosen ? `Change ${label.toLowerCase()}` : `Upload ${label.toLowerCase()}`}
             </Button>
           )}
         </FileButton>
-        {imageUrl && onRemove && (
+        {(imageUrl || chosen) && onRemove && (
           <Button variant="subtle" color="red" size="xs" onClick={onRemove} disabled={busy}>
             Remove {label.toLowerCase()}
           </Button>

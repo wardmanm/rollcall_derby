@@ -14,6 +14,7 @@ import {
   Text,
   TextInput,
   Title,
+  VisuallyHidden,
 } from '@mantine/core';
 import { UpdateTeamRequestSchema, type MemberKind, type Team, type TeamMember } from '@rollcall/core-contract';
 import { apiError, useGetMeQuery } from '@rollcall/web-sdk';
@@ -154,7 +155,11 @@ function TeamDetails({ team }: { team: Team }) {
         <Group gap={4}>
           {[team.primaryColor, team.secondaryColor].map(
             (color, i) =>
-              color && <ColorSwatch key={color + String(i)} color={color} size={18} aria-label={`Color ${color}`} />,
+              color && (
+                <ColorSwatch key={color + String(i)} color={color} size={18}>
+                  <VisuallyHidden>Color {color}</VisuallyHidden>
+                </ColorSwatch>
+              ),
           )}
         </Group>
       </Stack>
@@ -162,30 +167,35 @@ function TeamDetails({ team }: { team: Team }) {
   );
 }
 
-// The team's details as a form, with its logo.
+type DetailField = 'name' | 'leagueName' | 'shortName' | 'primaryColor' | 'secondaryColor';
+
+// The team's details as a form, with its logo. It shows the team as the server has it, apart from the fields you've
+// changed: Save sends only those, then shows what was saved, and a colleague's change to another field shows too.
 function TeamDetailsForm({ team }: { team: Team }) {
   const [updateTeam, saving] = useUpdateTeamMutation();
   const [setLogo, uploading] = useSetLogoMutation();
   const [removeLogo, removing] = useRemoveLogoMutation();
-  const [name, setName] = useState(team.name);
-  const [leagueName, setLeagueName] = useState(team.leagueName ?? '');
-  const [shortName, setShortName] = useState(team.shortName ?? '');
-  const [primaryColor, setPrimaryColor] = useState(team.primaryColor ?? '');
-  const [secondaryColor, setSecondaryColor] = useState(team.secondaryColor ?? '');
+  const [edits, setEdits] = useState<Partial<Record<DetailField, string>>>({});
+  const shown = (field: DetailField) => edits[field] ?? team[field] ?? '';
+  const change = (field: DetailField) => (value: string) => setEdits((current) => ({ ...current, [field]: value }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [problem, setProblem] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    const checked = UpdateTeamRequestSchema.safeParse({ name, leagueName, shortName, primaryColor, secondaryColor });
+    const checked = UpdateTeamRequestSchema.safeParse(edits);
     setErrors(checked.success ? {} : fieldErrors(checked.error));
     setProblem(null);
     setSaved(false);
     if (!checked.success) return;
     const result = await updateTeam({ id: team.id, changes: checked.data });
-    if (result.error) setProblem(problemWith(result.error, GONE));
-    else setSaved(true);
+    if (result.error) {
+      setProblem(problemWith(result.error, GONE));
+      return;
+    }
+    setEdits({});
+    setSaved(true);
   };
   const logoProblem = (result: { error?: unknown }) => {
     if (result.error) setProblem(problemWith(result.error, GONE));
@@ -205,38 +215,38 @@ function TeamDetailsForm({ team }: { team: Team }) {
         <Stack gap="sm">
           <TextInput
             label="Name"
-            value={name}
-            onChange={(e) => setName(e.currentTarget.value)}
+            value={shown('name')}
+            onChange={(e) => change('name')(e.currentTarget.value)}
             error={errors.name}
             w={320}
           />
           <TextInput
             label="League"
-            value={leagueName}
-            onChange={(e) => setLeagueName(e.currentTarget.value)}
+            value={shown('leagueName')}
+            onChange={(e) => change('leagueName')(e.currentTarget.value)}
             error={errors.leagueName}
             w={320}
           />
           <TextInput
             label="Short name"
             description="Up to 8 characters, such as RCR"
-            value={shortName}
-            onChange={(e) => setShortName(e.currentTarget.value)}
+            value={shown('shortName')}
+            onChange={(e) => change('shortName')(e.currentTarget.value)}
             error={errors.shortName}
             w={160}
           />
           <Group>
             <ColorInput
               label="Primary color"
-              value={primaryColor}
-              onChange={setPrimaryColor}
+              value={shown('primaryColor')}
+              onChange={change('primaryColor')}
               error={errors.primaryColor}
               w={160}
             />
             <ColorInput
               label="Secondary color"
-              value={secondaryColor}
-              onChange={setSecondaryColor}
+              value={shown('secondaryColor')}
+              onChange={change('secondaryColor')}
               error={errors.secondaryColor}
               w={160}
             />
@@ -247,7 +257,7 @@ function TeamDetailsForm({ team }: { team: Team }) {
               Save details
             </Button>
             {saved && (
-              <Text component="output" size="sm" c="dimmed">
+              <Text component="output" size="sm">
                 Saved.
               </Text>
             )}

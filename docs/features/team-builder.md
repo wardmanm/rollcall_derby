@@ -46,9 +46,9 @@ R1–R5 and R7 are built. R6 comes with the [Import / Export](import-export.md) 
 - **Logos and photos** are PNG, JPEG or WebP, up to 5 MB, stored as uploaded: overlays fit them to their space.
   - The server checks an image's bytes, not just its stated type, so nothing else can be served as one.
   - They're served at `/media/<id>` to anyone, so OBS overlays can show them, at addresses that can't be guessed ([ADR-0022](../decisions/0022-public-media.md)). They aren't secret: don't upload anything that must stay private.
-  - A new member's photo is uploaded when the member is saved. An existing member's photo, and a logo, change as soon as one is picked.
+  - A new member's photo is uploaded when the member is saved; until then it can be changed or removed. An existing member's photo, and a logo, change as soon as one is picked.
   - Replacing or removing an image deletes the old one. Deleting a team deletes its logo and every photo.
-- **Two people editing the same team** each save their own changes; the last save wins.
+- **Two people editing the same team:** **Save details** sends only the fields you changed, so a colleague's change to another field isn't overwritten, and shows up in your form. When you both change the same thing, the last save wins.
 - **The API** is below `/api/core/teams`; every change replies with the whole team. See [trying the API](../guides/local-development.md#trying-the-api).
 
 ## Related

@@ -34,7 +34,7 @@ function TeamList({ canManage }: { canManage: boolean }) {
       <Title order={2}>Teams</Title>
       {canManage && <NewTeam />}
       {teams.isError && <Alert color="red">{problemWith(teams.error)}</Alert>}
-      {teams.data?.length === 0 && <Text c="dimmed">No teams yet.</Text>}
+      {teams.data?.length === 0 && <Text>No teams yet.</Text>}
       {teams.data && teams.data.length > 0 && (
         <Table>
           <Table.Thead>
@@ -78,7 +78,11 @@ function TeamRow({ team }: { team: TeamSummary }) {
         <Group gap={4}>
           {[team.primaryColor, team.secondaryColor].map(
             (color, i) =>
-              color && <ColorSwatch key={color + String(i)} color={color} size={18} aria-label={`Color ${color}`} />,
+              color && (
+                <ColorSwatch key={color + String(i)} color={color} size={18}>
+                  <VisuallyHidden>Color {color}</VisuallyHidden>
+                </ColorSwatch>
+              ),
           )}
         </Group>
       </Table.Td>

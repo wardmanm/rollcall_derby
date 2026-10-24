@@ -24,3 +24,6 @@ export const NoImageYet: Story = { args: { imageUrl: null } };
 export const WithImage: Story = { args: { imageUrl: LOGO } };
 
 export const Uploading: Story = { args: { imageUrl: LOGO, busy: true } };
+
+/** A new member's photo, picked but not uploaded until Save. */
+export const PhotoChosen: Story = { args: { label: 'Photo', alt: '', imageUrl: null, chosen: 'jammy.png' } };

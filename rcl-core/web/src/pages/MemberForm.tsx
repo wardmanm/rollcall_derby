@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Alert, Button, Checkbox, Group, Modal, Stack, TagsInput, Text, TextInput } from '@mantine/core';
+import { Alert, Button, Checkbox, Group, Modal, Stack, TagsInput, TextInput } from '@mantine/core';
 import {
   BENCH_ROLES,
   CreateMemberRequestSchema,
@@ -108,6 +108,8 @@ export function MemberForm({ team, kind, member, onClose }: MemberFormProps) {
     void save(another);
   };
 
+  // Busy until a save is done, a new member's photo included, so a second click can't add them twice.
+  const saving = adding.isLoading || updating.isLoading || uploading.isLoading;
   const title = member ? `Edit ${member.name}` : kind === 'skater' ? 'Add skater' : 'Add bench staff';
   return (
     <Modal opened onClose={onClose} title={title}>
@@ -150,7 +152,6 @@ export function MemberForm({ team, kind, member, onClose }: MemberFormProps) {
             description="Up to 3, such as Lineup manager. Press Enter after each."
             value={customRoles}
             onChange={setCustomRoles}
-            maxTags={3}
             error={errors.customRoles}
           />
           {current ? (
@@ -163,10 +164,14 @@ export function MemberForm({ team, kind, member, onClose }: MemberFormProps) {
               onRemove={() => void changePhoto(removePhoto({ id: team.id, memberId: current.id }))}
             />
           ) : (
-            <Stack gap={4}>
-              <ImagePicker label="Photo" imageUrl={null} alt="" onPick={setPendingPhoto} />
-              {photo && <Text size="sm">{photo.name} will be uploaded when you save.</Text>}
-            </Stack>
+            <ImagePicker
+              label="Photo"
+              imageUrl={null}
+              alt=""
+              chosen={photo?.name}
+              onPick={setPendingPhoto}
+              onRemove={() => setPendingPhoto(null)}
+            />
           )}
           {problem && <Alert color="red">{problem}</Alert>}
           <Group justify="flex-end">
@@ -174,11 +179,11 @@ export function MemberForm({ team, kind, member, onClose }: MemberFormProps) {
               Cancel
             </Button>
             {!member && (
-              <Button variant="default" onClick={(event) => submit(event, true)} loading={adding.isLoading}>
+              <Button variant="default" onClick={(event) => submit(event, true)} loading={saving}>
                 Save and add another
               </Button>
             )}
-            <Button type="submit" loading={adding.isLoading || updating.isLoading}>
+            <Button type="submit" loading={saving}>
               Save
             </Button>
           </Group>

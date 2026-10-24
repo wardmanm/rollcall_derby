@@ -22,6 +22,7 @@ import {
   deleteTeam,
   findMember,
   findTeam,
+  findTeamRow,
   listTeams,
   memberConflict,
   updateMember,
@@ -130,7 +131,7 @@ export function registerTeamRoutes(fastify: FastifyInstance, { db, mediaDir }: {
     },
     async (request, reply) => {
       const { id } = request.params;
-      if (!findTeam(db, id)) return reply.code(404).send(NOT_FOUND);
+      if (!findTeamRow(db, id)) return reply.code(404).send(NOT_FOUND);
       const conflict = memberConflict(db, id, request.body);
       if (conflict) return reply.code(conflict.status).send({ error: conflict.error, message: conflict.message });
       return reply.code(201).send(addMember(db, id, request.body));

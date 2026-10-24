@@ -102,11 +102,32 @@ describe('the Team page', () => {
     fireEvent.change(screen.getByLabelText('League'), { target: { value: '  ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save details' }));
     expect(await screen.findByText('Saved.')).toBeTruthy();
-    expect(requests).toContainEqual({
-      method: 'PATCH',
-      path: '/api/core/teams/t1',
-      body: { name: 'All Stars', leagueName: null, shortName: 'RCR', primaryColor: '#aa0000', secondaryColor: null },
+    expect(requests).toContainEqual({ method: 'PATCH', path: '/api/core/teams/t1', body: { leagueName: null } });
+  });
+
+  it('shows the details as saved, and a colleague\u2019s change to a field you didn\u2019t touch', async () => {
+    let current = TEAM;
+    await openTeam(PRODUCER, {
+      'GET /api/core/teams/t1': () => Response.json(current),
+      'PATCH /api/core/teams/t1': () => {
+        current = { ...current, name: 'Rose City All Stars' };
+        return Response.json(current);
+      },
+      'POST /api/core/teams/t1/members': () => {
+        // Meanwhile, a colleague changed the short name.
+        current = { ...withMember('Blocky', '12'), name: current.name, shortName: 'RCAS' };
+        return Response.json(current, { status: 201 });
+      },
     });
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: '  Rose City All Stars  ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save details' }));
+    await vi.waitFor(() => expect(screen.getByLabelText<HTMLInputElement>('Name').value).toBe('Rose City All Stars'));
+    fireEvent.click(screen.getByRole('button', { name: 'Add skater' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Add skater' });
+    fireEvent.change(within(dialog).getByLabelText('Name'), { target: { value: 'Blocky' } });
+    fireEvent.change(within(dialog).getByLabelText(/^Number/), { target: { value: '12' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await vi.waitFor(() => expect(screen.getByLabelText<HTMLInputElement>('Short name').value).toBe('RCAS'));
   });
 
   it('says so when someone else deleted the team in the meantime', async () => {
@@ -179,7 +200,7 @@ describe('the Team page', () => {
     fireEvent.change(within(dialog).getByLabelText('Name'), { target: { value: 'Blocky' } });
     fireEvent.change(within(dialog).getByLabelText(/^Number/), { target: { value: '12' } });
     pickFile(fileInput(dialog), png('blocky.png'));
-    expect(await within(dialog).findByText('blocky.png will be uploaded when you save.')).toBeTruthy();
+    expect(await within(dialog).findByText('blocky.png chosen. It\u2019s uploaded when you save.')).toBeTruthy();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
     await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(requests.map((r) => `${r.method} ${r.path}`)).toEqual(
@@ -206,6 +227,62 @@ describe('the Team page', () => {
     await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     const photos = requests.filter((r) => r.method === 'PUT').map((r) => r.path);
     expect(photos).toEqual(['/api/core/teams/t1/members/new-21/photo']);
+  });
+
+  it('keeps both save buttons busy while a new skater\u2019s photo uploads', async () => {
+    let finish: (() => void) | undefined;
+    await openTeam(PRODUCER, {
+      'POST /api/core/teams/t1/members': json(withMember('Blocky', '12'), 201),
+      'PUT /api/core/teams/t1/members/new-12/photo': () =>
+        new Promise<Response>((resolve) => {
+          finish = () => resolve(Response.json(withMember('Blocky', '12')));
+        }),
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add skater' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Add skater' });
+    fireEvent.change(within(dialog).getByLabelText('Name'), { target: { value: 'Blocky' } });
+    fireEvent.change(within(dialog).getByLabelText(/^Number/), { target: { value: '12' } });
+    pickFile(fileInput(dialog), png('blocky.png'));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await vi.waitFor(() => expect(finish).toBeDefined());
+    for (const name of ['Save', 'Save and add another']) {
+      expect(within(dialog).getByRole<HTMLButtonElement>('button', { name }).disabled, name).toBe(true);
+    }
+    finish?.();
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('lets you change or remove a photo chosen for a new skater, before saving', async () => {
+    const { requests } = await openTeam(PRODUCER, {
+      'POST /api/core/teams/t1/members': json(withMember('Blocky', '12'), 201),
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add skater' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Add skater' });
+    fireEvent.change(within(dialog).getByLabelText('Name'), { target: { value: 'Blocky' } });
+    fireEvent.change(within(dialog).getByLabelText(/^Number/), { target: { value: '12' } });
+    pickFile(fileInput(dialog), png('blocky.png'));
+    expect(await within(dialog).findByText('blocky.png chosen. It\u2019s uploaded when you save.')).toBeTruthy();
+    expect(within(dialog).getByRole('button', { name: 'Change photo' })).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Remove photo' }));
+    expect(within(dialog).queryByText(/blocky\.png chosen/)).toBeNull();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(requests.filter((r) => r.method === 'PUT')).toEqual([]);
+  });
+
+  it('says a member can have at most 3 custom roles, rather than dropping the fourth', async () => {
+    const { requests } = await openTeam();
+    await chooseFor('Jammy', 'Edit');
+    const dialog = await screen.findByRole('dialog', { name: 'Edit Jammy' });
+    const custom = within(dialog).getByLabelText(/^Custom roles/);
+    for (const role of ['Lineups', 'Hype', 'Snacks']) {
+      custom.focus();
+      fireEvent.change(custom, { target: { value: role } });
+      fireEvent.blur(custom);
+    }
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    expect(await within(dialog).findByText('Use at most 3 custom roles')).toBeTruthy();
+    expect(requests.filter((r) => r.method === 'PATCH')).toEqual([]);
   });
 
   it("edits a member's roles", async () => {
