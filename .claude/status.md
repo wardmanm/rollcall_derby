@@ -2,9 +2,10 @@
 Updated: 2026-10-24 · Branch: main
 
 ## Current focus
-The Theme Builder (#20, rcl-producer) and its font library (#19, rcl-core): design agreed in sections; the written spec is with Mike for review.
+The Theme Builder (#20, rcl-producer) and its font library (#19, rcl-core): the spec is approved; the implementation plan is being written.
 
 ## Recent changes
+- 2026-10-24: Theme Builder spec approved. Decided: the font library (#19) stays in `rcl-core v0.2.0`, released with the Team Builder.
 - 2026-10-24: Theme Builder design agreed: a font library in rcl-core (bundled open-licence fonts plus uploads), themes in rcl-producer with a fixed token set plus extra colors, a live preview, and one default theme the OBS overlay uses live. Issues #19 and #20; #19 joins `rcl-core v0.2.0`, #20 a new `rcl-producer v0.3.0`.
 - 2026-10-24: Decided: build the Theme Builder next.
 - 2026-10-24: Fixed #18, the Team Builder polish: no double adds while a photo uploads, a clear limit on custom roles, a details form that keeps colleagues' changes, a changeable chosen photo, readable colors.
@@ -20,11 +21,9 @@ The Theme Builder (#20, rcl-producer) and its font library (#19, rcl-core): desi
 - 2026-10-23: Decided: build the Team Builder with the Native method (Claude implements every task, then one fresh review).
 - 2026-10-23: Team Builder spec approved. Implementation plan written (6 tasks), built and checked on a throwaway branch first.
 - 2026-10-23: Team Builder design agreed: the editor only (CRG and file import later), with team fields, members with fixed and custom roles, pronouns, and photos and logos stored as uploaded in a small media store. Announcers can view. Issue #17 and milestone `rcl-core v0.2.0` created.
-- 2026-10-21: Filed the deferred code-review findings as issues #12–#16, and added a note to #9.
 
 ## Pending decisions
-- **Approve the Theme Builder spec** (raised 2026-10-24), `design-docs/specs/2026-10-24-theme-builder-design.md`, not yet committed (it's committed with the plan). Options: approve / request changes. Blocks: the implementation plan.
-- **Which core release gets the font library** (raised 2026-10-24). Claude put #19 in `rcl-core v0.2.0` (with the Team Builder), as it recommended; Mike's "yes" didn't say. Options: keep it there / move it to a new `rcl-core v0.3.0` and release the Team Builder sooner. Blocks: the next rcl-core release.
+- None.
 
 ## Loose ends
 - Issues #12–#16: small fixes from earlier code reviews, not yet scheduled. None blocks a release.
