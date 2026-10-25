@@ -6,6 +6,15 @@ rcl-producer runs on rcl-core, Rollcall's server, which has [its own changelog](
 
 ## [Unreleased]
 
+### Added
+
+- Theme Builder: Admins create themes with colors, fonts from rcl-core's font library, sizes, corner radius, border width and extra colors, with a live preview of every change. Producers can view themes (#20)
+- The default theme styles the OBS overlay, which changes at once, with no reload, whenever the default theme is saved or another is chosen (#20)
+
+### Changed
+
+- The overlay's theme variables are renamed and extended, for example `--theme-font-family` is now `--theme-font-body` (#20)
+
 ## [0.2.0] - 2026-10-19
 
 ### Added

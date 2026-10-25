@@ -183,3 +183,42 @@ test('an Announcer can look at a team, but not change it', async ({ page }) => {
     await expect(page.getByRole('button', { name })).toHaveCount(0);
   }
 });
+
+// Themes (theme-builder R1–R5), on the accounts made above.
+test('an Admin makes a theme the default, and the open OBS overlay follows each save with fonts from the server', async ({
+  page,
+  context,
+}) => {
+  const overlay = await context.newPage();
+  await overlay.goto('/producer/overlay');
+  await expect(overlay.getByText(/^v\d+\.\d+\.\d+$/)).toBeVisible();
+  const accent = () =>
+    overlay
+      .locator('[data-theme-scope]')
+      .evaluate((scope) => getComputedStyle(scope).getPropertyValue('--theme-color-accent').trim());
+  const oswaldLoads = overlay.waitForResponse((response) => response.url().endsWith('/fonts/oswald/oswald.ttf'));
+
+  await page.goto('/producer/themes');
+  await signIn(page, ADMIN);
+  await page.getByLabel('New theme').fill('Derby Night');
+  await page.getByRole('button', { name: 'Create theme' }).click();
+  await expect(page.getByRole('heading', { name: 'Derby Night' })).toBeVisible();
+  await page.getByLabel('Accent', { exact: true }).fill('#ffd700');
+  await page.getByLabel('Heading font').selectOption('Oswald');
+  const saved = page.waitForResponse((response) => response.request().method() === 'PATCH');
+  await page.getByRole('button', { name: 'Save theme' }).click();
+  expect((await saved).status()).toBe(200);
+
+  await page.getByRole('link', { name: 'Themes' }).click();
+  await page.getByRole('button', { name: 'Actions for Derby Night' }).click();
+  await page.getByRole('menuitem', { name: 'Make default' }).click();
+  await expect(page.getByRole('row', { name: /Derby Night/ })).toContainText('Default');
+  await expect.poll(accent).toBe('#ffd700');
+  const font = await oswaldLoads;
+  expect([font.status(), font.headers()['content-type']]).toEqual([200, 'font/ttf']);
+
+  await page.getByRole('link', { name: 'Derby Night' }).click();
+  await page.getByLabel('Accent', { exact: true }).fill('#00c853');
+  await page.getByRole('button', { name: 'Save theme' }).click();
+  await expect.poll(accent).toBe('#00c853');
+});

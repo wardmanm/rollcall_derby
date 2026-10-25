@@ -19,3 +19,5 @@ A suite of apps for producing roller derby streams in [OBS Studio](https://obspr
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+The fonts bundled in `rcl-core/server/fonts/` (Inter, Roboto Condensed, Barlow Condensed, Oswald, Bebas Neue and Anton) are under the SIL Open Font License 1.1, which is next to each one.

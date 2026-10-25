@@ -44,7 +44,7 @@ These workspaces are planned in [ADR-0017](../decisions/0017-rcl-app-workspace-l
 
 | Workspace | Responsibility |
 |---|---|
-| `rcl-core/server` | The one server process: hosts every rcl app as a module ([ADR-0019](../decisions/0019-rcl-apps-as-modules.md)), plus core's own REST API, Socket.IO hub, accounts and access checks, SQLite, media storage, one connection per OBS and CRG instance, automation engine and live state |
+| `rcl-core/server` | The one server process: hosts every rcl app as a module ([ADR-0019](../decisions/0019-rcl-apps-as-modules.md)), plus core's own REST API, Socket.IO hub, accounts and access checks, SQLite, media storage, the font library (bundled fonts at `/fonts/<family>/<file>`), one connection per OBS and CRG instance, automation engine and live state |
 | `rcl-core/web` | React SPA for rcl-core's admin GUI: setup, sign-in, users and the data editors, served at `/core/` |
 | `rcl-core/contract` | Zod schemas and TypeScript types for core's API, socket messages and import/export formats, used by server and web |
 | `rcl-producer/server` | The Producer app's module: its routes, namespaces (such as the overlay's `/producer/overlay`) and tables, hosted by rcl-core |
@@ -71,7 +71,7 @@ These workspaces are planned in [ADR-0017](../decisions/0017-rcl-app-workspace-l
 3. Outputs, dashboard previews and the builder canvas all render with the same presentational overlay components, so every view matches what's on air ([ADR-0006](../decisions/0006-one-overlay-renderer-css-variable-theming.md)).
 4. When an output reloads, whether OBS restarted it or it was hidden and shown again, it rebuilds its entire state from the server.
 
-**Socket.IO namespaces.** Each rcl app has its own namespaces, at or below `/<id>`, and each one declares who may join, as each API route does ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)). The OBS overlay's `/producer/overlay` is public, so OBS outputs need no login until output token URLs arrive. Signed-in namespaces, such as Live Mode's dashboards, check the session cookie when a client connects. The bare `/` namespace refuses everyone.
+**Socket.IO namespaces.** Each rcl app has its own namespaces, at or below `/<id>`, and each one declares who may join, as each API route does ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)). The OBS overlay's `/producer/overlay` is public, so OBS outputs need no login until output token URLs arrive. It sends each overlay the [default theme](../product/glossary.md#default-theme) when it connects, and again whenever that theme changes. Signed-in namespaces, such as Live Mode's dashboards, check the session cookie when a client connects. The bare `/` namespace refuses everyone.
 
 ## Key decisions
 
