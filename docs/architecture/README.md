@@ -50,7 +50,7 @@ These workspaces are planned in [ADR-0017](../decisions/0017-rcl-app-workspace-l
 | `rcl-producer/server` | The Producer app's module: its routes, namespaces (such as the overlay's `/producer/overlay`) and tables, hosted by rcl-core |
 | `rcl-producer/contract` | Zod schemas and types for the Producer app's API and socket messages |
 | `rcl-producer/web` | React SPA for the builders, Live Mode and dashboards, served at `/producer/`. A separate lightweight **overlay entry** at `/producer/overlay` renders outputs for OBS |
-| `packages/app-sdk` | The types an app module is written against: `AppModule`, `AppContext`, `Access` and permissions |
+| `packages/app-sdk` | The types an app module is written against: `AppModule`, `AppContext` with core's read-only data services ([ADR-0023](../decisions/0023-core-data-services-for-apps.md)), `Access` and permissions |
 | `packages/web-sdk` | Code every app's Mantine GUI shares: the app shell, the sign-in gate that sends people to rcl-core's sign-in page and back, the account menu, the server badge, the RTK Query base API and store, and the dev proxy. Overlay entries never use it |
 
 ## How data flows
@@ -85,6 +85,7 @@ Summaries only. The ADRs are canonical.
 - [ADR-0018](../decisions/0018-declared-access-and-permissions.md): Server-side sessions; every route and namespace declares its access, checked by permission; a public overlay until output token URLs arrive.
 - [ADR-0020](../decisions/0020-api-keys.md): API keys for devices and scripts, with their own permissions and never people-only ones; the `Authorization` header beats the cookie.
 - [ADR-0022](../decisions/0022-public-media.md): Uploaded images are files in the data folder, served to anyone at unguessable `/media/<id>` addresses, so OBS overlays can show them.
+- [ADR-0023](../decisions/0023-core-data-services-for-apps.md): rcl-core shares its data with apps through read-only services on `AppContext`, fonts first; apps never read core's tables.
 
 ## More
 

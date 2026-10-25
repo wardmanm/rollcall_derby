@@ -5,6 +5,7 @@ import { satisfies, validRange } from 'semver';
 import type { AppContext, AppModule } from '@rollcall/app-sdk';
 import { createPermissions, type Permissions } from './auth/access.ts';
 import type { AppDatabase } from './db.ts';
+import { listFonts } from './fonts/fonts.ts';
 import type { WebApp } from './web-apps.ts';
 
 /** The rcl apps this server hosts, after their startup checks (ADR-0019). */
@@ -81,14 +82,22 @@ export function hostApps({
     }
     modules.push(app);
   }
+  // One context per app, made the first time it's asked for, so its register() and realtime() get the same object.
+  const contexts = new Map<string, AppContext>();
+  const newContext = (module: AppModule): AppContext => ({
+    log: log.child({ app: module.id }),
+    coreVersion,
+    db: (schema) => drizzle(db.$client, { schema }),
+    fonts: { list: () => listFonts(db) },
+  });
   return {
     modules,
     permissions: createPermissions(modules.flatMap((module) => module.permissions)),
     webApps: modules.flatMap((module) => (module.web ? [{ base: `/${module.id}/`, ...module.web }] : [])),
-    contextFor: (module) => ({
-      log: log.child({ app: module.id }),
-      coreVersion,
-      db: (schema) => drizzle(db.$client, { schema }),
-    }),
+    contextFor: (module) => {
+      const ctx = contexts.get(module.id) ?? newContext(module);
+      contexts.set(module.id, ctx);
+      return ctx;
+    },
   };
 }

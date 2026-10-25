@@ -1,7 +1,7 @@
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import type { Namespace } from 'socket.io';
-import type { Role } from '@rollcall/core-contract';
+import type { FontFamily, Role } from '@rollcall/core-contract';
 
 // What an rcl app gives rcl-core to be hosted, and what core gives it back (ADR-0019). Types only: core does the
 // hosting. Apps' servers depend on this package and on contracts, never on rcl-core's server.
@@ -48,7 +48,17 @@ export interface Realtime {
   namespace(name: `/${string}`, options: { access: Access }): Namespace;
 }
 
-/** What core gives each app while hosting it. Core data services (teams, players, logos), CRG and OBS come later. */
+/** The font library (docs/features/theme-builder.md). Read-only: fonts change through core's own routes. */
+export interface FontsService {
+  /** Every family as it is now, bundled first, then uploaded ones by name: the same list as `GET /api/core/fonts`. */
+  list(): FontFamily[];
+}
+
+/**
+ * What core gives each app while hosting it: one object per app, passed to both `register()` and `realtime()`, so an
+ * app can share state between them through it. Core's data comes through read-only services, fonts first (ADR-0023).
+ * Teams, CRG and OBS come later.
+ */
 export interface AppContext {
   /** Core's logger, labelled with the app's id. */
   log: FastifyBaseLogger;
@@ -56,6 +66,7 @@ export interface AppContext {
   coreVersion: string;
   /** The shared SQLite connection, typed with the app's own schema. Its tables are named `<id>_…`. */
   db<S extends Record<string, unknown>>(schema: S): BetterSQLite3Database<S>;
+  fonts: FontsService;
 }
 
 /** An rcl app, as rcl-core hosts it (split spec). */

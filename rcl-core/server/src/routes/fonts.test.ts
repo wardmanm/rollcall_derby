@@ -1,5 +1,6 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { afterEach, describe, expect, it } from 'vitest';
+import type { AppContext, AppModule } from '@rollcall/app-sdk';
 import { type FontFamily, FontFamilySchema, MAX_FONT_BYTES, type Role } from '@rollcall/core-contract';
 import { SESSION_COOKIE } from '../auth/guard.ts';
 import { createSession } from '../auth/sessions.ts';
@@ -12,8 +13,8 @@ afterEach(async () => {
 });
 
 // An app with `role` signed in, and ways to upload, remove and list fonts as them.
-async function as(role: Role = 'admin') {
-  const { app, db, mediaDir } = testApp();
+async function as(role: Role = 'admin', options: Parameters<typeof testApp>[0] = {}) {
+  const { app, db, mediaDir } = testApp(options);
   opened.push(app);
   const user = await addUser(db, `${role}1`, 'correct horse', role);
   const cookies = { [SESSION_COOKIE]: createSession(db, user.id).token };
@@ -158,5 +159,25 @@ describe('who may do what', () => {
       });
       expect((await remove('anything')).json(), role).toEqual({ error: 'forbidden' });
     }
+  });
+});
+
+describe('fonts for apps', () => {
+  it('gives an app module the same list as GET /fonts, as it is now', async () => {
+    let fonts: AppContext['fonts'] | undefined;
+    const demo: AppModule = {
+      id: 'demo',
+      title: 'Demo',
+      version: '1.0.0',
+      requiresCore: '*',
+      permissions: [],
+      register: (_api, ctx) => {
+        fonts = ctx.fonts;
+      },
+    };
+    const { upload, list } = await as('admin', { apps: [demo] });
+    await upload('family=Rollerball&weight=700', FONTS.woff2);
+    expect(uploaded(fonts?.list() ?? [])).toHaveLength(1);
+    expect(fonts?.list()).toEqual(await list());
   });
 });

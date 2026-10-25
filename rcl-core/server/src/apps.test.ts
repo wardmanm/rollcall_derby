@@ -112,6 +112,15 @@ describe('hostApps', () => {
   });
 });
 
+describe("an app's context", () => {
+  it('is one object per app, so its register() and realtime() can share state through it', () => {
+    const demo = app();
+    const { hosted } = host([demo]);
+    expect(hosted.contextFor(demo)).toBe(hosted.contextFor(demo));
+    expect(hosted.contextFor(demo)).not.toBe(hosted.contextFor(core));
+  });
+});
+
 describe("an app's tables", () => {
   it('are found, so a test can check they are named after the app', () => {
     const folder = migrations('CREATE TABLE `things` (`id` text PRIMARY KEY NOT NULL);');
