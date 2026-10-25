@@ -6,6 +6,8 @@ rcl-producer runs on rcl-core, Rollcall's server, which has [its own changelog](
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-25
+
 ### Added
 
 - Theme Builder: Admins create themes with colors, fonts from rcl-core's font library, sizes, corner radius, border width and extra colors, with a live preview of every change. Producers can view themes (#20)
@@ -14,6 +16,7 @@ rcl-producer runs on rcl-core, Rollcall's server, which has [its own changelog](
 ### Changed
 
 - The overlay's theme variables are renamed and extended, for example `--theme-font-family` is now `--theme-font-body` (#20)
+- Needs rcl-core 0.2.0 or later, for its font library: upgrade rcl-core first (#20)
 
 ## [0.2.0] - 2026-10-19
 
@@ -41,6 +44,7 @@ rcl-producer runs on rcl-core, Rollcall's server, which has [its own changelog](
 - Server with a health endpoint, and a web app shell that shows whether the server is reachable (wardmanm/GROBS#6, wardmanm/GROBS#8)
 - OBS overlay page at `/overlay`: transparent, fed live by the server, and reconnects on its own after a server restart (wardmanm/GROBS#9)
 
-[Unreleased]: https://github.com/wardmanm/rollcall_derby/compare/rcl-producer-v0.2.0...HEAD
+[Unreleased]: https://github.com/wardmanm/rollcall_derby/compare/rcl-producer-v0.3.0...HEAD
+[0.3.0]: https://github.com/wardmanm/rollcall_derby/releases/tag/rcl-producer-v0.3.0
 [0.2.0]: https://github.com/wardmanm/rollcall_derby/releases/tag/rcl-producer-v0.2.0
 [0.1.0]: https://github.com/wardmanm/GROBS/releases/tag/obs-producer-v0.1.0
