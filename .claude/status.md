@@ -1,8 +1,8 @@
 # Status: Rollcall
-Updated: 2026-10-25 · Branch: release/rcl-core-v0.2.0
+Updated: 2026-10-25 · Branch: main
 
 ## Current focus
-Releasing: rcl-core v0.2.0 is prepared on `release/rcl-core-v0.2.0`, waiting for Mike to merge it and run the release workflow. rcl-producer v0.3.0 follows once core 0.2.0 is published.
+Releasing: rcl-core v0.2.0 is prepared and on main, waiting for Mike to run the release workflow. rcl-producer v0.3.0 follows once core 0.2.0 is published.
 
 ## Recent changes
 - 2026-10-25: Decided: release rcl-core v0.2.0, then rcl-producer v0.3.0. rcl-core 0.2.0 prepared; the Producer app now requires rcl-core ^0.2.0.
