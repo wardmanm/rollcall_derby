@@ -1,8 +1,8 @@
 # Status: Rollcall
-Updated: 2026-10-25 · Branch: release/rcl-producer-v0.3.0
+Updated: 2026-10-25 · Branch: main
 
 ## Current focus
-Releasing: rcl-producer v0.3.0 is prepared on `release/rcl-producer-v0.3.0`, waiting for Mike to merge it and run the release workflow.
+Releasing: rcl-producer v0.3.0 is prepared and on main, waiting for Mike to run the release workflow.
 
 ## Recent changes
 - 2026-10-25: Released rcl-core v0.2.0 (Team Builder, font library). rcl-producer v0.3.0 prepared; its notes say it needs rcl-core 0.2.0.
