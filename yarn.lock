@@ -1848,6 +1848,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@rollcall/producer-contract@workspace:rcl-producer/contract"
   dependencies:
+    "@rollcall/core-contract": "workspace:^"
     zod: "npm:^4.6.5"
   languageName: unknown
   linkType: soft
