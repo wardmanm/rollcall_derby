@@ -8,13 +8,14 @@ paths:
 - **Never import Mantine, `@rollcall/web-sdk` or the Producer app's own code** (`src/pages`, `src/routes.tsx`, `src/main.tsx`). `src/overlay/bundle.test.ts` fails if a Mantine or web SDK module reaches the overlay bundle.
 - **Overlay components** (`src/overlay/components/`) are presentational:
   - Data comes in through props.
-  - Styling uses CSS modules and theme custom properties (`--theme-*`) only, never hard-coded colors or fonts.
+  - Styling uses CSS modules and theme custom properties (`--theme-*`) only, never hard-coded colors or fonts. The variables are the token table in `docs/features/theme-builder.md`; `theme-defaults.css` sets the built-in look (`DEFAULT_TOKENS`, kept in step by `theme-defaults.test.ts`).
   - Fonts are local only (hard rule 4).
   - Get a story next to them, in the overlay Storybook, which never loads Mantine (ADR-0015).
 - **Live state** comes only from Socket.IO, the `/producer/overlay` namespace, into the RTK Query cache in `live.ts` (hard rule 6), and is validated with schemas from `@rollcall/producer-contract`.
   - A reload rebuilds state from the server.
   - A disconnect keeps the last state.
   - Render nothing until the server has spoken.
+- **Themes:** the default theme arrives as `theme:changed`. `ThemeScope` applies `themeToCss` (from `@rollcall/producer-contract`) to what's inside it, in the overlay and in the theme editor's preview alike, so the two can't differ. With no theme, `theme-defaults.css` shows through.
 - **`html` and `body` stay transparent.**
 - **The page is served at `/producer/overlay`** and everything below it, where output URLs will live (`rcl-core/server/src/web-apps.ts`).
 - **Docs:**

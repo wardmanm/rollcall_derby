@@ -1,7 +1,14 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 import { io } from 'socket.io-client';
-import { SERVER_HELLO_EVENT, ServerHelloSchema, type ServerHello } from '@rollcall/producer-contract';
+import {
+  SERVER_HELLO_EVENT,
+  ServerHelloSchema,
+  THEME_CHANGED_EVENT,
+  ThemeChangedSchema,
+  type ServerHello,
+  type ThemeChanged,
+} from '@rollcall/producer-contract';
 
 // The overlay's live state comes only from the server over Socket.IO (ADR-0019), held in the RTK Query
 // cache rather than a slice (hard rule 6, ADR-0003). A reload starts empty and rebuilds from what the
@@ -10,6 +17,8 @@ import { SERVER_HELLO_EVENT, ServerHelloSchema, type ServerHello } from '@rollca
 export interface LiveState {
   connected: boolean;
   server: ServerHello | null;
+  /** The default theme, or null for the built-in look. */
+  theme: ThemeChanged;
 }
 
 /** The part of a Socket.IO client the overlay uses; tests pass a fake. */
@@ -28,7 +37,7 @@ export const liveApi = createApi({
   baseQuery: fakeBaseQuery(),
   endpoints: (build) => ({
     getLiveState: build.query<LiveState, void>({
-      queryFn: () => ({ data: { connected: false, server: null } }),
+      queryFn: () => ({ data: { connected: false, server: null, theme: null } }),
       keepUnusedDataFor: 0,
       async onCacheEntryAdded(_arg, lifecycle) {
         await lifecycle.cacheDataLoaded;
@@ -39,6 +48,10 @@ export const liveApi = createApi({
         socket.on(SERVER_HELLO_EVENT, (payload) => {
           const hello = ServerHelloSchema.safeParse(payload);
           if (hello.success) lifecycle.updateCachedData((draft) => void (draft.server = hello.data));
+        });
+        socket.on(THEME_CHANGED_EVENT, (payload) => {
+          const theme = ThemeChangedSchema.safeParse(payload);
+          if (theme.success) lifecycle.updateCachedData((draft) => void (draft.theme = theme.data));
         });
         await lifecycle.cacheEntryRemoved;
         socket.close();

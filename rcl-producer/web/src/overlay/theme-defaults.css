@@ -1,10 +1,29 @@
-/* Default theme tokens until the Theme Builder supplies real themes. Overlay components use only these.
-   Fonts are local only: nothing may load from the internet (hard rule 4). */
+/* The built-in look: DEFAULT_TOKENS from @rollcall/producer-contract as plain CSS (theme-defaults.test.ts keeps the two
+   in step). The overlay shows it until a default theme arrives, and overlay stories show it as the "Default" theme.
+   Overlay components use only these variables. Fonts are local only: Inter is one of rcl-core's bundled fonts, never
+   loaded from the internet (hard rule 4). */
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter/inter.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --theme-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --theme-color-text: #ffffff;
-  --theme-color-surface: rgb(20 24 33 / 0.85);
+  --theme-color-text-muted: #ffffffcc;
+  --theme-color-surface: #141821d9;
+  --theme-color-surface-alt: #252b38d9;
   --theme-color-accent: #228be6;
+  --theme-color-on-accent: #ffffff;
+  --theme-color-border: #228be6;
+  --theme-font-heading: 'Inter', system-ui, sans-serif;
+  --theme-font-heading-weight: 700;
+  --theme-font-body: 'Inter', system-ui, sans-serif;
+  --theme-font-body-weight: 400;
+  --theme-font-size: 16px;
+  --theme-heading-transform: none;
   --theme-radius: 8px;
   --theme-border-width: 2px;
 }

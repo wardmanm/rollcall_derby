@@ -3,6 +3,7 @@ import { fontFaceRules, type FontFamily } from '@rollcall/core-contract';
 import {
   CreateThemeRequestSchema,
   DEFAULT_TOKENS,
+  familiesUsedBy,
   OverlayThemeSchema,
   SetDefaultThemeRequestSchema,
   ThemeSchema,
@@ -162,6 +163,18 @@ describe('theme requests and replies', () => {
       tokens: DEFAULT_TOKENS,
       families: [INTER],
     });
+  });
+});
+
+describe('familiesUsedBy', () => {
+  it('picks the heading and body families from the library, in its order, ignoring case', () => {
+    const used = tokens((draft) => {
+      draft.fonts.heading.family = 'rollerball';
+      draft.fonts.body.family = 'Oswald';
+    });
+    expect(familiesUsedBy(used, LIBRARY)).toEqual([OSWALD, ROLLERBALL]);
+    expect(familiesUsedBy(DEFAULT_TOKENS, LIBRARY)).toEqual([INTER]);
+    expect(familiesUsedBy(DEFAULT_TOKENS, [])).toEqual([]);
   });
 });
 

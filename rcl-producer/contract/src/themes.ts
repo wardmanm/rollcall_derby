@@ -135,6 +135,12 @@ const fontStack = (family: string) => `"${family}", system-ui, sans-serif`;
 // Browsers match family names regardless of case, so this does too. Names are ASCII letters, digits, spaces and dashes.
 const sameFamily = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 
+/** The families of `library` that the theme's heading and body use, in the library's order. */
+export function familiesUsedBy(tokens: ThemeTokens, library: readonly FontFamily[]): FontFamily[] {
+  const names = [tokens.fonts.heading.family, tokens.fonts.body.family];
+  return library.filter((family) => names.some((name) => sameFamily(name, family.name)));
+}
+
 /** The CSS for a theme: its variables, and `@font-face` rules for the families it uses that are in `families`. */
 export function themeToCss(tokens: ThemeTokens, families: readonly FontFamily[]): ThemeCss {
   const { colors, fonts, shape } = tokens;
@@ -156,8 +162,5 @@ export function themeToCss(tokens: ThemeTokens, families: readonly FontFamily[])
     '--theme-border-width': `${shape.borderWidth}px`,
   };
   for (const extra of tokens.extras) variables[`--theme-extra-${extra.name}`] = extra.color;
-  const used = families.filter((family) =>
-    [fonts.heading.family, fonts.body.family].some((name) => sameFamily(name, family.name)),
-  );
-  return { variables, fontFaces: fontFaceRules(used) };
+  return { variables, fontFaces: fontFaceRules(familiesUsedBy(tokens, families)) };
 }

@@ -2,18 +2,22 @@
 .card {
   display: inline-block;
   padding: 0.75em 1.25em;
-  font-family: var(--theme-font-family);
+  font-family: var(--theme-font-body);
+  font-size: var(--theme-font-size);
+  font-weight: var(--theme-font-body-weight);
   color: var(--theme-color-text);
   background: var(--theme-color-surface);
-  border: var(--theme-border-width) solid var(--theme-color-accent);
+  border: var(--theme-border-width) solid var(--theme-color-border);
   border-radius: var(--theme-radius);
 }
 
 .title {
+  font-family: var(--theme-font-heading);
   font-size: 1.5em;
-  font-weight: 700;
+  font-weight: var(--theme-font-heading-weight);
+  text-transform: var(--theme-heading-transform);
 }
 
 .subtitle {
-  opacity: 0.8;
+  color: var(--theme-color-text-muted);
 }

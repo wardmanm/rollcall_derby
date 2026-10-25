@@ -1,20 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { liveApi, makeOverlayStore, type LiveSocket } from './live.ts';
-
-class FakeSocket implements LiveSocket {
-  private handlers = new Map<string, ((...args: unknown[]) => void)[]>();
-  close = vi.fn<() => void>();
-  on(event: string, handler: (...args: unknown[]) => void) {
-    this.handlers.set(event, [...(this.handlers.get(event) ?? []), handler]);
-    return this;
-  }
-  emit(event: string, ...args: unknown[]) {
-    for (const handler of this.handlers.get(event) ?? []) handler(...args);
-  }
-  get listening() {
-    return this.handlers.size > 0;
-  }
-}
+import { DEFAULT_TOKENS } from '@rollcall/producer-contract';
+import { liveApi, makeOverlayStore } from './live.ts';
+import { FakeSocket } from './test-socket.ts';
 
 const hello = { name: 'Rollcall', version: '0.1.0' };
 
@@ -30,10 +17,10 @@ describe('overlay live state', () => {
   it('starts empty and fills in from the server hello', async () => {
     const socket = new FakeSocket();
     const { state } = await subscribe(socket);
-    expect(state()).toEqual({ connected: false, server: null });
+    expect(state()).toEqual({ connected: false, server: null, theme: null });
     socket.emit('connect');
     socket.emit('server:hello', hello);
-    expect(state()).toEqual({ connected: true, server: hello });
+    expect(state()).toEqual({ connected: true, server: hello, theme: null });
   });
 
   it('keeps the last known state when the connection drops', async () => {
@@ -42,14 +29,26 @@ describe('overlay live state', () => {
     socket.emit('connect');
     socket.emit('server:hello', hello);
     socket.emit('disconnect');
-    expect(state()).toEqual({ connected: false, server: hello });
+    expect(state()).toEqual({ connected: false, server: hello, theme: null });
+  });
+
+  it('keeps the default theme the server sends, and goes back to the built-in look on null', async () => {
+    const socket = new FakeSocket();
+    const { state } = await subscribe(socket);
+    const theme = { tokens: DEFAULT_TOKENS, families: [] };
+    socket.emit('theme:changed', theme);
+    expect(state()?.theme).toEqual(theme);
+    socket.emit('theme:changed', null);
+    expect(state()?.theme).toBeNull();
   });
 
   it('ignores messages that break the shared contract', async () => {
     const socket = new FakeSocket();
     const { state } = await subscribe(socket);
     socket.emit('server:hello', { name: 'Rollcall' });
+    socket.emit('theme:changed', { tokens: { colors: {} }, families: [] });
     expect(state()?.server).toBeNull();
+    expect(state()?.theme).toBeNull();
   });
 
   it('rebuilds everything from the server after a reload', async () => {

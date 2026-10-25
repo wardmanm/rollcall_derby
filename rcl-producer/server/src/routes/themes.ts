@@ -31,8 +31,12 @@ const NAME_TAKEN = { error: 'name_taken', message: 'That name is already taken' 
 const TAGS = ['producer/themes'];
 
 // Themes (docs/features/theme-builder.md): anyone holding producer:themes.read may look, and producer:themes.manage
-// may change them and choose the default.
-export function registerThemeRoutes(fastify: FastifyInstance, { db }: { db: ProducerDatabase }) {
+// may change them and choose the default. `onDefaultChanged` runs after each change to what the default theme is or
+// looks like, so the OBS overlay can follow it.
+export function registerThemeRoutes(
+  fastify: FastifyInstance,
+  { db, onDefaultChanged }: { db: ProducerDatabase; onDefaultChanged: () => void },
+) {
   const api = fastify.withTypeProvider<ZodTypeProvider>();
 
   api.get(
@@ -96,7 +100,10 @@ export function registerThemeRoutes(fastify: FastifyInstance, { db }: { db: Prod
       const { name } = request.body;
       if (!findTheme(db, id)) return reply.code(404).send(NOT_FOUND);
       if (name !== undefined && themeNameTaken(db, name, id)) return reply.code(409).send(NAME_TAKEN);
-      return updateTheme(db, id, request.body) ?? reply.code(404).send(NOT_FOUND);
+      const theme = updateTheme(db, id, request.body);
+      if (!theme) return reply.code(404).send(NOT_FOUND);
+      if (theme.isDefault) onDefaultChanged();
+      return theme;
     },
   );
 
@@ -129,7 +136,9 @@ export function registerThemeRoutes(fastify: FastifyInstance, { db }: { db: Prod
       },
     },
     async (request, reply) => {
-      if (!deleteTheme(db, request.params.id)) return reply.code(404).send(NOT_FOUND);
+      const theme = deleteTheme(db, request.params.id);
+      if (!theme) return reply.code(404).send(NOT_FOUND);
+      if (theme.isDefault) onDefaultChanged();
       return reply.code(204).send();
     },
   );
@@ -148,6 +157,7 @@ export function registerThemeRoutes(fastify: FastifyInstance, { db }: { db: Prod
     async (request, reply) => {
       const { themeId } = request.body;
       if (!setDefaultTheme(db, themeId)) return reply.code(404).send(NOT_FOUND);
+      onDefaultChanged();
       return { themeId };
     },
   );
