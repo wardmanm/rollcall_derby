@@ -2,10 +2,11 @@
 Updated: 2026-10-25 · Branch: main
 
 ## Current focus
-Releasing: rcl-producer v0.3.0 is prepared and on main, waiting for Mike to run the release workflow.
+rcl-core v0.2.0 and rcl-producer v0.3.0 are released. Nothing is in progress; the next piece of work is Mike's choice.
 
 ## Recent changes
-- 2026-10-25: Released rcl-core v0.2.0 (Team Builder, font library). rcl-producer v0.3.0 prepared; its notes say it needs rcl-core 0.2.0.
+- 2026-10-25: Released rcl-producer v0.3.0 (Theme Builder; needs rcl-core 0.2.0).
+- 2026-10-25: Released rcl-core v0.2.0 (Team Builder, font library).
 - 2026-10-25: Decided: release rcl-core v0.2.0, then rcl-producer v0.3.0. rcl-core 0.2.0 prepared; the Producer app now requires rcl-core ^0.2.0.
 - 2026-10-25: Merged #21, the Theme Builder polish: a colleague's change to another token survives your save, a failed font list is shown, the font picker matches families regardless of capitals, and two comments are corrected.
 - 2026-10-25: Decided: fix the five Theme Builder review follow-ups now; filed them as #21 (milestone `rcl-producer v0.3.0`).
@@ -27,7 +28,7 @@ Releasing: rcl-producer v0.3.0 is prepared and on main, waiting for Mike to run 
     - a new member's photo can't land on someone else's member.
 
 ## Pending decisions
-- None.
+- **What next?** (raised 2026-10-25). Options: Import/Export for teams and themes (last Phase 1 item) / Screen Builder and a team roster component (Phase 2) / a cleanup round of #12–#16. Blocks: the next piece of work.
 
 ## Loose ends
 - Issues #12–#16: small fixes from earlier code reviews, not yet scheduled. None blocks a release.
