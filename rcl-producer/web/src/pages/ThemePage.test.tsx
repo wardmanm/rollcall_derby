@@ -138,6 +138,59 @@ describe('the theme editor', () => {
     expect(within(scope()).getByText('Heading')).toBeTruthy();
   });
 
+  it('keeps a colleague’s change to a token you didn’t touch, and shows it after your save', async () => {
+    let current = THEME;
+    const { requests } = await openTheme(ADMIN, THEME, {
+      'GET /api/producer/themes/t1': () => Response.json(current),
+      'PATCH /api/producer/themes/t1': async (request: Request) => {
+        const { tokens } = (await request.json()) as { tokens: ThemeTokens };
+        current = { ...current, tokens, updatedAt: '2026-10-24T12:00:00.000Z' };
+        return Response.json(current);
+      },
+    });
+    // Meanwhile, a colleague saves a new border color.
+    current = {
+      ...withTokens((tokens) => void (tokens.colors.border = '#00c853')),
+      updatedAt: '2026-10-24T11:00:00.000Z',
+    };
+    fireEvent.change(screen.getByLabelText('Accent'), { target: { value: '#ffd700' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save theme' }));
+    await vi.waitFor(() => expect(patches(requests)).toHaveLength(1));
+    expect(patches(requests)[0]).toMatchObject({
+      body: { tokens: { colors: { accent: '#ffd700', border: '#00c853' } } },
+    });
+    await vi.waitFor(() => expect(screen.getByLabelText<HTMLInputElement>('Border').value).toBe('#00c853'));
+    expect(screen.getByLabelText<HTMLInputElement>('Accent').value).toBe('#ffd700');
+  });
+
+  it('sends your change to a token a colleague changed too: the last save wins', async () => {
+    let current = THEME;
+    const { requests } = await openTheme(ADMIN, THEME, {
+      'GET /api/producer/themes/t1': () => Response.json(current),
+      'PATCH /api/producer/themes/t1': () => Response.json(current),
+    });
+    current = withTokens((tokens) => void (tokens.colors.accent = '#111111'));
+    fireEvent.change(screen.getByLabelText('Accent'), { target: { value: '#ffd700' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save theme' }));
+    await vi.waitFor(() => expect(patches(requests)).toHaveLength(1));
+    expect(patches(requests)[0]).toMatchObject({ body: { tokens: { colors: { accent: '#ffd700' } } } });
+  });
+
+  it('says when the font library can’t be loaded', async () => {
+    await openTheme(ADMIN, THEME, { 'GET /api/core/fonts': json({ error: 'internal_error' }, 500) });
+    expect(await screen.findByText('Can’t load the font library')).toBeTruthy();
+    expect(screen.getByText('Something went wrong. Try again.')).toBeTruthy();
+  });
+
+  it('shows the library’s spelling of a family whose capitals differ', async () => {
+    await openTheme(
+      ADMIN,
+      withTokens((tokens) => void (tokens.fonts.heading.family = 'oswald')),
+    );
+    await vi.waitFor(() => expect(screen.getByLabelText<HTMLSelectElement>('Heading font').value).toBe('Oswald'));
+    expect(screen.queryByRole('option', { name: /missing/ })).toBeNull();
+  });
+
   it('says when the theme does not exist', async () => {
     signedIn(ADMIN, { 'GET /api/core/fonts': json(LIBRARY) });
     openProducer('/producer/themes/t1');

@@ -40,6 +40,11 @@ function ThemeView({ id, canManage }: { id: string; canManage: boolean }) {
         <Title order={2}>{theme.data.name}</Title>
         {theme.data.isDefault && <Badge variant="light">Default</Badge>}
       </Group>
+      {fonts.isError && (
+        <Alert color="red" title="Can’t load the font library">
+          {problemWith(fonts.error)}
+        </Alert>
+      )}
       {canManage ? (
         <ThemeEditor key={theme.data.id} theme={theme.data} families={fonts.data} />
       ) : (

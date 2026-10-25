@@ -28,6 +28,7 @@ const face = (id: string, file: string, weightMin: number, weightMax = weightMin
   style,
 });
 
+// Browsers and OBS keep a bundled file for a year (`immutable`), so a font file that changes needs a new file name.
 const BUNDLED: readonly { name: string; faces: readonly BundledFace[] }[] = [
   { name: 'Anton', faces: [face('bundled-anton', 'anton/anton.ttf', 400)] },
   {

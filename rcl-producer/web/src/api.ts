@@ -68,6 +68,7 @@ export const {
   useGetFontsQuery,
   useGetThemesQuery,
   useGetThemeQuery,
+  useLazyGetThemeQuery,
   useCreateThemeMutation,
   useUpdateThemeMutation,
   useDuplicateThemeMutation,

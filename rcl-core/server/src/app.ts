@@ -25,7 +25,7 @@ export interface AppOptions {
   version: string;
   logger?: boolean;
   db: AppDatabase;
-  /** Where uploaded images live: media/ in the data folder (ADR-0022). Created when the first one is saved. */
+  /** Where uploaded images and fonts live: media/ in the data folder (ADR-0022). Created when the first is saved. */
   mediaDir: string;
   /** rcl-core's own web build, served at /core/. */
   coreWebDir?: string;

@@ -96,8 +96,9 @@ export function sweepMedia(db: AppDatabase, dir: string): { files: number; rows:
   return { files: orphanFiles.length, rows: orphanRows.length };
 }
 
-// Serves images at /media/<id>, to anyone (ADR-0022). An id that isn't 32 hex characters never reaches the file system.
-// The replies can only ever be images: the type comes from the row, which saveMedia set from the file's own bytes.
+// Serves uploaded images and fonts at /media/<id>, to anyone (ADR-0022). An id that isn't 32 hex characters never
+// reaches the file system. A reply is only ever an image or a font: the type comes from the row, which saveMedia set
+// from the file's own bytes.
 export function serveMedia(app: FastifyInstance, { db, dir }: { db: AppDatabase; dir: string }): void {
   app.get<{ Params: { id: string } }>('/media/:id', async (request, reply) => {
     const { id } = request.params;

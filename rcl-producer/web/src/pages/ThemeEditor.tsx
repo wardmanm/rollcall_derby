@@ -22,7 +22,7 @@ import {
   type ThemeTokens,
 } from '@rollcall/producer-contract';
 import { pathErrors, problemWith } from '@rollcall/web-sdk';
-import { useUpdateThemeMutation } from '../api.ts';
+import { useLazyGetThemeQuery, useUpdateThemeMutation } from '../api.ts';
 import { ThemePreview } from './ThemePreview.tsx';
 
 type Colors = ThemeTokens['colors'];
@@ -46,6 +46,17 @@ const MISSING_FONT = 'This font isn’t in the font library, so the overlay uses
 const numberOf = (value: string | number) => (typeof value === 'number' ? value : Number.NaN);
 const sameFamily = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 
+// Your changes, by token: each one a change to make to the theme as it is now. Changing a token again replaces its
+// earlier change, and the extra colors count as one token.
+type Edits = Readonly<Record<string, (draft: ThemeTokens) => void>>;
+
+// `tokens` with `edits` made to a copy of them.
+function withEdits(tokens: ThemeTokens, edits: Edits): ThemeTokens {
+  const draft = structuredClone(tokens);
+  for (const edit of Object.values(edits)) edit(draft);
+  return draft;
+}
+
 // The first extra color name not already used: color-1, color-2 and so on.
 function newExtraName(extras: ThemeTokens['extras']): string {
   let n = 1;
@@ -55,43 +66,65 @@ function newExtraName(extras: ThemeTokens['extras']): string {
 
 // Editing a theme (docs/features/theme-builder.md): the form on the left, and on the right a live preview of every
 // change. Changes stay here until Save, which checks them against the contract first; Discard goes back to the saved
-// theme. The server checks again, and only holders of producer:themes.manage get this far.
+// theme. The form shows your changes on the theme as the server last sent it, and Save puts them on the theme as it is
+// then, so a colleague's change to anything you didn't touch is kept. The server checks again, and only holders of
+// producer:themes.manage get this far.
 export function ThemeEditor({ theme, families }: { theme: Theme; families: readonly FontFamily[] | undefined }) {
   const [updateTheme, { isLoading, error }] = useUpdateThemeMutation();
-  const [name, setName] = useState(theme.name);
-  const [tokens, setTokens] = useState<ThemeTokens>(theme.tokens);
+  const [loadTheme] = useLazyGetThemeQuery();
+  const [name, setName] = useState<string | undefined>(undefined);
+  const [edits, setEdits] = useState<Edits>({});
+  // The reply to your last save, until the theme is fetched again and catches up with it.
+  const [lastSaved, setLastSaved] = useState<Theme | undefined>(undefined);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const saved = lastSaved && lastSaved.updatedAt > theme.updatedAt ? lastSaved : theme;
+  const tokens = useMemo(() => withEdits(saved.tokens, edits), [saved.tokens, edits]);
   const css = useMemo(() => themeToCss(tokens, families ?? []), [tokens, families]);
 
-  // Changes a copy of the tokens, so the preview and form follow at once.
-  const change = (edit: (draft: ThemeTokens) => void) =>
-    setTokens((current) => {
-      const draft = structuredClone(current);
-      edit(draft);
-      return draft;
-    });
+  // Records your change to one token, so the preview and form follow at once.
+  const change = (token: string, edit: (draft: ThemeTokens) => void) =>
+    setEdits((current) => ({ ...current, [token]: edit }));
+  // The extra colors are one token: a change to them sets the whole list.
+  const changeExtras = (edit: (extras: ThemeTokens['extras']) => void) => {
+    const extras = structuredClone(tokens.extras);
+    edit(extras);
+    change('extras', (draft) => void (draft.extras = extras));
+  };
 
   const save = async (event: FormEvent) => {
     event.preventDefault();
-    const checked = UpdateThemeRequestSchema.safeParse({ name, tokens });
+    const checked = UpdateThemeRequestSchema.safeParse({ name: name ?? saved.name, tokens });
     setErrors(checked.success ? {} : pathErrors(checked.error));
     if (!checked.success) return;
-    const result = await updateTheme({ id: theme.id, changes: checked.data });
+    // Your changes go on the theme as it is now, so a colleague's save in the meantime isn't undone.
+    const latest = await loadTheme(theme.id);
+    const changes = UpdateThemeRequestSchema.safeParse({
+      ...(name === undefined ? {} : { name }),
+      tokens: withEdits((latest.data ?? saved).tokens, edits),
+    });
+    if (!changes.success) {
+      setErrors(pathErrors(changes.error));
+      return;
+    }
+    const result = await updateTheme({ id: theme.id, changes: changes.data });
     if (!result.data) return;
-    setName(result.data.name);
-    setTokens(result.data.tokens);
+    setLastSaved(result.data);
+    setEdits({});
+    setName(undefined);
   };
 
   const discard = () => {
-    setName(theme.name);
-    setTokens(theme.tokens);
+    setName(undefined);
+    setEdits({});
     setErrors({});
   };
 
-  // The library's families, plus the theme's own when it's missing from the library (once the library has loaded).
+  // The library's families, plus the theme's own when it's missing from the library (once the library has loaded). A
+  // family in the library shows with the library's spelling, since names match regardless of case.
   const familyField = (role: 'heading' | 'body', label: string) => {
     const current = tokens.fonts[role].family;
-    const missing = families !== undefined && !families.some((family) => sameFamily(family.name, current));
+    const inLibrary = families?.find((family) => sameFamily(family.name, current));
+    const missing = families !== undefined && !inLibrary;
     const options = (families ?? []).map((family) => ({ value: family.name, label: family.name }));
     if (missing || families === undefined)
       options.unshift({ value: current, label: missing ? `${current} (missing)` : current });
@@ -99,12 +132,12 @@ export function ThemeEditor({ theme, families }: { theme: Theme; families: reado
       <NativeSelect
         label={label}
         data={options}
-        value={current}
+        value={inLibrary?.name ?? current}
         description={missing ? MISSING_FONT : undefined}
         error={errors[`tokens.fonts.${role}.family`]}
         onChange={(event) => {
           const family = event.currentTarget.value;
-          change((draft) => void (draft.fonts[role].family = family));
+          change(`fonts.${role}.family`, (draft) => void (draft.fonts[role].family = family));
         }}
       />
     );
@@ -118,7 +151,7 @@ export function ThemeEditor({ theme, families }: { theme: Theme; families: reado
       error={errors[`tokens.fonts.${role}.weight`]}
       onChange={(event) => {
         const weight = Number(event.currentTarget.value);
-        change((draft) => void (draft.fonts[role].weight = weight));
+        change(`fonts.${role}.weight`, (draft) => void (draft.fonts[role].weight = weight));
       }}
     />
   );
@@ -132,7 +165,7 @@ export function ThemeEditor({ theme, families }: { theme: Theme; families: reado
           )}
           <TextInput
             label="Name"
-            value={name}
+            value={name ?? saved.name}
             onChange={(event) => setName(event.currentTarget.value)}
             error={errors.name}
           />
@@ -146,7 +179,7 @@ export function ThemeEditor({ theme, families }: { theme: Theme; families: reado
                 format="hexa"
                 value={tokens.colors[key]}
                 error={errors[`tokens.colors.${key}`]}
-                onChange={(color) => change((draft) => void (draft.colors[key] = color))}
+                onChange={(color) => change(`colors.${key}`, (draft) => void (draft.colors[key] = color))}
               />
             ))}
           </SimpleGrid>
@@ -163,7 +196,7 @@ export function ThemeEditor({ theme, families }: { theme: Theme; families: reado
               allowDecimal={false}
               value={Number.isNaN(tokens.fonts.size) ? '' : tokens.fonts.size}
               error={errors['tokens.fonts.size']}
-              onChange={(value) => change((draft) => void (draft.fonts.size = numberOf(value)))}
+              onChange={(value) => change('fonts.size', (draft) => void (draft.fonts.size = numberOf(value)))}
             />
             <NativeSelect
               label="Heading case"
@@ -171,7 +204,7 @@ export function ThemeEditor({ theme, families }: { theme: Theme; families: reado
               value={tokens.fonts.headingCase}
               onChange={(event) => {
                 const headingCase = event.currentTarget.value === 'uppercase' ? 'uppercase' : 'none';
-                change((draft) => void (draft.fonts.headingCase = headingCase));
+                change('fonts.headingCase', (draft) => void (draft.fonts.headingCase = headingCase));
               }}
             />
           </SimpleGrid>
@@ -184,7 +217,7 @@ export function ThemeEditor({ theme, families }: { theme: Theme; families: reado
               allowDecimal={false}
               value={Number.isNaN(tokens.shape.radius) ? '' : tokens.shape.radius}
               error={errors['tokens.shape.radius']}
-              onChange={(value) => change((draft) => void (draft.shape.radius = numberOf(value)))}
+              onChange={(value) => change('shape.radius', (draft) => void (draft.shape.radius = numberOf(value)))}
             />
             <NumberInput
               label="Border width"
@@ -192,7 +225,9 @@ export function ThemeEditor({ theme, families }: { theme: Theme; families: reado
               allowDecimal={false}
               value={Number.isNaN(tokens.shape.borderWidth) ? '' : tokens.shape.borderWidth}
               error={errors['tokens.shape.borderWidth']}
-              onChange={(value) => change((draft) => void (draft.shape.borderWidth = numberOf(value)))}
+              onChange={(value) =>
+                change('shape.borderWidth', (draft) => void (draft.shape.borderWidth = numberOf(value)))
+              }
             />
           </SimpleGrid>
 
@@ -207,7 +242,7 @@ export function ThemeEditor({ theme, families }: { theme: Theme; families: reado
                 error={errors[`tokens.extras.${index}.name`]}
                 onChange={(event) => {
                   const extraName = event.currentTarget.value;
-                  change((draft) => void (draft.extras[index]!.name = extraName));
+                  changeExtras((extras) => void (extras[index]!.name = extraName));
                 }}
               />
               <ColorInput
@@ -215,14 +250,14 @@ export function ThemeEditor({ theme, families }: { theme: Theme; families: reado
                 format="hexa"
                 value={extra.color}
                 error={errors[`tokens.extras.${index}.color`]}
-                onChange={(color) => change((draft) => void (draft.extras[index]!.color = color))}
+                onChange={(color) => changeExtras((extras) => void (extras[index]!.color = color))}
               />
               <ActionIcon
                 variant="subtle"
                 color="red"
                 mt={28}
                 aria-label={`Remove extra color ${index + 1}`}
-                onClick={() => change((draft) => void draft.extras.splice(index, 1))}
+                onClick={() => changeExtras((extras) => void extras.splice(index, 1))}
               >
                 ✕
               </ActionIcon>
@@ -238,7 +273,7 @@ export function ThemeEditor({ theme, families }: { theme: Theme; families: reado
               variant="default"
               disabled={tokens.extras.length >= MAX_EXTRA_COLORS}
               onClick={() =>
-                change((draft) => void draft.extras.push({ name: newExtraName(draft.extras), color: '#ffffff' }))
+                changeExtras((extras) => void extras.push({ name: newExtraName(extras), color: '#ffffff' }))
               }
             >
               Add color
