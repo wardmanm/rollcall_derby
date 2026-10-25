@@ -1,10 +1,12 @@
 # Status: Rollcall
-Updated: 2026-10-25 · Branch: main
+Updated: 2026-10-25 · Branch: fix/theme-builder-polish
 
 ## Current focus
-The Theme Builder (#20) and its font library (#19) are merged to main. Nothing is in progress; what comes next is Mike's choice.
+#21, the Theme Builder polish from its review, is fixed on `fix/theme-builder-polish`, waiting for Mike to choose how to merge.
 
 ## Recent changes
+- 2026-10-25: Fixed #21, the Theme Builder polish: a colleague's change to another token survives your save, a failed font list is shown, the font picker matches families regardless of capitals, and two comments are corrected.
+- 2026-10-25: Decided: fix the five Theme Builder review follow-ups now; filed them as #21 (milestone `rcl-producer v0.3.0`).
 - 2026-10-25: Merged the Theme Builder and font library (#19, #20). Admins upload fonts and make themes with a live preview; the default theme restyles the open OBS overlay at once. A fresh review found it ready to merge; one rule was added (a token change needs a migration for stored themes).
 - 2026-10-25: Decided: build the Theme Builder with the Native method (Claude implements every task, then one fresh review).
 - 2026-10-24: Theme Builder implementation plan written (9 tasks), built and checked on a throwaway branch first.
@@ -23,9 +25,8 @@ The Theme Builder (#20) and its font library (#19) are merged to main. Nothing i
     - a new member's photo can't land on someone else's member.
 
 ## Pending decisions
-- **What next?** (raised 2026-10-25). Options: file the Theme Builder review's follow-ups / release rcl-core v0.2.0 (Team Builder, font library) and rcl-producer v0.3.0 (Theme Builder) / start the next roadmap feature. Blocks: nothing.
+- **What next, after #21?** (raised 2026-10-25). Options: release rcl-core v0.2.0 (Team Builder, font library) and rcl-producer v0.3.0 (Theme Builder) / start the next roadmap feature. Blocks: nothing.
 
 ## Loose ends
 - Issues #12–#16: small fixes from earlier code reviews, not yet scheduled. None blocks a release.
-- Five small follow-ups from the Theme Builder review, not filed yet: a failed font list is hidden in the theme editor; last write wins between two Admins editing one theme; stale "images" comments on `/media`; bundled fonts need a new file name if one ever changes; the font picker shows the wrong option when a family's case differs.
 - Found while planning: team logo and photo uploads set a `Content-Type` header that RTK Query drops for file bodies. They work because browsers type PNG, JPEG and WebP files. Not filed yet.
