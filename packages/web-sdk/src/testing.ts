@@ -51,21 +51,30 @@ export const ADMIN: CurrentUser = {
   username: 'admin',
   role: 'admin',
   mustChangePassword: false,
-  permissions: ['core:users.manage', 'core:api-keys.manage', 'core:teams.read', 'core:teams.manage'],
+  permissions: [
+    'core:users.manage',
+    'core:api-keys.manage',
+    'core:teams.read',
+    'core:teams.manage',
+    'core:fonts.read',
+    'core:fonts.manage',
+    'producer:themes.read',
+    'producer:themes.manage',
+  ],
 };
 export const PRODUCER: CurrentUser = {
   id: 'u-producer',
   username: 'producer1',
   role: 'producer',
   mustChangePassword: false,
-  permissions: ['core:teams.read', 'core:teams.manage'],
+  permissions: ['core:teams.read', 'core:teams.manage', 'core:fonts.read', 'producer:themes.read'],
 };
 export const ANNOUNCER: CurrentUser = {
   id: 'u-announcer',
   username: 'announcer1',
   role: 'announcer',
   mustChangePassword: false,
-  permissions: ['core:teams.read'],
+  permissions: ['core:teams.read', 'core:fonts.read'],
 };
 
 /** The user as login, setup and password changes reply: without the permissions `me` adds. */

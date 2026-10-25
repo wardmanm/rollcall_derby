@@ -3,6 +3,7 @@ import { APP_NAME } from '@rollcall/core-contract';
 import { AppLayout, PageNotFound, SignInGate, type AppLink } from '@rollcall/web-sdk';
 import { ApiKeysPage } from './pages/ApiKeysPage.tsx';
 import { ChangePasswordPage } from './pages/ChangePasswordPage.tsx';
+import { FontsPage } from './pages/FontsPage.tsx';
 import { HomePage } from './pages/HomePage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { SetupPage } from './pages/SetupPage.tsx';
@@ -15,6 +16,7 @@ import { UsersPage } from './pages/UsersPage.tsx';
 // Each is shown only to people holding its permission; the server checks every request anyway (hard rule 5).
 const LINKS: readonly AppLink[] = [
   { label: 'Teams', to: '/teams', permission: 'core:teams.read' },
+  { label: 'Fonts', to: '/fonts', permission: 'core:fonts.read' },
   { label: 'Users', to: '/users', permission: 'core:users.manage' },
   { label: 'API keys', to: '/api-keys', permission: 'core:api-keys.manage' },
 ];
@@ -31,6 +33,7 @@ export const routes: RouteObject[] = [
       { index: true, element: <HomePage /> },
       { path: 'teams', element: <TeamsPage /> },
       { path: 'teams/:id', element: <TeamPage /> },
+      { path: 'fonts', element: <FontsPage /> },
       { path: 'users', element: <UsersPage /> },
       { path: 'api-keys', element: <ApiKeysPage /> },
       { path: '*', element: <PageNotFound /> },

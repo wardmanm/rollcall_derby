@@ -18,3 +18,4 @@ paths:
 - **Testing:** React Testing Library in jsdom, with `openCore` (`src/test/open-core.tsx`) and the fake server from `@rollcall/web-sdk/testing`; see `docs/guides/testing.md`.
 - **Shared admin components** get a story next to them, in the admin Storybook (ADR-0015). See `docs/guides/testing.md#stories`.
 - **Images** are sent as the raw file with its own type, never as JSON (`setLogo`, `setPhoto` in `src/api.ts`), and checked first with `imageProblem` (`src/pages/ImagePicker.tsx`). The server checks them again (ADR-0022).
+- **Fonts** are checked first with `fontProblem` (`src/pages/font-files.ts`) and sent as a copy of the file typed by its extension (`uploadFontFace`): `fetchBaseQuery` drops a `Content-Type` header on a file body, and browsers often leave a font's type blank.

@@ -1,6 +1,7 @@
 import {
   ApiKeySchema,
   CreateApiKeyResponseSchema,
+  FontFamilySchema,
   CreateUserResponseSchema,
   GrantablePermissionSchema,
   HostedAppSchema,
@@ -17,6 +18,8 @@ import {
   type CreateTeamRequest,
   type CreateUserRequest,
   type CreateUserResponse,
+  type FontFamily,
+  type FontType,
   type GrantablePermission,
   type HostedApp,
   type LoginRequest,
@@ -28,6 +31,7 @@ import {
   type TeamSummary,
   type UpdateMemberRequest,
   type UpdateTeamRequest,
+  type UploadFontFaceQuery,
   type User,
 } from '@rollcall/core-contract';
 import { api } from '@rollcall/web-sdk';
@@ -43,7 +47,7 @@ const teamChanged = (_team: unknown, _error: unknown, { id }: { id: string }) =>
 
 // rcl-core's own endpoints, added to the shared base API. Each reply is checked against the contract (ADR-0019).
 // Body-less POSTs send `{}`: the server refuses an empty body labelled as JSON.
-const coreApi = api.enhanceEndpoints({ addTagTypes: ['Users', 'ApiKeys', 'Teams'] }).injectEndpoints({
+const coreApi = api.enhanceEndpoints({ addTagTypes: ['Users', 'ApiKeys', 'Teams', 'Fonts'] }).injectEndpoints({
   endpoints: (build) => ({
     setup: build.mutation<SessionUser, SetupRequest>({
       query: (body) => ({ url: 'core/setup', method: 'POST', body }),
@@ -183,6 +187,28 @@ const coreApi = api.enhanceEndpoints({ addTagTypes: ['Users', 'ApiKeys', 'Teams'
       transformResponse: (response: unknown) => TeamSchema.parse(response),
       invalidatesTags: teamChanged,
     }),
+    getFonts: build.query<FontFamily[], void>({
+      query: () => 'core/fonts',
+      transformResponse: (response: unknown) => FontFamilySchema.array().parse(response),
+      providesTags: ['Fonts'],
+    }),
+    // A font is sent as it is, with its family, weights and style in the query string (ADR-0022). fetchBaseQuery
+    // drops any Content-Type header on a file and lets the browser send the file's own type, which is often blank for
+    // a font, so the file goes as a copy typed by its extension.
+    uploadFontFace: build.mutation<FontFamily, { face: UploadFontFaceQuery; file: File; type: FontType }>({
+      query: ({ face, file, type }) => ({
+        url: 'core/fonts/faces',
+        method: 'POST',
+        params: face,
+        body: new Blob([file], { type }),
+      }),
+      transformResponse: (response: unknown) => FontFamilySchema.parse(response),
+      invalidatesTags: ['Fonts'],
+    }),
+    removeFontFace: build.mutation<void, string>({
+      query: (id) => ({ url: `core/fonts/faces/${encodeURIComponent(id)}`, method: 'DELETE' }),
+      invalidatesTags: ['Fonts'],
+    }),
   }),
 });
 
@@ -213,4 +239,7 @@ export const {
   useRemoveLogoMutation,
   useSetPhotoMutation,
   useRemovePhotoMutation,
+  useGetFontsQuery,
+  useUploadFontFaceMutation,
+  useRemoveFontFaceMutation,
 } = coreApi;
