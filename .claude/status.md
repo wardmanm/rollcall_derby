@@ -1,10 +1,11 @@
 # Status: Rollcall
-Updated: 2026-10-25 · Branch: main
+Updated: 2026-10-25 · Branch: release/rcl-core-v0.2.0
 
 ## Current focus
-The Theme Builder, its font library and its polish (#19, #20, #21) are merged to main. Nothing is in progress; what comes next is Mike's choice.
+Releasing: rcl-core v0.2.0 is prepared on `release/rcl-core-v0.2.0`, waiting for Mike to merge it and run the release workflow. rcl-producer v0.3.0 follows once core 0.2.0 is published.
 
 ## Recent changes
+- 2026-10-25: Decided: release rcl-core v0.2.0, then rcl-producer v0.3.0. rcl-core 0.2.0 prepared; the Producer app now requires rcl-core ^0.2.0.
 - 2026-10-25: Merged #21, the Theme Builder polish: a colleague's change to another token survives your save, a failed font list is shown, the font picker matches families regardless of capitals, and two comments are corrected.
 - 2026-10-25: Decided: fix the five Theme Builder review follow-ups now; filed them as #21 (milestone `rcl-producer v0.3.0`).
 - 2026-10-25: Merged the Theme Builder and font library (#19, #20). Admins upload fonts and make themes with a live preview; the default theme restyles the open OBS overlay at once. A fresh review found it ready to merge; one rule was added (a token change needs a migration for stored themes).
@@ -25,7 +26,7 @@ The Theme Builder, its font library and its polish (#19, #20, #21) are merged to
     - a new member's photo can't land on someone else's member.
 
 ## Pending decisions
-- **What next?** (raised 2026-10-25). Options: release rcl-core v0.2.0 (Team Builder, font library) and rcl-producer v0.3.0 (Theme Builder) / start the next roadmap feature. Blocks: nothing.
+- None.
 
 ## Loose ends
 - Issues #12–#16: small fixes from earlier code reviews, not yet scheduled. None blocks a release.
