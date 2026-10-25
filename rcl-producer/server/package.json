@@ -11,7 +11,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "rollcall": {
-    "requiresCore": "^0.1.0"
+    "requiresCore": "^0.2.0"
   },
   "dependencies": {
     "@rollcall/app-sdk": "workspace:^",

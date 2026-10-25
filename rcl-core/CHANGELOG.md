@@ -6,6 +6,8 @@ rcl-core hosts the other rcl apps, which have their own changelogs, such as [rcl
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-25
+
 ### Added
 
 - Team Builder: Admins and Producers create teams with a league, short name, colors and logo, and their skaters and bench staff, with numbers (`00` keeps its zeros), pronouns, roles and photos. **Save and add another** makes typing in a roster quick. Announcers can view teams, and API keys can be given access to them. Logos and photos are stored on the server and shown to OBS overlays without signing in, so don't upload anything private (#17)
@@ -41,5 +43,6 @@ rcl-core hosts the other rcl apps, which have their own changelogs, such as [rcl
 - The first failed sign-in after the server starts takes as long as later ones, so it doesn't reveal whether the username exists (#8)
 - Logging out works even after the session has ended, and always clears the cookie (#11)
 
-[Unreleased]: https://github.com/wardmanm/rollcall_derby/compare/rcl-core-v0.1.0...HEAD
+[Unreleased]: https://github.com/wardmanm/rollcall_derby/compare/rcl-core-v0.2.0...HEAD
+[0.2.0]: https://github.com/wardmanm/rollcall_derby/releases/tag/rcl-core-v0.2.0
 [0.1.0]: https://github.com/wardmanm/rollcall_derby/releases/tag/rcl-core-v0.1.0
