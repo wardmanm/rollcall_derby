@@ -1,10 +1,11 @@
 # Status: Rollcall
-Updated: 2026-10-25 · Branch: main
+Updated: 2026-10-25 · Branch: release/rcl-producer-v0.3.0
 
 ## Current focus
-Releasing: rcl-core v0.2.0 is prepared and on main, waiting for Mike to run the release workflow. rcl-producer v0.3.0 follows once core 0.2.0 is published.
+Releasing: rcl-producer v0.3.0 is prepared on `release/rcl-producer-v0.3.0`, waiting for Mike to merge it and run the release workflow.
 
 ## Recent changes
+- 2026-10-25: Released rcl-core v0.2.0 (Team Builder, font library). rcl-producer v0.3.0 prepared; its notes say it needs rcl-core 0.2.0.
 - 2026-10-25: Decided: release rcl-core v0.2.0, then rcl-producer v0.3.0. rcl-core 0.2.0 prepared; the Producer app now requires rcl-core ^0.2.0.
 - 2026-10-25: Merged #21, the Theme Builder polish: a colleague's change to another token survives your save, a failed font list is shown, the font picker matches families regardless of capitals, and two comments are corrected.
 - 2026-10-25: Decided: fix the five Theme Builder review follow-ups now; filed them as #21 (milestone `rcl-producer v0.3.0`).
