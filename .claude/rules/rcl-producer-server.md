@@ -13,4 +13,6 @@ paths:
   - permissions are `producer:<action>`, listed in `permissions` with the roles that hold them, and in the table on `docs/features/users-and-access.md`;
   - tables are `producer_<name>`, in migrations under `migrationsFolder` (`rcl-core/server/src/installed-apps.test.ts` checks the names).
 - **Every route and namespace declares its access** (hard rule 5, ADR-0018), and validates its input with schemas from `@rollcall/producer-contract` (ADR-0014).
+- **Tables:** `src/db/schema.ts`, the first being `producer_themes`. After editing it, run `yarn workspace @rollcall/producer-server db:generate --name <change>` and commit the migration; rcl-core runs it at startup in `__drizzle_migrations_producer`. New entities also update `docs/architecture/data-model.md`.
+- **Tests** host the module with `testProducer()` (`src/testing.ts`): an in-memory database with the migrations run, a context with the fonts given, and the routes below `/api/producer`. Access isn't checked there: core's route inventory sweeps these routes with every kind of caller, so add each new route to its pinned list.
 - **`rollcall.requiresCore`** in `package.json` is the rcl-core range this app works with. Change it deliberately when core's version changes.

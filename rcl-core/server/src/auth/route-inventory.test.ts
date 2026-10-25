@@ -176,16 +176,23 @@ describe('route inventory', () => {
       'DELETE /api/core/teams/:id/logo',
       'DELETE /api/core/teams/:id/members/:memberId',
       'DELETE /api/core/teams/:id/members/:memberId/photo',
+      'DELETE /api/producer/themes/:id',
       'GET /api/core/fonts',
       'GET /api/core/teams',
       'GET /api/core/teams/:id',
+      'GET /api/producer/themes',
+      'GET /api/producer/themes/:id',
       'PATCH /api/core/teams/:id',
       'PATCH /api/core/teams/:id/members/:memberId',
+      'PATCH /api/producer/themes/:id',
       'POST /api/core/fonts/faces',
       'POST /api/core/teams',
       'POST /api/core/teams/:id/members',
+      'POST /api/producer/themes',
+      'POST /api/producer/themes/:id/duplicate',
       'PUT /api/core/teams/:id/logo',
       'PUT /api/core/teams/:id/members/:memberId/photo',
+      'PUT /api/producer/default-theme',
     ]);
     // A key gets through to each: no team exists, so most answer 404 or 400, but none refuses the key.
     const refusals = [];

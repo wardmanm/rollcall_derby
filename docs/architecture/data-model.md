@@ -32,8 +32,8 @@ erDiagram
 | Team | A team with its identity and members | [Team Builder](../features/team-builder.md) |
 | Team member | A skater or a member of bench staff, with number, pronouns, roles and photo | [Team Builder](../features/team-builder.md) |
 | Media | An uploaded file, such as a team logo, a member photo or a font: a file in the data folder's `media/`, with its type ([ADR-0022](../decisions/0022-public-media.md)) | [Team Builder](../features/team-builder.md) |
-| Font face | One uploaded font file in the font library: its family, weights and style, and its media | [Theme Builder](../features/theme-builder.md) |
-| Theme | A named set of visual tokens | [Theme Builder](../features/theme-builder.md) |
+| Font face | One uploaded font file in the font library: its family, weights and style, and its media (rcl-core) | [Theme Builder](../features/theme-builder.md) |
+| Theme | A named set of visual tokens. At most one is the default, which the OBS overlay uses (rcl-producer) | [Theme Builder](../features/theme-builder.md) |
 | Screen | An overlay canvas: size, theme, placed components | [Screen Builder](../features/screen-builder.md) |
 | Component instance | One overlay component placed on a screen, with position, size and options | [Overlay components](../features/overlay-components.md) |
 | Event | A day of derby with one or more games and tracks | [Live Mode](../features/live-mode.md) |

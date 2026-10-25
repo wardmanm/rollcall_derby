@@ -26,6 +26,7 @@ Basic user accounts and role-based access control. The app runs on a shared venu
 |---|---|---|---|
 | Manage users and roles | ✅ | — | — |
 | Configure OBS and CRG connections | ✅ | — | — |
+| View themes | ✅ | ✅ | — |
 | Create or edit themes | ✅ | — (uses existing) | — |
 | Manage fonts | ✅ | — | — |
 | Create or edit screens, component layout and options | ✅ | — (uses existing) | — |
@@ -51,6 +52,8 @@ Routes and live connections check [permissions](../product/glossary.md#permissio
 | `core:teams.manage` | Create, edit and delete teams, members, logos and photos | ✅ | ✅ | — | ✅ |
 | `core:fonts.read` | List the fonts in the font library | ✅ | ✅ | ✅ | ✅ |
 | `core:fonts.manage` | Upload and remove fonts | ✅ | — | — | ✅ |
+| `producer:themes.read` | View themes | ✅ | ✅ | — | ✅ |
+| `producer:themes.manage` | Create, edit, duplicate and delete themes, and choose the default | ✅ | — | — | ✅ |
 
 The capabilities in the role matrix become permissions here as each feature is built.
 
