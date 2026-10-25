@@ -24,10 +24,11 @@ paths:
   - A handler that awaits before it writes calls `request.recheckAccess()` after the await.
   - Callers are signed-in sessions or API keys (ADR-0020). Read the person with `userOf(request.principal)`, never `request.principal.user`.
   - A new permission sets `peopleOnly: true` if a leaked API key holding it could take over accounts or make more keys.
-- **Uploaded images** go through `src/media.ts` (ADR-0022): `saveMedia` keeps only real PNG, JPEG or WebP bytes, and `removeMedia` deletes the row and file once nothing points at them.
-  - A new column that refers to media goes in `MEDIA_REFERENCES` (`src/db/schema.ts`), or the startup sweep deletes its images.
+- **Uploaded images and fonts** go through `src/media.ts` (ADR-0022): `saveMedia` keeps only real PNG, JPEG or WebP bytes, or with `fontTypeOf` real WOFF2, WOFF, TTF or OTF bytes, and `removeMedia` deletes the row and file once nothing points at them.
+  - A new column that refers to media goes in `MEDIA_REFERENCES` (`src/db/schema.ts`), or the startup sweep deletes its files.
   - `/media/<id>` is public, outside `/api`, and `media` is a reserved app id.
-  - Upload routes take the raw image body in a plugin of their own, with the image content types and a 5 MB `bodyLimit` (`src/routes/team-images.ts`).
+  - Upload routes take the raw body in a plugin of their own, with their content types and a 5 MB `bodyLimit`, through `registerUploads` (`src/routes/uploads.ts`).
+- **Bundled fonts** are in `fonts/`, listed in `src/fonts/bundled.ts` and served at `/fonts/<folder>/<file>` to anyone, so `fonts` is a reserved app id too.
 - **Socket.IO:** each app creates its namespaces with `rt.namespace(name, { access })` in its module's `realtime()`, at or below `/<id>`. `/` refuses everyone, and namespaces take sessions only, never API keys.
 - **Database changes:**
   1. Edit `src/db/schema.ts`.

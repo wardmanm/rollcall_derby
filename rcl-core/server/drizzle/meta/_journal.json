@@ -29,6 +29,13 @@
       "when": 1792791812693,
       "tag": "0003_teams",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792930552162,
+      "tag": "0004_fonts",
+      "breakpoints": true
     }
   ]
 }

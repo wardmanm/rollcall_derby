@@ -3,18 +3,21 @@ import { createReadStream, existsSync, mkdirSync, readdirSync, renameSync, rmSyn
 import { join } from 'node:path';
 import type { FastifyInstance } from 'fastify';
 import { eq, inArray, isNotNull } from 'drizzle-orm';
-import type { ImageType } from '@rollcall/core-contract';
+import type { FontType, ImageType } from '@rollcall/core-contract';
 import type { AppDatabase, Queryable } from './db.ts';
 import { media, MEDIA_REFERENCES } from './db/schema.ts';
 
-// Uploaded images (ADR-0022): team logos and member photos now, theme and screen images later. Each is a file in the
-// media folder named by its id, with a row saying its type. Images are public at /media/<id> so OBS overlays, which
+// Uploaded images and fonts (ADR-0022): team logos, member photos and fonts now, screen images later. Each is a file
+// in the media folder named by its id, with a row saying its type. They're public at /media/<id> so OBS overlays, which
 // have no session, can load them: the id is 128 random bits, so an address can't be guessed, and nothing lists them.
 
 const MEDIA_ID = /^[0-9a-f]{32}$/;
 const UPLOADING = '.uploading';
 
-/** Where an image is served. */
+/** The types media may be: an image or a font. */
+export type MediaType = ImageType | FontType;
+
+/** Where an image or font is served. */
 export const mediaUrl = (id: string | null): string | null => (id === null ? null : `/media/${id}`);
 
 const startsWith = (bytes: Uint8Array, prefix: readonly number[], at = 0) =>
@@ -29,12 +32,26 @@ export function imageTypeOf(bytes: Uint8Array): ImageType | undefined {
   return undefined;
 }
 
+/** The type a font's first bytes show it to be, or undefined when they aren't a WOFF2, WOFF, TTF or OTF. */
+export function fontTypeOf(bytes: Uint8Array): FontType | undefined {
+  if (startsWith(bytes, ascii('wOF2'))) return 'font/woff2';
+  if (startsWith(bytes, ascii('wOFF'))) return 'font/woff';
+  if (startsWith(bytes, [0x00, 0x01, 0x00, 0x00]) || startsWith(bytes, ascii('true'))) return 'font/ttf';
+  if (startsWith(bytes, ascii('OTTO'))) return 'font/otf';
+  return undefined;
+}
+
 /**
- * Saves an upload as a new image: its file, then its row. Returns its id, or null when the bytes aren't a PNG, JPEG
- * or WebP, saving nothing. The caller then points a logo or photo at it.
+ * Saves an upload: its file, then its row. Returns its id, or null when `typeOf` doesn't recognize the bytes (by
+ * default, when they aren't a PNG, JPEG or WebP), saving nothing. The caller then points a logo, photo or font at it.
  */
-export function saveMedia(db: Queryable, dir: string, bytes: Uint8Array): string | null {
-  const contentType = imageTypeOf(bytes);
+export function saveMedia(
+  db: Queryable,
+  dir: string,
+  bytes: Uint8Array,
+  typeOf: (bytes: Uint8Array) => MediaType | undefined = imageTypeOf,
+): string | null {
+  const contentType = typeOf(bytes);
   if (!contentType) return null;
   mkdirSync(dir, { recursive: true });
   const id = randomBytes(16).toString('hex');

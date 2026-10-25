@@ -82,7 +82,7 @@ export function coreApp({
       registerApiKeyRoutes(fastify, db);
       registerTeamRoutes(fastify, { db, mediaDir });
       registerTeamImageRoutes(fastify, { db, mediaDir });
-      registerFontRoutes(fastify, { db });
+      registerFontRoutes(fastify, { db, mediaDir });
     },
   };
 }

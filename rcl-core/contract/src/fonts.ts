@@ -21,6 +21,27 @@ export const FontFamilyNameSchema = z
   .trim()
   .regex(/^[A-Za-z0-9 _-]{1,64}$/, 'Use 1–64 letters, digits, spaces, dashes or underscores');
 
+const WEIGHTS = /^(\d{3})(?:-(\d{3}))?$/;
+
+/** An upload's family, weight (`400`, or `100-900` for a variable font) and style, sent in its query string. */
+export const UploadFontFaceQuerySchema = z
+  .strictObject({
+    family: FontFamilyNameSchema,
+    weight: z.string().regex(WEIGHTS, 'Use a weight such as 400, or a range such as 100-900'),
+    style: FontStyleSchema.default('normal'),
+  })
+  .transform(({ family, weight, style }, context) => {
+    const [, min = '', max = min] = WEIGHTS.exec(weight) ?? [];
+    const weightMin = Number(min);
+    const weightMax = Number(max);
+    if (weightMin < 100 || weightMax > 900 || weightMin > weightMax) {
+      context.addIssue({ code: 'custom', path: ['weight'], message: 'Use weights from 100 to 900, lowest first' });
+      return z.NEVER;
+    }
+    return { family, weightMin, weightMax, style };
+  });
+export type UploadFontFaceQuery = z.input<typeof UploadFontFaceQuerySchema>;
+
 export const FontFaceSchema = z.strictObject({
   id: z.string(),
   weightMin: z.number().int().min(100).max(900),

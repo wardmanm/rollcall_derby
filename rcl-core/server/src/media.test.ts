@@ -2,8 +2,8 @@ import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { media, teamMembers, teams } from './db/schema.ts';
-import { imageTypeOf, mediaUrl, removeMedia, saveMedia, sweepMedia } from './media.ts';
-import { IMAGES, testApp } from './testing.ts';
+import { fontTypeOf, imageTypeOf, mediaUrl, removeMedia, saveMedia, sweepMedia } from './media.ts';
+import { FONTS, IMAGES, testApp } from './testing.ts';
 
 const NOW = '2026-10-23T10:00:00.000Z';
 const apps: ReturnType<typeof testApp>['app'][] = [];
@@ -36,6 +36,32 @@ describe('imageTypeOf', () => {
     ]) {
       expect(imageTypeOf(bytes), bytes.toString('latin1')).toBeUndefined();
     }
+  });
+});
+
+describe('fontTypeOf', () => {
+  it('knows WOFF2, WOFF, TTF and OTF by their first bytes', () => {
+    expect(fontTypeOf(FONTS.woff2)).toBe('font/woff2');
+    expect(fontTypeOf(FONTS.woff)).toBe('font/woff');
+    expect(fontTypeOf(FONTS.ttf)).toBe('font/ttf');
+    expect(fontTypeOf(FONTS.appleTtf)).toBe('font/ttf');
+    expect(fontTypeOf(FONTS.otf)).toBe('font/otf');
+  });
+
+  it('refuses anything else, images included', () => {
+    for (const bytes of [IMAGES.png, IMAGES.jpeg, Buffer.from('<svg/>'), Buffer.from('wOF'), Buffer.alloc(0)]) {
+      expect(fontTypeOf(bytes), bytes.toString('latin1')).toBeUndefined();
+    }
+  });
+
+  it('keeps fonts out of image uploads, and images out of font uploads', () => {
+    const { db, mediaDir } = fresh();
+    expect(saveMedia(db, mediaDir, FONTS.woff2)).toBeNull();
+    expect(saveMedia(db, mediaDir, IMAGES.png, fontTypeOf)).toBeNull();
+    const font = saveMedia(db, mediaDir, FONTS.otf, fontTypeOf);
+    expect(db.select().from(media).all()).toEqual([
+      { id: font, contentType: 'font/otf', size: FONTS.otf.length, createdAt: expect.any(String) },
+    ]);
   });
 });
 

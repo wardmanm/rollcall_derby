@@ -1,5 +1,5 @@
 import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
-import { IMAGE_TYPES, MEMBER_KINDS, type MemberRole } from '@rollcall/core-contract';
+import { FONT_STYLES, FONT_TYPES, IMAGE_TYPES, MEMBER_KINDS, type MemberRole } from '@rollcall/core-contract';
 
 // Drizzle schema: the source of truth for tables (docs/architecture/data-model.md maps the concepts).
 
@@ -50,11 +50,11 @@ export const apiKeys = sqliteTable('api_keys', {
   lastUsedAt: text('last_used_at'),
 });
 
-// Uploaded images, such as team logos and member photos (ADR-0022). Each is a file named by its id in the data
+// Uploaded images and fonts, such as team logos, member photos and font faces (ADR-0022). Each is a file named by its id in the data
 // folder's media/ folder. The id is 128 random bits, so an image's address can't be guessed.
 export const media = sqliteTable('media', {
   id: text('id').primaryKey(),
-  contentType: text('content_type', { enum: IMAGE_TYPES }).notNull(),
+  contentType: text('content_type', { enum: [...IMAGE_TYPES, ...FONT_TYPES] }).notNull(),
   size: integer('size').notNull(),
   createdAt: text('created_at').notNull(),
 });
@@ -95,8 +95,27 @@ export const teamMembers = sqliteTable(
   (table) => [uniqueIndex('team_members_team_number_idx').on(table.teamId, table.number)],
 );
 
+// Fonts Admins upload, one row per face of a family (docs/features/theme-builder.md). The bundled families aren't here:
+// they ship with the server (src/fonts/bundled.ts). A family has one face per weight range and style.
+export const fontFaces = sqliteTable(
+  'font_faces',
+  {
+    id: text('id').primaryKey(),
+    family: text('family').notNull(),
+    weightMin: integer('weight_min').notNull(),
+    weightMax: integer('weight_max').notNull(),
+    style: text('style', { enum: FONT_STYLES }).notNull(),
+    mediaId: text('media_id')
+      .notNull()
+      .references(() => media.id, { onDelete: 'cascade' }),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [uniqueIndex('font_faces_face_idx').on(table.family, table.weightMin, table.weightMax, table.style)],
+);
+
 // Every column that refers to media. The startup sweep keeps only media that one of them refers to: add new ones here.
 export const MEDIA_REFERENCES = [
   { table: teams, column: teams.logoMediaId },
   { table: teamMembers, column: teamMembers.photoMediaId },
+  { table: fontFaces, column: fontFaces.mediaId },
 ] as const;

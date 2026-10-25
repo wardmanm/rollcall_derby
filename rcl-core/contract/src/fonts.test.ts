@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { FontFamilyNameSchema, FontFamilySchema, fontFaceRules, MAX_FONT_BYTES, type FontFamily } from './fonts.ts';
+import {
+  FontFamilyNameSchema,
+  FontFamilySchema,
+  fontFaceRules,
+  MAX_FONT_BYTES,
+  UploadFontFaceQuerySchema,
+  type FontFamily,
+} from './fonts.ts';
 
 const OSWALD: FontFamily = {
   name: 'Oswald',
@@ -98,6 +105,37 @@ describe('fontFaceRules', () => {
       ].join('\n'),
     );
     expect(fontFaceRules([])).toBe('');
+  });
+});
+
+describe('UploadFontFaceQuerySchema', () => {
+  it('reads a single weight or a range, and defaults the style to normal', () => {
+    expect(UploadFontFaceQuerySchema.parse({ family: ' Rollerball ', weight: '700' })).toEqual({
+      family: 'Rollerball',
+      weightMin: 700,
+      weightMax: 700,
+      style: 'normal',
+    });
+    expect(UploadFontFaceQuerySchema.parse({ family: 'Rollerball', weight: '100-900', style: 'italic' })).toEqual({
+      family: 'Rollerball',
+      weightMin: 100,
+      weightMax: 900,
+      style: 'italic',
+    });
+  });
+
+  it('refuses a weight outside 100–900, a range the wrong way round, and a bad family or style', () => {
+    for (const query of [
+      { family: 'R', weight: '50' },
+      { family: 'R', weight: '950' },
+      { family: 'R', weight: '900-100' },
+      { family: 'R', weight: 'bold' },
+      { family: 'R', weight: '400', style: 'oblique' },
+      { family: 'R;', weight: '400' },
+      { family: 'R', weight: '400', extra: 'x' },
+    ]) {
+      expect(UploadFontFaceQuerySchema.safeParse(query).success, JSON.stringify(query)).toBe(false);
+    }
   });
 });
 

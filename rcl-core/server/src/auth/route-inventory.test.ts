@@ -171,6 +171,7 @@ describe('route inventory', () => {
     expect(await notRefused(inv, refusedToKeys, inv.as('admin'), forbidden)).toHaveLength(refusedToKeys.length);
     const callable = where(inv.routes, keyMayCall);
     expect(keysOf(callable)).toEqual([
+      'DELETE /api/core/fonts/faces/:id',
       'DELETE /api/core/teams/:id',
       'DELETE /api/core/teams/:id/logo',
       'DELETE /api/core/teams/:id/members/:memberId',
@@ -180,6 +181,7 @@ describe('route inventory', () => {
       'GET /api/core/teams/:id',
       'PATCH /api/core/teams/:id',
       'PATCH /api/core/teams/:id/members/:memberId',
+      'POST /api/core/fonts/faces',
       'POST /api/core/teams',
       'POST /api/core/teams/:id/members',
       'PUT /api/core/teams/:id/logo',

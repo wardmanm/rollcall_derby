@@ -34,6 +34,15 @@ export const IMAGES = {
   webp: Buffer.concat([Buffer.from('RIFF'), Buffer.from([26, 0, 0, 0]), Buffer.from('WEBPVP8 ')]),
 };
 
+/** The first bytes of each font type: enough for the server, which checks a font's bytes, not its glyphs. */
+export const FONTS = {
+  woff2: Buffer.concat([Buffer.from('wOF2'), Buffer.from([0, 1, 0, 0, 0, 0, 4, 0])]),
+  woff: Buffer.concat([Buffer.from('wOFF'), Buffer.from([0, 1, 0, 0, 0, 0, 4, 0])]),
+  ttf: Buffer.from([0x00, 0x01, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x80, 0x00, 0x03, 0x00, 0x40]),
+  appleTtf: Buffer.concat([Buffer.from('true'), Buffer.from([0x00, 0x0c, 0x00, 0x80])]),
+  otf: Buffer.concat([Buffer.from('OTTO'), Buffer.from([0x00, 0x0c, 0x00, 0x80])]),
+};
+
 export async function addUser(
   db: AppDatabase,
   username: string,

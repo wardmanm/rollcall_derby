@@ -1,12 +1,13 @@
-import type { FastifyError, FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { IMAGE_TYPES, MAX_IMAGE_BYTES, TeamSchema } from '@rollcall/core-contract';
 import type { AppDatabase } from '../db.ts';
 import type { Access } from '../auth/access.ts';
-import { ERROR_RESPONSES, sendApiError } from '../http.ts';
+import { ERROR_RESPONSES } from '../http.ts';
 import { removeMedia, saveMedia } from '../media.ts';
 import { findMember, findTeamRow, updateMember, updateTeam } from '../teams/teams.ts';
+import { registerUploads } from './uploads.ts';
 
 const MANAGE: { config: { access: Access } } = { config: { access: { permission: 'core:teams.manage' } } };
 const TeamParamsSchema = z.strictObject({ id: z.string() });
@@ -21,23 +22,13 @@ const TAGS = ['core/teams'];
 const UPLOAD = { ...MANAGE, bodyLimit: MAX_IMAGE_BYTES } as const;
 
 // Team logos and member photos (ADR-0022). An upload is the raw image, with its type as the Content-Type. The server
-// keeps it only if its bytes are a PNG, JPEG or WebP, then deletes the image it replaces. Like every route, the body is
-// read before the access check, so the 5 MB limit also caps what a refused caller can send.
+// keeps it only if its bytes are a PNG, JPEG or WebP, then deletes the image it replaces.
 export function registerTeamImageRoutes(fastify: FastifyInstance, deps: { db: AppDatabase; mediaDir: string }) {
-  // A plugin of their own, so only these routes accept image bodies and say too_large or unsupported_image.
-  void fastify.register(async (uploads) => {
-    uploads.addContentTypeParser(
-      [...IMAGE_TYPES],
-      { parseAs: 'buffer', bodyLimit: MAX_IMAGE_BYTES },
-      (_request, body, done) => done(null, body),
-    );
-    uploads.setErrorHandler<FastifyError>((error, request, reply) => {
-      if (error.statusCode === 413) return reply.code(413).send(TOO_LARGE);
-      if (error.statusCode === 415) return reply.code(415).send(UNSUPPORTED);
-      return sendApiError(error, request, reply);
-    });
-    imageRoutes(uploads, deps);
-  });
+  registerUploads(
+    fastify,
+    { types: IMAGE_TYPES, maxBytes: MAX_IMAGE_BYTES, tooLarge: TOO_LARGE, unsupported: UNSUPPORTED },
+    (uploads) => imageRoutes(uploads, deps),
+  );
 }
 
 function imageRoutes(fastify: FastifyInstance, { db, mediaDir }: { db: AppDatabase; mediaDir: string }) {
