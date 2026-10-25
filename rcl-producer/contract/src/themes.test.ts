@@ -86,11 +86,12 @@ describe('ThemeTokensSchema', () => {
     }
   });
 
+  // NaN is what a cleared number field gives.
   it('keeps sizes, corners and borders within their limits, in whole pixels', () => {
     const cases: [(draft: ThemeTokens, value: number) => void, number[], number[], string][] = [
-      [(draft, value) => void (draft.fonts.size = value), [12, 96], [11, 97, 16.5], 'Use 12 to 96 pixels'],
-      [(draft, value) => void (draft.shape.radius = value), [0, 64], [-1, 65, 1.5], 'Use 0 to 64 pixels'],
-      [(draft, value) => void (draft.shape.borderWidth = value), [0, 16], [-1, 17], 'Use 0 to 16 pixels'],
+      [(draft, value) => void (draft.fonts.size = value), [12, 96], [11, 97, 16.5, Number.NaN], 'Use 12 to 96 pixels'],
+      [(draft, value) => void (draft.shape.radius = value), [0, 64], [-1, 65, 1.5, Number.NaN], 'Use 0 to 64 pixels'],
+      [(draft, value) => void (draft.shape.borderWidth = value), [0, 16], [-1, 17, Number.NaN], 'Use 0 to 16 pixels'],
     ];
     for (const [set, good, bad, message] of cases) {
       for (const value of good) expect(problem(tokens((draft) => set(draft, value))), `${value}`).toBeUndefined();

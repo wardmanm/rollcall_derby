@@ -1,7 +1,7 @@
 import { Alert, Card, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { problemWith } from '@rollcall/web-sdk';
 import { useGetAppsQuery } from '../api.ts';
 import { CORE_BASE } from '../base.ts';
-import { problemWith } from '../forms.ts';
 
 // rcl-core's home: the app launcher (split spec). It lists the other rcl apps this server hosts that have a web app;
 // rcl-core's own pages are in the header.

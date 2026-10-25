@@ -16,7 +16,7 @@ import {
   VisuallyHidden,
 } from '@mantine/core';
 import { CreateUserRequestSchema, ROLES, type CurrentUser, type Role, type User } from '@rollcall/core-contract';
-import { ROLE_NAMES, useGetMeQuery } from '@rollcall/web-sdk';
+import { fieldErrors, problemWith, ROLE_NAMES, useGetMeQuery } from '@rollcall/web-sdk';
 import {
   useCreateUserMutation,
   useDeleteUserMutation,
@@ -25,7 +25,6 @@ import {
   useSignOutUserMutation,
   useUpdateUserRoleMutation,
 } from '../api.ts';
-import { fieldErrors, problemWith } from '../forms.ts';
 import { ShowOnce, type ShownOnce } from './ShowOnce.tsx';
 
 const ROLE_OPTIONS = ROLES.map((role) => ({ value: role, label: ROLE_NAMES[role] }));

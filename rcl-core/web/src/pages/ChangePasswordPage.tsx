@@ -2,9 +2,18 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Alert, Button, Group, Loader, PasswordInput, Stack, Text } from '@mantine/core';
 import { useHref, useLocation, useSearchParams } from 'react-router';
 import { ChangePasswordRequestSchema } from '@rollcall/core-contract';
-import { apiError, CORE_PAGES, safeNext, useGetMeQuery, useGoTo, useLogoutMutation, withNext } from '@rollcall/web-sdk';
+import {
+  apiError,
+  CORE_PAGES,
+  fieldErrors,
+  problemWith,
+  safeNext,
+  useGetMeQuery,
+  useGoTo,
+  useLogoutMutation,
+  withNext,
+} from '@rollcall/web-sdk';
 import { useChangePasswordMutation } from '../api.ts';
-import { fieldErrors, problemWith } from '../forms.ts';
 import { AuthCard } from './AuthCard.tsx';
 
 // Changing your own password: by choice from the account menu, or first thing after signing in with a temporary

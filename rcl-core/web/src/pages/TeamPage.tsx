@@ -17,7 +17,7 @@ import {
   VisuallyHidden,
 } from '@mantine/core';
 import { UpdateTeamRequestSchema, type MemberKind, type Team, type TeamMember } from '@rollcall/core-contract';
-import { apiError, useGetMeQuery } from '@rollcall/web-sdk';
+import { apiError, fieldErrors, problemWith, useGetMeQuery } from '@rollcall/web-sdk';
 import {
   useDeleteTeamMutation,
   useGetTeamQuery,
@@ -26,7 +26,6 @@ import {
   useSetLogoMutation,
   useUpdateTeamMutation,
 } from '../api.ts';
-import { fieldErrors, problemWith } from '../forms.ts';
 import { ImagePicker } from './ImagePicker.tsx';
 import { GONE, MemberForm } from './MemberForm.tsx';
 import { MembersTable } from './MembersTable.tsx';

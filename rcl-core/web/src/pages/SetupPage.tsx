@@ -1,9 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Alert, Button, Code, Loader, PasswordInput, Stack, Text, TextInput } from '@mantine/core';
 import { SetupRequestSchema } from '@rollcall/core-contract';
-import { CORE_PAGES, useGetSetupStatusQuery, useGoTo } from '@rollcall/web-sdk';
+import { CORE_PAGES, fieldErrors, problemWith, useGetSetupStatusQuery, useGoTo } from '@rollcall/web-sdk';
 import { useSetupMutation } from '../api.ts';
-import { fieldErrors, problemWith } from '../forms.ts';
 import { AuthCard } from './AuthCard.tsx';
 
 // First-run setup (users-and-access R2): creates the first Admin, only on the server machine and only while there

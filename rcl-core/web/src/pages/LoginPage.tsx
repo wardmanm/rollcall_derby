@@ -1,9 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Alert, Button, PasswordInput, Stack, TextInput } from '@mantine/core';
 import { useSearchParams } from 'react-router';
-import { CORE_PAGES, safeNext, useGetSetupStatusQuery, useGoTo } from '@rollcall/web-sdk';
+import { CORE_PAGES, problemWith, safeNext, useGetSetupStatusQuery, useGoTo } from '@rollcall/web-sdk';
 import { useLoginMutation } from '../api.ts';
-import { problemWith } from '../forms.ts';
 import { AuthCard } from './AuthCard.tsx';
 
 // Sign-in for every rcl app (split spec). Afterwards it goes back to `next`, the page that sent you here.

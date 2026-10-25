@@ -1,4 +1,4 @@
-import { apiError } from '@rollcall/web-sdk';
+import { apiError } from './errors.ts';
 
 /** A failed check of a form against a contract schema: Zod's issues, each naming its field. */
 interface Problems {
@@ -9,6 +9,13 @@ interface Problems {
 export function fieldErrors(problems: Problems): Record<string, string> {
   const errors: Record<string, string> = {};
   for (const issue of problems.issues) errors[String(issue.path[0] ?? '')] ??= issue.message;
+  return errors;
+}
+
+/** The first problem at each full path, such as `tokens.colors.accent`, for forms with nested fields. */
+export function pathErrors(problems: Problems): Record<string, string> {
+  const errors: Record<string, string> = {};
+  for (const issue of problems.issues) errors[issue.path.map(String).join('.')] ??= issue.message;
   return errors;
 }
 

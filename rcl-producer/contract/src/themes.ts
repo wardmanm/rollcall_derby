@@ -11,12 +11,11 @@ const ColorSchema = z
   .toLowerCase()
   .regex(/^#(?:[0-9a-f]{6}|[0-9a-f]{8})$/, 'Use a color like #1a2b3c');
 
-const pixels = (min: number, max: number) =>
-  z
-    .number()
-    .int(`Use ${min} to ${max} pixels`)
-    .min(min, `Use ${min} to ${max} pixels`)
-    .max(max, `Use ${min} to ${max} pixels`);
+// A whole number of pixels. Anything else, even a cleared field's NaN, gets the same plain message.
+function pixels(min: number, max: number) {
+  const rule = `Use ${min} to ${max} pixels`;
+  return z.number({ error: rule }).int(rule).min(min, rule).max(max, rule);
+}
 
 const WEIGHT_RULE = 'Use a weight from 100 to 900, in steps of 100';
 const FontTokenSchema = z.strictObject({

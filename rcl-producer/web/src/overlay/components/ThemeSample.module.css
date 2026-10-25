@@ -1,0 +1,77 @@
+/* Overlay components are styled only with theme custom properties (ADR-0006). */
+.sample {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.75em;
+  padding: 1em;
+  font-family: var(--theme-font-body);
+  font-size: var(--theme-font-size);
+  font-weight: var(--theme-font-body-weight);
+  color: var(--theme-color-text);
+  background: var(--theme-color-surface);
+  border-radius: var(--theme-radius);
+}
+
+.heading {
+  font-family: var(--theme-font-heading);
+  font-size: 1.5em;
+  font-weight: var(--theme-font-heading-weight);
+  text-transform: var(--theme-heading-transform);
+}
+
+.muted {
+  color: var(--theme-color-text-muted);
+}
+
+.table {
+  border-collapse: collapse;
+}
+
+.table td {
+  padding: 0.25em 0.75em;
+}
+
+.row {
+  background: var(--theme-color-surface);
+}
+
+.rowAlt {
+  background: var(--theme-color-surface-alt);
+}
+
+/* Large, bold text, so it stays readable on the accent color. */
+.accentBar {
+  padding: 0.25em 0.75em;
+  font-size: 1.25em;
+  font-weight: 700;
+  color: var(--theme-color-on-accent);
+  background: var(--theme-color-accent);
+  border-radius: var(--theme-radius);
+}
+
+.panel {
+  padding: 0.5em 0.75em;
+  border: var(--theme-border-width) solid var(--theme-color-border);
+  border-radius: var(--theme-radius);
+}
+
+.extras {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.extra {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+}
+
+.chip {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 1px solid var(--theme-color-border);
+  border-radius: var(--theme-radius);
+}

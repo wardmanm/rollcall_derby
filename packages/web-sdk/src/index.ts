@@ -10,6 +10,7 @@ export { UserMenu } from './UserMenu.tsx';
 export { api, useGetHealthQuery, useGetMeQuery, useGetSetupStatusQuery, useLogoutMutation } from './api.ts';
 export { CORE_PAGES, safeNext, withNext } from './core-pages.ts';
 export { apiError } from './errors.ts';
+export { fieldErrors, pathErrors, problemWith } from './forms.ts';
 export { parseHealth } from './health.ts';
 export { useAppDispatch, useAppSelector } from './hooks.ts';
 export { browser, useGoTo } from './navigation.ts';

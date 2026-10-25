@@ -20,9 +20,8 @@ import {
   type FontFamily,
   type FontStyle,
 } from '@rollcall/core-contract';
-import { useGetMeQuery } from '@rollcall/web-sdk';
+import { fieldErrors, problemWith, useGetMeQuery } from '@rollcall/web-sdk';
 import { useGetFontsQuery, useRemoveFontFaceMutation, useUploadFontFaceMutation } from '../api.ts';
-import { fieldErrors, problemWith } from '../forms.ts';
 import { fontProblem, fontTypeOf, suggestFace } from './font-files.ts';
 import { FontSample } from './FontSample.tsx';
 

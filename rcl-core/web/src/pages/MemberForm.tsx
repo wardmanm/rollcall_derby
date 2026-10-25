@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Alert, Button, Checkbox, Group, Modal, Stack, TagsInput, TextInput } from '@mantine/core';
+import { fieldErrors, problemWith } from '@rollcall/web-sdk';
 import {
   BENCH_ROLES,
   CreateMemberRequestSchema,
@@ -11,7 +12,6 @@ import {
   type TeamMember,
 } from '@rollcall/core-contract';
 import { useAddMemberMutation, useRemovePhotoMutation, useSetPhotoMutation, useUpdateMemberMutation } from '../api.ts';
-import { fieldErrors, problemWith } from '../forms.ts';
 import { ImagePicker } from './ImagePicker.tsx';
 
 export interface MemberFormProps {

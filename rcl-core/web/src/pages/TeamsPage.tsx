@@ -15,9 +15,8 @@ import {
   VisuallyHidden,
 } from '@mantine/core';
 import { CreateTeamRequestSchema, type TeamSummary } from '@rollcall/core-contract';
-import { useGetMeQuery } from '@rollcall/web-sdk';
+import { fieldErrors, problemWith, useGetMeQuery } from '@rollcall/web-sdk';
 import { useCreateTeamMutation, useGetTeamsQuery } from '../api.ts';
-import { fieldErrors, problemWith } from '../forms.ts';
 
 // The teams (docs/features/team-builder.md). Anyone holding core:teams.read sees the list; core:teams.manage can
 // create teams too. Hiding things is only for convenience: the server checks every request (hard rule 5).
