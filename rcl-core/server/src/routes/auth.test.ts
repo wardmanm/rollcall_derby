@@ -95,8 +95,10 @@ describe('GET /api/core/auth/me and POST /api/core/auth/logout', () => {
       'core:api-keys.manage',
       'core:teams.read',
       'core:teams.manage',
+      'core:fonts.read',
+      'core:fonts.manage',
     ]);
-    expect(await permissionsOf('producer1')).toEqual(['core:teams.read', 'core:teams.manage']);
+    expect(await permissionsOf('producer1')).toEqual(['core:teams.read', 'core:teams.manage', 'core:fonts.read']);
   });
 
   it('needs a session to say who you are', async () => {

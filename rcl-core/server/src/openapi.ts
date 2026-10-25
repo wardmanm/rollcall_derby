@@ -53,6 +53,7 @@ export function registerApiDocs(
         { name: 'core/users', description: 'User management (Admin only)' },
         { name: 'core/api-keys', description: 'API keys for devices and scripts (Admin only)' },
         { name: 'core/teams', description: 'Teams, their skaters and bench staff, logos and photos' },
+        { name: 'core/fonts', description: 'The font library: bundled and uploaded fonts' },
       ],
       components: {
         securitySchemes: {

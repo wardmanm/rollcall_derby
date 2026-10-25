@@ -11,6 +11,7 @@ import type { AppDatabase } from './db.ts';
 import { ERROR_RESPONSES } from './http.ts';
 import { CORE_APP_ID, CORE_PERMISSIONS } from './auth/permissions.ts';
 import { registerApiKeyRoutes } from './routes/api-keys.ts';
+import { registerFontRoutes } from './routes/fonts.ts';
 import { registerAuthRoutes } from './routes/auth.ts';
 import { registerSetupRoutes } from './routes/setup.ts';
 import { registerTeamImageRoutes } from './routes/team-images.ts';
@@ -81,6 +82,7 @@ export function coreApp({
       registerApiKeyRoutes(fastify, db);
       registerTeamRoutes(fastify, { db, mediaDir });
       registerTeamImageRoutes(fastify, { db, mediaDir });
+      registerFontRoutes(fastify, { db });
     },
   };
 }

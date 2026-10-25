@@ -9,6 +9,7 @@ import type { AppDatabase } from './db.ts';
 import { sendApiError } from './http.ts';
 import { enforceRouteAccess } from './auth/access.ts';
 import { installAuth } from './auth/guard.ts';
+import { serveBundledFonts } from './fonts/bundled.ts';
 import { serveMedia } from './media.ts';
 import { registerApiDocs } from './openapi.ts';
 import { serveWebApps } from './web-apps.ts';
@@ -89,6 +90,7 @@ export function buildApp({
   });
 
   serveMedia(app, { db, dir: mediaDir });
+  serveBundledFonts(app);
   const webPage = serveWebApps(app, hosted.webApps);
   app.setNotFoundHandler((request, reply) => {
     const path = request.url.split('?')[0] ?? '';

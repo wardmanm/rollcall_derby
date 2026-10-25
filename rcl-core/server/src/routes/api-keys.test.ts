@@ -46,6 +46,8 @@ describe('/api/core/api-keys', () => {
     expect(GrantablePermissionSchema.array().parse(res.json())).toEqual([
       { key: 'core:teams.read', summary: 'View teams and their members' },
       { key: 'core:teams.manage', summary: 'Create, edit and delete teams, members, logos and photos' },
+      { key: 'core:fonts.read', summary: 'List the fonts in the font library' },
+      { key: 'core:fonts.manage', summary: 'Upload and remove fonts' },
       { key: 'demo:things.read', summary: 'Read things' },
     ]);
   });

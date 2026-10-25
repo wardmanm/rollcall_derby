@@ -17,6 +17,6 @@ The build order is on the [roadmap](../product/roadmap.md). To add a feature, st
 | [Overlay Components](overlay-components.md) | rcl-producer | planned | Pre-made, configurable building blocks placed on screens, such as rosters, game info and skater spotlights. |
 | [Screen Builder](screen-builder.md) | rcl-producer | planned | Design overlay screens by dragging pre-made components onto a canvas of any size; each screen goes into OBS as a browser source. |
 | [Team Builder](team-builder.md) | rcl-core | shipped | Create teams with skaters and bench staff, including names, numbers, roles and photos. |
-| [Theme Builder](theme-builder.md) | rcl-producer | planned | Define reusable visual styles (colors, fonts, borders, corner radius) that restyle every overlay. |
+| [Theme Builder](theme-builder.md) | both | in-progress | Define reusable visual styles (colors, fonts, borders, corner radius) that restyle every overlay. |
 | [Users and Access](users-and-access.md) | rcl-core | shipped | Username and password login with Admin, Producer and Announcer roles, enforced on the server. |
 <!-- /generated:features -->

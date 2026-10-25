@@ -175,6 +175,7 @@ describe('route inventory', () => {
       'DELETE /api/core/teams/:id/logo',
       'DELETE /api/core/teams/:id/members/:memberId',
       'DELETE /api/core/teams/:id/members/:memberId/photo',
+      'GET /api/core/fonts',
       'GET /api/core/teams',
       'GET /api/core/teams/:id',
       'PATCH /api/core/teams/:id',

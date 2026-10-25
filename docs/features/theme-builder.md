@@ -1,7 +1,7 @@
 ---
 title: Theme Builder
-app: rcl-producer
-status: planned
+app: both
+status: in-progress
 summary: Define reusable visual styles (colors, fonts, borders, corner radius) that restyle every overlay.
 ---
 # Theme Builder

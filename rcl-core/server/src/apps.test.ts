@@ -65,6 +65,7 @@ describe('hostApps', () => {
       [app({ id: 'Demo' }), 'its id "Demo" must be lowercase letters, digits and dashes'],
       [app({ id: 'core' }), 'another app already uses the id "core"'],
       [app({ id: 'media' }), 'its id "media" is a path the server uses itself'],
+      [app({ id: 'fonts' }), 'its id "fonts" is a path the server uses itself'],
       [app({ requiresCore: 'soon' }), 'its requiresCore "soon" isn\'t a version range'],
       [
         app({ permissions: [{ key: 'core:users.manage', summary: 'x', roles: [] }] }),

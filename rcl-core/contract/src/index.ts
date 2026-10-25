@@ -6,4 +6,5 @@ export * from './api-keys.ts';
 export * from './apps.ts';
 export * from './health.ts';
 export * from './auth.ts';
+export * from './fonts.ts';
 export * from './teams.ts';

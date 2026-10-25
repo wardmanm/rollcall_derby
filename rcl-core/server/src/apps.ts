@@ -20,7 +20,7 @@ export interface HostedApps {
 
 const APP_ID = /^[a-z][a-z0-9-]*$/;
 // Ids the server's own paths use, so no app's web build at /<id>/ can collide with them.
-const RESERVED_IDS = new Set(['media']);
+const RESERVED_IDS = new Set(['media', 'fonts']);
 
 /** The migrations table for an app's own migrations. Core keeps Drizzle's default, so existing databases still open. */
 export const migrationsTableFor = (id: string) => `__drizzle_migrations_${id}`;

@@ -27,4 +27,14 @@ export const CORE_PERMISSIONS: readonly PermissionDef[] = [
     summary: 'Create, edit and delete teams, members, logos and photos',
     roles: ['producer'],
   },
+  {
+    key: 'core:fonts.read',
+    summary: 'List the fonts in the font library',
+    roles: ['producer', 'announcer'],
+  },
+  {
+    key: 'core:fonts.manage',
+    summary: 'Upload and remove fonts',
+    roles: [],
+  },
 ];
