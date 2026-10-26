@@ -2,9 +2,11 @@
 Updated: 2026-10-25 · Branch: main
 
 ## Current focus
-rcl-core v0.2.0 and rcl-producer v0.3.0 are released. Nothing is in progress; the next piece of work is Mike's choice.
+Import / export for teams and themes (#22 rcl-core, #23 rcl-producer): the design is agreed and the written spec is waiting for Mike's review.
 
 ## Recent changes
+- 2026-10-26: Import / export design agreed: a .zip export file with a versioned manifest; core hosts import and export and each app owns its kinds (ADR-0024 planned); an Import dialog that shows conflicts side by side with Replace, Keep both or Skip; a theme becomes the default only by its own switch. Issues #22 and #23, milestones `rcl-core v0.3.0` and `rcl-producer v0.4.0`.
+- 2026-10-25: Decided: build Import / export next.
 - 2026-10-25: Released rcl-producer v0.3.0 (Theme Builder; needs rcl-core 0.2.0).
 - 2026-10-25: Released rcl-core v0.2.0 (Team Builder, font library).
 - 2026-10-25: Decided: release rcl-core v0.2.0, then rcl-producer v0.3.0. rcl-core 0.2.0 prepared; the Producer app now requires rcl-core ^0.2.0.
@@ -28,7 +30,7 @@ rcl-core v0.2.0 and rcl-producer v0.3.0 are released. Nothing is in progress; th
     - a new member's photo can't land on someone else's member.
 
 ## Pending decisions
-- **What next?** (raised 2026-10-25). Options: Import/Export for teams and themes (last Phase 1 item) / Screen Builder and a team roster component (Phase 2) / a cleanup round of #12–#16. Blocks: the next piece of work.
+- None.
 
 ## Loose ends
 - Issues #12–#16: small fixes from earlier code reviews, not yet scheduled. None blocks a release.
