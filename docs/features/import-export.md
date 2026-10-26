@@ -1,7 +1,7 @@
 ---
 title: Import / Export
 app: both
-status: planned
+status: in-progress
 summary: Move teams, themes and screens between installs as versioned, validated JSON.
 ---
 # Import / Export

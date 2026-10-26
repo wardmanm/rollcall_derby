@@ -23,23 +23,27 @@ export const FontFamilyNameSchema = z
 
 const WEIGHTS = /^(\d{3})(?:-(\d{3}))?$/;
 
-/** An upload's family, weight (`400`, or `100-900` for a variable font) and style, sent in its query string. */
-export const UploadFontFaceQuerySchema = z
-  .strictObject({
-    family: FontFamilyNameSchema,
-    weight: z.string().regex(WEIGHTS, 'Use a weight such as 400, or a range such as 100-900'),
-    style: FontStyleSchema.default('normal'),
-  })
-  .transform(({ family, weight, style }, context) => {
-    const [, min = '', max = min] = WEIGHTS.exec(weight) ?? [];
-    const weightMin = Number(min);
-    const weightMax = Number(max);
-    if (weightMin < 100 || weightMax > 900 || weightMin > weightMax) {
-      context.addIssue({ code: 'custom', path: ['weight'], message: 'Use weights from 100 to 900, lowest first' });
-      return z.NEVER;
-    }
-    return { family, weightMin, weightMax, style };
-  });
+/** A face as people give it: its family, weight (`400`, or `100-900` for a variable font) and style. */
+export const FONT_FACE_FIELDS = {
+  family: FontFamilyNameSchema,
+  weight: z.string().regex(WEIGHTS, 'Use a weight such as 400, or a range such as 100-900'),
+  style: FontStyleSchema.default('normal'),
+};
+
+/** Turns a face's `weight` into `weightMin` and `weightMax`, refusing weights outside 100–900 or the wrong way round. */
+export function faceWeights<T extends { weight: string }>({ weight, ...rest }: T, context: z.RefinementCtx) {
+  const [, min = '', max = min] = WEIGHTS.exec(weight) ?? [];
+  const weightMin = Number(min);
+  const weightMax = Number(max);
+  if (weightMin < 100 || weightMax > 900 || weightMin > weightMax) {
+    context.addIssue({ code: 'custom', path: ['weight'], message: 'Use weights from 100 to 900, lowest first' });
+    return z.NEVER;
+  }
+  return { ...rest, weightMin, weightMax };
+}
+
+/** An upload's family, weight and style, sent in its query string. */
+export const UploadFontFaceQuerySchema = z.strictObject(FONT_FACE_FIELDS).transform(faceWeights);
 export type UploadFontFaceQuery = z.input<typeof UploadFontFaceQuerySchema>;
 
 export const FontFaceSchema = z.strictObject({

@@ -33,4 +33,5 @@ To write a new one, follow [recording decisions](../wiki-guide.md#recording-deci
 | [0021](0021-per-app-releases.md) | Each rcl app is released on its own | accepted | 2026-10-16 |
 | [0022](0022-public-media.md) | Uploaded images are public at unguessable addresses | accepted | 2026-10-23 |
 | [0023](0023-core-data-services-for-apps.md) | rcl-core shares data with apps through read-only services | accepted | 2026-10-24 |
+| [0024](0024-import-export-kinds.md) | Import and export: core hosts them, apps own their kinds | accepted | 2026-10-26 |
 <!-- /generated:decisions -->

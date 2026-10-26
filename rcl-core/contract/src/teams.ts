@@ -146,6 +146,32 @@ export function memberProblem(member: MemberFields): { field: keyof MemberFields
   return null;
 }
 
+/** Adds memberProblem's finding, if any, to a schema's issues. */
+export function checkMember(member: MemberFields, context: z.RefinementCtx): void {
+  const problem = memberProblem(member);
+  if (problem) context.addIssue({ code: 'custom', path: [problem.field], message: problem.message });
+}
+
+/**
+ * What's wrong with a team's members together, or null: two skaters with the same number, or two members with a role a
+ * team has only one of. `index` is the second member involved.
+ */
+export function rosterProblem(
+  members: readonly MemberFields[],
+): { index: number; field: keyof MemberFields; message: string } | null {
+  for (const [index, member] of members.entries()) {
+    const earlier = members.slice(0, index);
+    if (member.number !== null && earlier.some((other) => other.number === member.number)) {
+      return { index, field: 'number', message: `Number ${member.number} is used by two skaters` };
+    }
+    const twice = member.roles.find(
+      (role) => ONE_PER_TEAM.includes(role) && earlier.some((o) => o.roles.includes(role)),
+    );
+    if (twice) return { index, field: 'roles', message: `Only one member can be ${MEMBER_ROLE_NAMES[twice]}` };
+  }
+  return null;
+}
+
 export const CreateMemberRequestSchema = z
   .strictObject({
     kind: MemberKindSchema,
@@ -155,10 +181,7 @@ export const CreateMemberRequestSchema = z
     roles: z.array(MemberRoleSchema).default([]),
     customRoles: CustomRolesSchema.default([]),
   })
-  .superRefine((member, context) => {
-    const problem = memberProblem(member);
-    if (problem) context.addIssue({ code: 'custom', path: [problem.field], message: problem.message });
-  });
+  .superRefine(checkMember);
 export type CreateMemberRequest = z.input<typeof CreateMemberRequestSchema>;
 
 /** A missing field stays as it is. The server checks the member that results, as memberProblem says. */
