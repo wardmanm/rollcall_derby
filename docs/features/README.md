@@ -11,7 +11,7 @@ The build order is on the [roadmap](../product/roadmap.md). To add a feature, st
 | Feature | App | Status | Summary |
 | --- | --- | --- | --- |
 | [CRG Automation](crg-automation.md) | rcl-producer | planned | Use CRG scoreboard state (read-only) to show and hide components and to display live game data. |
-| [Import / Export](import-export.md) | both | in-progress | Move teams, themes and screens between installs as versioned, validated JSON. |
+| [Import / Export](import-export.md) | both | shipped | Move teams and themes, with their logos, photos and fonts, between installs as versioned export files. |
 | [Live Mode](live-mode.md) | rcl-producer | planned | Set up and run events with several games and concurrent tracks, from producer dashboards with live previews. |
 | [OBS Control](obs-control.md) | rcl-producer | planned | Switch scenes, trigger hotkeys and toggle sources in OBS from producer dashboards. |
 | [Overlay Components](overlay-components.md) | rcl-producer | planned | Pre-made, configurable building blocks placed on screens, such as rosters, game info and skater spotlights. |

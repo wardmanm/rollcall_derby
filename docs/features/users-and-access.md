@@ -33,7 +33,7 @@ Basic user accounts and role-based access control. The app runs on a shared venu
 | View teams | ✅ | ✅ | ✅ |
 | Create or edit teams | ✅ | ✅ | — |
 | Import or export teams | ✅ | ✅ | — |
-| Import or export themes and screens | ✅ | ❓ | — |
+| Import or export themes and screens | ✅ | Export only | — |
 | Set up events, games and tracks | ✅ | ✅ | — |
 | View dashboards and previews | ✅ | ✅ (all) | Assigned screens only |
 | Use component controls on dashboards | ✅ | ✅ | ❓ limited, per assigned screen |
@@ -88,6 +88,5 @@ How accounts work is decided in [ADR-0018](../decisions/0018-declared-access-and
 
 - What does an Announcer's access look like: assigned per user, or per screen? Which "limited controls" do they get?
 - May Producers use OBS controls? The requirement says producers use dashboards, and OBS control is on dashboards.
-- May Producers import or export themes and screens they can't edit?
 - May Producers edit automation rules, or only pause and override them?
 - Should output tokens be rotatable, e.g. after an event, without having to re-add every source in OBS?

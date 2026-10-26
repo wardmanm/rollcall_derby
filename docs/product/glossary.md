@@ -68,6 +68,7 @@ This page defines the terms used across the wiki, the UI and the code. Use them 
 | **Component options** | The settings of one placed overlay component, e.g. which team or how many rows. |
 | **Theme** | A named set of visual tokens (colors, fonts, borders, radius) applied to screens as CSS custom properties. See [Theme Builder](../features/theme-builder.md). |
 | <a id="default-theme"></a>**Default theme** | The one theme the OBS overlay uses, chosen on the Themes page. With none, the overlay uses the built-in look. See [Theme Builder](../features/theme-builder.md#themes-rcl-producer). |
+| <a id="export-file"></a>**Export file** | A `.zip` of teams, themes and their logos, photos and fonts, made by exporting and read by importing, to move them between Rollcall installs or keep a backup. See [Import / Export](../features/import-export.md). |
 | <a id="font-library"></a>**Font library** | rcl-core's fonts: families that come with Rollcall, plus faces Admins upload. Themes pick their fonts from it, and they're never loaded from the internet. See [Theme Builder](../features/theme-builder.md#font-library-rcl-core). |
 | **Event** | A day of derby: one or more games across one or more tracks. See [Live Mode](../features/live-mode.md). |
 | <a id="output"></a>**Output** | A URL that renders one screen for one track. It is added to OBS as a browser source. |

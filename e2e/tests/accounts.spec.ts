@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 
 // Accounts on a fresh install (users-and-access R1–R4), in order: each step needs the one before. Each run starts
@@ -221,4 +223,65 @@ test('an Admin makes a theme the default, and the open OBS overlay follows each 
   await page.getByLabel('Accent', { exact: true }).fill('#00c853');
   await page.getByRole('button', { name: 'Save theme' }).click();
   await expect.poll(accent).toBe('#00c853');
+});
+
+// Import / export (import-export R1–R5), on the team and theme made above.
+test('an Admin exports teams and themes with an uploaded font, deletes them, and imports them back', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/core/transfer');
+  await signIn(page, ADMIN);
+  await expect(page.getByRole('heading', { name: 'Import / export' })).toBeVisible();
+  // An uploaded font for the theme's headings: Anton's file, under another family name.
+  const ttf = readFileSync(fileURLToPath(new URL('../../rcl-core/server/fonts/anton/anton.ttf', import.meta.url)));
+  const upload = await page.request.post('/api/core/fonts/faces?family=Rollerball&weight=400', {
+    data: ttf,
+    headers: { 'content-type': 'font/ttf' },
+  });
+  expect(upload.status()).toBe(201);
+  const [night] = (await (await page.request.get('/api/producer/themes')).json()) as {
+    id: string;
+    tokens: { fonts: Record<string, unknown> };
+  }[];
+  const tokens = {
+    ...night!.tokens,
+    fonts: { ...night!.tokens.fonts, heading: { family: 'Rollerball', weight: 400 } },
+  };
+  expect((await page.request.patch(`/api/producer/themes/${night!.id}`, { data: { tokens } })).status()).toBe(200);
+
+  await page.reload();
+  await expect(page.getByRole('checkbox', { name: 'Themes (1)' })).toBeChecked();
+  const download = page.waitForEvent('download');
+  await page.getByRole('link', { name: 'Export', exact: true }).click();
+  const file = testInfo.outputPath('rollcall-export.zip');
+  await (await download).saveAs(file);
+
+  // Gone: the team, the theme and the font.
+  const [team] = (await (await page.request.get('/api/core/teams')).json()) as { id: string }[];
+  await page.request.delete(`/api/core/teams/${team!.id}`);
+  await page.request.delete(`/api/producer/themes/${night!.id}`);
+  const families = (await (await page.request.get('/api/core/fonts')).json()) as {
+    name: string;
+    faces: { id: string }[];
+  }[];
+  const rollerball = families.find((family) => family.name === 'Rollerball')!;
+  await page.request.delete(`/api/core/fonts/faces/${rollerball.faces[0]!.id}`);
+
+  // Back, through the Import dialog, with the theme made the default again.
+  await page.getByRole('button', { name: 'Import…' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.locator('input[type="file"]').setInputFiles(file);
+  await expect(dialog.getByText('3 items. Nothing is saved until you import them.')).toBeVisible();
+  await expect(dialog.getByText('used by Derby Night')).toBeVisible();
+  await dialog.getByRole('switch', { name: 'Make theme “Derby Night” the default' }).check();
+  await dialog.getByRole('button', { name: 'Import 3 items' }).click();
+  await expect(dialog.getByText('Imported 3: 3 new.')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Done' }).click();
+
+  await page.goto('/core/teams');
+  await expect(page.getByRole('row', { name: /All Stars/ })).toBeVisible();
+  await page.goto('/core/fonts');
+  await expect(page.getByRole('row', { name: /Rollerball/ })).toBeVisible();
+  await page.goto('/producer/themes');
+  await expect(page.getByRole('row', { name: /Derby Night/ })).toContainText('Default');
 });

@@ -86,6 +86,7 @@ Summaries only. The ADRs are canonical.
 - [ADR-0020](../decisions/0020-api-keys.md): API keys for devices and scripts, with their own permissions and never people-only ones; the `Authorization` header beats the cookie.
 - [ADR-0022](../decisions/0022-public-media.md): Uploaded images are files in the data folder, served to anyone at unguessable `/media/<id>` addresses, so OBS overlays can show them.
 - [ADR-0023](../decisions/0023-core-data-services-for-apps.md): rcl-core shares its data with apps through read-only services on `AppContext`, fonts first; apps never read core's tables.
+- [ADR-0024](../decisions/0024-import-export-kinds.md): rcl-core reads and writes export files at `/api/core/transfer/…`; each app owns its kinds of item, and one import is one transaction.
 
 ## More
 

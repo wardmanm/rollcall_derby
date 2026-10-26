@@ -6,6 +6,10 @@ rcl-core hosts the other rcl apps, which have their own changelogs, such as [rcl
 
 ## [Unreleased]
 
+### Added
+
+- Import and export: export teams and themes, with their logos, photos and fonts, to a file, and import it on another Rollcall. Before anything is saved, the Import dialog shows what's in the file, side by side with anything here of the same name, so you choose to replace it, keep both or skip it. An import saves everything or nothing. Admins and Producers import and export teams (#22)
+
 ## [0.2.0] - 2026-10-25
 
 ### Added

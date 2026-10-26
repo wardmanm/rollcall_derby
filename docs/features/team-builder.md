@@ -29,7 +29,7 @@ Admins and Producers create and edit teams (`core:teams.manage`). Announcers can
 
 ## Behavior
 
-R1–R5 and R7 are built. R6 comes with the [Import / Export](import-export.md) feature.
+R1–R7 are built. Teams travel in [export files](import-export.md) (R6).
 
 - **The Teams page** (`/core/teams`, "Teams" in the header) lists each team with its logo, league, short name, colors, and how many skaters and bench staff it has. Admins and Producers create a team there by name, which then opens it.
 - **A team's page** has its details and logo, then its skaters, then its bench staff.

@@ -65,7 +65,7 @@ A theme is a name and a fixed set of **tokens**. Each becomes a CSS custom prope
 - **Two people editing the same theme:** **Save theme** puts your changes on the theme as it is then, so a colleague's change to a token you didn't touch isn't overwritten, and shows up in your form. When you both change the same token, the last save wins. The extra colors count as one token.
 - **Producers** see the list and each theme's preview, without editing controls. Announcers don't see themes.
 
-Not built yet: exporting and importing themes (R6).
+Themes travel in [export files](import-export.md), with the uploaded fonts they use (R6). Importing a theme never makes it the default on its own.
 
 ## Related
 
