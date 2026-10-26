@@ -6,6 +6,7 @@ import {
   familiesUsedBy,
   OverlayThemeSchema,
   SetDefaultThemeRequestSchema,
+  ThemeItemSchema,
   ThemeSchema,
   ThemeTokensSchema,
   themeToCss,
@@ -238,5 +239,25 @@ describe('themeToCss', () => {
     });
     expect(themeToCss(missing, LIBRARY).fontFaces).toBe('');
     expect(themeToCss(missing, LIBRARY).variables['--theme-font-body']).toBe('"Gone", system-ui, sans-serif');
+  });
+});
+
+describe('ThemeItemSchema', () => {
+  it('accepts a theme as an export file holds it, its name trimmed, not the default unless it says so', () => {
+    expect(ThemeItemSchema.parse({ name: ' Derby Night ', tokens: DEFAULT_TOKENS })).toEqual({
+      name: 'Derby Night',
+      tokens: DEFAULT_TOKENS,
+      default: false,
+    });
+    expect(ThemeItemSchema.parse({ name: 'Finals', tokens: DEFAULT_TOKENS, default: true }).default).toBe(true);
+  });
+
+  it('refuses a blank name, tokens the contract refuses, and anything else', () => {
+    expect(ThemeItemSchema.safeParse({ name: '', tokens: DEFAULT_TOKENS }).success).toBe(false);
+    const gold = { ...DEFAULT_TOKENS, colors: { ...DEFAULT_TOKENS.colors, accent: 'gold' } };
+    expect(ThemeItemSchema.safeParse({ name: 'Gold', tokens: gold }).error?.issues[0]?.message).toBe(
+      'Use a color like #1a2b3c',
+    );
+    expect(ThemeItemSchema.safeParse({ name: 'X', tokens: DEFAULT_TOKENS, id: 't1' }).success).toBe(false);
   });
 });

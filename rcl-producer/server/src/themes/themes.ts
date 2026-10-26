@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import { copyName } from '@rollcall/core-contract';
 import { DEFAULT_TOKENS, type Theme, type ThemeTokens } from '@rollcall/producer-contract';
 import type * as schema from '../db/schema.ts';
 import { producerThemes } from '../db/schema.ts';
@@ -10,7 +11,6 @@ import { producerThemes } from '../db/schema.ts';
 
 export type ProducerDatabase = BetterSQLite3Database<typeof schema>;
 
-const MAX_NAME = 64;
 const NAMES = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
 const now = () => new Date().toISOString();
 
@@ -61,19 +61,18 @@ export function updateTheme(
     .get();
 }
 
-// "<name> copy", or "<name> copy <n>", with the name shortened so the whole still fits in MAX_NAME characters.
-function copyName(name: string, n: number): string {
-  const suffix = n === 1 ? ' copy' : ` copy ${n}`;
-  return `${name.slice(0, MAX_NAME - suffix.length).trimEnd()}${suffix}`;
+/** The first copy name, "<name> copy" or "<name> copy 2" and so on, that no theme has. */
+export function freeCopyName(db: ProducerDatabase, name: string): string {
+  let n = 1;
+  while (themeNameTaken(db, copyName(name, n))) n += 1;
+  return copyName(name, n);
 }
 
 /** A copy of the theme under the first free copy name, never the default. Undefined when there's no such theme. */
 export function duplicateTheme(db: ProducerDatabase, id: string): Theme | undefined {
   const theme = findTheme(db, id);
   if (!theme) return undefined;
-  let n = 1;
-  while (themeNameTaken(db, copyName(theme.name, n))) n += 1;
-  return createTheme(db, { name: copyName(theme.name, n), tokens: theme.tokens });
+  return createTheme(db, { name: freeCopyName(db, theme.name), tokens: theme.tokens });
 }
 
 /** Deletes the theme, and returns it. Undefined when there's no such theme. */

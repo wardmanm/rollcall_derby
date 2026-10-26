@@ -97,6 +97,17 @@ export const ThemeSchema = z.strictObject({
 });
 export type Theme = z.infer<typeof ThemeSchema>;
 
+/**
+ * A theme in a Rollcall export file (ADR-0024), version 1: its name and tokens, and whether it was the default where it
+ * was exported, which an import shows only as a hint.
+ */
+export const ThemeItemSchema = z.strictObject({
+  name: ThemeNameSchema,
+  tokens: ThemeTokensSchema,
+  default: z.boolean().default(false),
+});
+export type ThemeItem = z.input<typeof ThemeItemSchema>;
+
 /** A new theme. Without tokens, it starts from the built-in look. */
 export const CreateThemeRequestSchema = z.strictObject({
   name: ThemeNameSchema,

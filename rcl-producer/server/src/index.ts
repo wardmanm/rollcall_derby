@@ -5,6 +5,7 @@ import pkg from '../package.json' with { type: 'json' };
 import * as schema from './db/schema.ts';
 import { announceDefaultTheme, openOverlay } from './overlay.ts';
 import { registerThemeRoutes } from './routes/themes.ts';
+import { themeKind } from './themes/transfer.ts';
 
 // The Producer app's server side, hosted by rcl-core as app module `producer` (ADR-0019): its routes below
 // /api/producer, its tables (producer_…), and the /producer/overlay namespace. rcl-core serves its web build at
@@ -33,4 +34,6 @@ export const producerApp: AppModule = {
   realtime(rt, ctx) {
     openOverlay(rt, ctx);
   },
+  // Themes travel in export files (ADR-0024).
+  transfer: (ctx) => [themeKind({ db: ctx.db(schema), announce: () => announceDefaultTheme(ctx) })],
 };

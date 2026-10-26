@@ -11,6 +11,6 @@ paths:
 - **A schema change is a server *and* web change.** Update both, and their tests, in the same change.
 - **Released import/export format versions never change.** Add a new version plus a migration instead (`docs/features/import-export.md`).
 - **Keep it lean:** the Producer app's server, its web app and the overlay all use this package. No runtime dependencies beyond `zod` and `@rollcall/core-contract` (whose only one is `zod`), and no Node-only or DOM-only APIs.
-- **Themes** (`src/themes.ts`): the token schema, `DEFAULT_TOKENS` (the built-in look) and `themeToCss`, which the editor's preview and the overlay both use. Token rules and variable names are in `docs/features/theme-builder.md`.
+- **Themes** (`src/themes.ts`), including `ThemeItemSchema`, a theme in export files (ADR-0024; released versions never change): the token schema, `DEFAULT_TOKENS` (the built-in look) and `themeToCss`, which the editor's preview and the overlay both use. Token rules and variable names are in `docs/features/theme-builder.md`.
   - Stored themes are checked against `ThemeTokensSchema` on every reply, and the overlay drops tokens that fail it. So a change to the tokens needs a Producer app migration that rewrites every theme's `tokens` in the same change.
 - **Tests:** every schema has tests for an accepted payload and for the rejected shapes that matter.
