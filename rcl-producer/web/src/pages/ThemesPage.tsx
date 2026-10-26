@@ -18,7 +18,7 @@ import {
   VisuallyHidden,
 } from '@mantine/core';
 import { CreateThemeRequestSchema, type Theme } from '@rollcall/producer-contract';
-import { fieldErrors, problemWith, useGetMeQuery } from '@rollcall/web-sdk';
+import { exportUrl, fieldErrors, ImportDialog, problemWith, useGetMeQuery } from '@rollcall/web-sdk';
 import {
   useCreateThemeMutation,
   useDeleteThemeMutation,
@@ -42,9 +42,24 @@ function ThemeList({ canManage }: { canManage: boolean }) {
   const themes = useGetThemesQuery();
   const [deleting, setDeleting] = useState<Theme | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
   return (
     <Stack maw={980}>
-      <Title order={2}>Themes</Title>
+      <Group justify="space-between">
+        <Title order={2}>Themes</Title>
+        <Group gap="xs">
+          {canManage && (
+            <Button variant="default" onClick={() => setImporting(true)}>
+              Import…
+            </Button>
+          )}
+          {themes.data && themes.data.length > 0 && (
+            <Button variant="default" component="a" href={exportUrl({ kinds: ['producer:theme'] })} download>
+              Export all
+            </Button>
+          )}
+        </Group>
+      </Group>
       <Text size="sm">The default theme styles the OBS overlay. With none, the overlay uses the built-in look.</Text>
       {canManage && <NewTheme />}
       {themes.isError && <Alert color="red">{problemWith(themes.error)}</Alert>}
@@ -56,11 +71,9 @@ function ThemeList({ canManage }: { canManage: boolean }) {
             <Table.Tr>
               <Table.Th>Name</Table.Th>
               <Table.Th>Colors</Table.Th>
-              {canManage && (
-                <Table.Th>
-                  <VisuallyHidden>Actions</VisuallyHidden>
-                </Table.Th>
-              )}
+              <Table.Th>
+                <VisuallyHidden>Actions</VisuallyHidden>
+              </Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -68,13 +81,18 @@ function ThemeList({ canManage }: { canManage: boolean }) {
               <ThemeRow
                 key={theme.id}
                 theme={theme}
-                actions={canManage ? <ThemeMenu theme={theme} onDelete={setDeleting} onProblem={setProblem} /> : null}
+                actions={
+                  <ThemeMenu theme={theme} canManage={canManage} onDelete={setDeleting} onProblem={setProblem} />
+                }
               />
             ))}
           </Table.Tbody>
         </Table>
       )}
       {deleting && <DeleteTheme theme={deleting} onClose={() => setDeleting(null)} />}
+      {canManage && (
+        <ImportDialog opened={importing} onClose={() => setImporting(false)} onImported={() => void themes.refetch()} />
+      )}
     </Stack>
   );
 }
@@ -101,18 +119,21 @@ function ThemeRow({ theme, actions }: { theme: Theme; actions: ReactNode }) {
           </ColorSwatch>
         </Group>
       </Table.Td>
-      {actions && <Table.Td>{actions}</Table.Td>}
+      <Table.Td>{actions}</Table.Td>
     </Table.Tr>
   );
 }
 
-// A theme's row menu: Duplicate, Make default or Stop using as default, and Delete (which confirms first).
+// A theme's row menu: Export for anyone who can see it, then for those who may manage themes Duplicate, Make default
+// or Stop using as default, and Delete (which confirms first).
 function ThemeMenu({
   theme,
+  canManage,
   onDelete,
   onProblem,
 }: {
   theme: Theme;
+  canManage: boolean;
   onDelete: (theme: Theme) => void;
   onProblem: (problem: string | null) => void;
 }) {
@@ -130,15 +151,22 @@ function ThemeMenu({
         </ActionIcon>
       </Menu.Target>
       <Menu.Dropdown>
-        <Menu.Item onClick={() => void run(duplicateTheme({ id: theme.id }))}>Duplicate</Menu.Item>
-        {theme.isDefault ? (
-          <Menu.Item onClick={() => void run(setDefaultTheme({ themeId: null }))}>Stop using as default</Menu.Item>
-        ) : (
-          <Menu.Item onClick={() => void run(setDefaultTheme({ themeId: theme.id }))}>Make default</Menu.Item>
-        )}
-        <Menu.Item color="red" onClick={() => onDelete(theme)}>
-          Delete
+        <Menu.Item component="a" href={exportUrl({ items: [{ kind: 'producer:theme', id: theme.id }] })} download>
+          Export
         </Menu.Item>
+        {canManage && (
+          <>
+            <Menu.Item onClick={() => void run(duplicateTheme({ id: theme.id }))}>Duplicate</Menu.Item>
+            {theme.isDefault ? (
+              <Menu.Item onClick={() => void run(setDefaultTheme({ themeId: null }))}>Stop using as default</Menu.Item>
+            ) : (
+              <Menu.Item onClick={() => void run(setDefaultTheme({ themeId: theme.id }))}>Make default</Menu.Item>
+            )}
+            <Menu.Item color="red" onClick={() => onDelete(theme)}>
+              Delete
+            </Menu.Item>
+          </>
+        )}
       </Menu.Dropdown>
     </Menu>
   );

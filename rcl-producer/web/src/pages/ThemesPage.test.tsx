@@ -111,10 +111,24 @@ describe('the Themes page', () => {
     );
   });
 
-  it('is read-only for a Producer', async () => {
+  it('is read-only for a Producer, who may still export themes', async () => {
     await openThemes(PRODUCER);
     expect(screen.queryByRole('button', { name: 'Create theme' })).toBeNull();
-    expect(screen.queryByRole('button', { name: /Actions for/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Import…' })).toBeNull();
+    fireEvent.click(within(rowOf('Derby Night')).getByRole('button', { name: 'Actions for Derby Night' }));
+    expect((await screen.findByRole('menuitem', { name: 'Export' })).getAttribute('href')).toBe(
+      '/api/core/transfer/export?items=producer%3Atheme%3At1',
+    );
+    expect(screen.queryByRole('menuitem', { name: 'Duplicate' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Export all' }).getAttribute('href')).toBe(
+      '/api/core/transfer/export?kinds=producer%3Atheme',
+    );
+  });
+
+  it('opens the Import dialog for an Admin', async () => {
+    await openThemes(ADMIN);
+    fireEvent.click(screen.getByRole('button', { name: 'Import…' }));
+    expect(await screen.findByRole('button', { name: 'Choose file' })).toBeTruthy();
   });
 
   it('hides the page and its link from someone who may not view themes', async () => {
