@@ -363,6 +363,16 @@ describe('previewing an import', () => {
     expect(imported.json()).toEqual({ added: 1, replaced: 0, keptBoth: 0, skipped: 1, copies: [] });
   });
 
+  it('shortens an item’s name to 64 characters where it shows the name as the file gives it', async () => {
+    const { preview } = await as();
+    const broken = await preview(fileOf([team({ ...TEAM, name: 'A'.repeat(10_000) })]));
+    const { message } = broken.res.json<{ message: string }>();
+    expect(message.startsWith(`Item 1 (team “${'A'.repeat(63)}…”): `)).toBe(true);
+    expect(message.length).toBeLessThan(200);
+    const unknown = await preview(fileOf([{ kind: 'core:screen', version: 1, data: { name: 'B'.repeat(10_000) } }]));
+    expect(unknown.body?.items[0]?.name).toBe(`${'B'.repeat(63)}…`);
+  });
+
   it('refuses a file that isn’t an export, is newer, or holds a broken item or media file, saying where', async () => {
     const { send, preview } = await as();
     const refusal = async (zip: Uint8Array) => (await preview(zip)).res.json<{ error: string; message: string }>();

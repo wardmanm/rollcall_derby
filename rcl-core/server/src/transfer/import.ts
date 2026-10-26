@@ -61,9 +61,12 @@ const thingsOf = (kindName: string) => {
   const thing = (kindName.split(':')[1] ?? kindName).replaceAll('-', ' ');
   return `${thing.charAt(0).toUpperCase()}${thing.slice(1)}s`;
 };
-// An item's name before its kind has checked it, for messages.
-const rawName = (data: unknown) =>
-  typeof data === 'object' && data !== null && 'name' in data && typeof data.name === 'string' ? data.name : '';
+// An item's name before its kind has checked it, for messages: at most 64 characters, as names here are.
+const rawName = (data: unknown) => {
+  const name =
+    typeof data === 'object' && data !== null && 'name' in data && typeof data.name === 'string' ? data.name : '';
+  return name.length > 64 ? `${name.slice(0, 63)}…` : name;
+};
 
 /** Reads and checks an export file, and matches its items with what's here. Throws a TransferError if it can't. */
 export function planImport({
