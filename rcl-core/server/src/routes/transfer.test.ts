@@ -150,7 +150,7 @@ async function as(role: Role = 'admin', { demo = false } = {}) {
       style: 'normal',
       mediaId: saveMedia(db, mediaDir, FONTS.woff2, fontTypeOf)!,
     });
-  return { app, db, mediaDir, notes, exportOf, send, preview, importFile, allStars, uploadFont };
+  return { app, db, mediaDir, cookies, notes, exportOf, send, preview, importFile, allStars, uploadFont };
 }
 
 const LOGO = mediaPathFor(IMAGES.png, 'image/png');
@@ -191,6 +191,34 @@ const face = (family: string, weight = '700'): ManifestItem => ({
 const manifestOf = (body: Buffer) =>
   ManifestSchema.parse(JSON.parse(strFromU8(unzipSync(body)['rollcall-export.json']!)));
 const choose = (file: string, ...items: ImportChoices['items']): ImportChoices => ({ file, items });
+
+describe('the kinds of item', () => {
+  it('lists those the caller may export or import, with counts, leaving out those that only travel with others', async () => {
+    const admin = await as('admin', { demo: true });
+    admin.allStars();
+    const kinds = await admin.app.inject({ method: 'GET', url: '/api/core/transfer/kinds', cookies: admin.cookies });
+    expect(kinds.json()).toEqual([
+      { kind: 'core:team', one: 'Team', many: 'teams', count: 1, mayExport: true, mayImport: true },
+      { kind: 'demo:note', one: 'Note', many: 'notes', count: 0, mayExport: true, mayImport: true },
+    ]);
+    const producer = await as('producer', { demo: true });
+    const theirs = await producer.app.inject({
+      method: 'GET',
+      url: '/api/core/transfer/kinds',
+      cookies: producer.cookies,
+    });
+    expect(theirs.json()).toEqual([
+      { kind: 'core:team', one: 'Team', many: 'teams', count: 0, mayExport: true, mayImport: true },
+    ]);
+    const announcer = await as('announcer');
+    const none = await announcer.app.inject({
+      method: 'GET',
+      url: '/api/core/transfer/kinds',
+      cookies: announcer.cookies,
+    });
+    expect(none.json()).toEqual([]);
+  });
+});
 
 describe('exporting', () => {
   it('exports a team with its logo and photos, as a download named after it', async () => {

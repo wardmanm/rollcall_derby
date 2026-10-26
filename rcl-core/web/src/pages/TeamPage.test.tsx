@@ -337,6 +337,13 @@ describe('the Team page', () => {
     );
   });
 
+  it('exports the team', async () => {
+    await openTeam();
+    expect(screen.getByRole('link', { name: 'Export team' }).getAttribute('href')).toBe(
+      '/api/core/transfer/export?items=core%3Ateam%3At1',
+    );
+  });
+
   it('uploads a logo as the image itself, with its own type', async () => {
     const { requests } = await openTeam(PRODUCER, { 'PUT /api/core/teams/t1/logo': json(TEAM) });
     pickFile(fileInput(), png());
@@ -382,6 +389,7 @@ describe('the Team page', () => {
       expect(screen.queryByRole('button', { name }), name).toBeNull();
     }
     expect(document.querySelector('input[type="file"]')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Export team' })).toBeNull();
   });
 
   it('says when there is no such team', async () => {

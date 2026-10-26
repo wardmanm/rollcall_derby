@@ -15,7 +15,7 @@ import {
   VisuallyHidden,
 } from '@mantine/core';
 import { CreateTeamRequestSchema, type TeamSummary } from '@rollcall/core-contract';
-import { fieldErrors, problemWith, useGetMeQuery } from '@rollcall/web-sdk';
+import { exportUrl, fieldErrors, ImportDialog, problemWith, useGetMeQuery } from '@rollcall/web-sdk';
 import { useCreateTeamMutation, useGetTeamsQuery } from '../api.ts';
 
 // The teams (docs/features/team-builder.md). Anyone holding core:teams.read sees the list; core:teams.manage can
@@ -28,10 +28,28 @@ export function TeamsPage() {
 
 function TeamList({ canManage }: { canManage: boolean }) {
   const teams = useGetTeamsQuery();
+  const [importing, setImporting] = useState(false);
   return (
     <Stack maw={980}>
-      <Title order={2}>Teams</Title>
+      <Group justify="space-between">
+        <Title order={2}>Teams</Title>
+        {canManage && (
+          <Group gap="xs">
+            <Button variant="default" onClick={() => setImporting(true)}>
+              Import…
+            </Button>
+            {teams.data && teams.data.length > 0 && (
+              <Button variant="default" component="a" href={exportUrl({ kinds: ['core:team'] })} download>
+                Export all
+              </Button>
+            )}
+          </Group>
+        )}
+      </Group>
       {canManage && <NewTeam />}
+      {canManage && (
+        <ImportDialog opened={importing} onClose={() => setImporting(false)} onImported={() => void teams.refetch()} />
+      )}
       {teams.isError && <Alert color="red">{problemWith(teams.error)}</Alert>}
       {teams.data?.length === 0 && <Text>No teams yet.</Text>}
       {teams.data && teams.data.length > 0 && (

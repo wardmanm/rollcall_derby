@@ -5,6 +5,7 @@ import type { TransferKind } from '@rollcall/app-sdk';
 import {
   ExportQuerySchema,
   ImportPreviewSchema,
+  TransferKindInfoSchema,
   ImportQuerySchema,
   ImportResultSchema,
   MAX_EXPORT_BYTES,
@@ -49,6 +50,30 @@ export function registerTransferRoutes(
   fastify: FastifyInstance,
   { db, mediaDir }: { db: AppDatabase; mediaDir: string },
 ) {
+  fastify.withTypeProvider<ZodTypeProvider>().get(
+    '/transfer/kinds',
+    {
+      ...SIGNED_IN,
+      schema: {
+        tags: TAGS,
+        summary: 'The kinds of item you may export or import, with how many of each there are',
+        response: { 200: TransferKindInfoSchema.array(), ...ERROR_RESPONSES },
+      },
+    },
+    async (request) =>
+      [...request.server.hostedApps.kinds.values()]
+        .filter((kind) => !kind.onlyAsNeed)
+        .map((kind) => ({
+          kind: kind.name,
+          one: kind.label.one,
+          many: kind.label.many,
+          count: kind.list().length,
+          mayExport: holds(request, kind.exportPermission),
+          mayImport: holds(request, kind.importPermission),
+        }))
+        .filter((info) => info.mayExport || info.mayImport),
+  );
+
   fastify.withTypeProvider<ZodTypeProvider>().get(
     '/transfer/export',
     {

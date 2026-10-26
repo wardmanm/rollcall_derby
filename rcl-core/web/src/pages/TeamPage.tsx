@@ -17,7 +17,7 @@ import {
   VisuallyHidden,
 } from '@mantine/core';
 import { UpdateTeamRequestSchema, type MemberKind, type Team, type TeamMember } from '@rollcall/core-contract';
-import { apiError, fieldErrors, problemWith, useGetMeQuery } from '@rollcall/web-sdk';
+import { apiError, exportUrl, fieldErrors, problemWith, useGetMeQuery } from '@rollcall/web-sdk';
 import {
   useDeleteTeamMutation,
   useGetTeamQuery,
@@ -91,7 +91,19 @@ function TeamView({ id, canManage }: { id: string; canManage: boolean }) {
   return (
     <Stack maw={980}>
       <BackToTeams />
-      <Title order={2}>{data.name}</Title>
+      <Group justify="space-between">
+        <Title order={2}>{data.name}</Title>
+        {canManage && (
+          <Button
+            variant="default"
+            component="a"
+            href={exportUrl({ items: [{ kind: 'core:team', id: data.id }] })}
+            download
+          >
+            Export team
+          </Button>
+        )}
+      </Group>
       {canManage ? <TeamDetailsForm key={data.id} team={data} /> : <TeamDetails team={data} />}
       {problem && (
         <Alert color="red" withCloseButton closeButtonLabel="Dismiss" onClose={() => setProblem(null)}>

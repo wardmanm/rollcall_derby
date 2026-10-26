@@ -83,6 +83,19 @@ export function copyName(name: string, n: number, max = 64): string {
   return `${name.slice(0, max - suffix.length).trimEnd()}${suffix}`;
 }
 
+/** A kind of item the caller may export or import, for the Import / export page. */
+export const TransferKindInfoSchema = z.strictObject({
+  kind: z.string(),
+  /** For people, such as "Team" and "teams". */
+  one: z.string(),
+  many: z.string(),
+  /** How many items of it there are here. */
+  count: z.number().int().min(0),
+  mayExport: z.boolean(),
+  mayImport: z.boolean(),
+});
+export type TransferKindInfo = z.infer<typeof TransferKindInfoSchema>;
+
 /** What to export: chosen items, or everything of some kinds. */
 export type ExportSelection = { items: { kind: string; id: string }[] } | { kinds: string[] };
 

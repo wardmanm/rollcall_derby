@@ -62,6 +62,17 @@ describe('the Teams page', () => {
     expect(screen.getByRole('link', { name: 'Teams' })).toBeTruthy();
   });
 
+  it('exports every team, and opens the Import dialog, for those who may manage teams', async () => {
+    signedIn(PRODUCER, { 'GET /api/core/teams': json(TEAMS) });
+    openCore('/core/teams');
+    await within(await screen.findByRole('table')).findByText('All Stars');
+    expect(screen.getByRole('link', { name: 'Export all' }).getAttribute('href')).toBe(
+      '/api/core/transfer/export?kinds=core%3Ateam',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Import…' }));
+    expect(await screen.findByRole('button', { name: 'Choose file' })).toBeTruthy();
+  });
+
   it('says when there are no teams yet', async () => {
     signedIn(PRODUCER, { 'GET /api/core/teams': json([]) });
     openCore('/core/teams');
@@ -99,6 +110,8 @@ describe('the Teams page', () => {
     openCore('/core/teams');
     await within(await screen.findByRole('table')).findByText('All Stars');
     expect(screen.queryByRole('button', { name: 'Create team' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Import…' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Export all' })).toBeNull();
   });
 
   it('hides the page and its link from someone who may not view teams', async () => {

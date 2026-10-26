@@ -9,6 +9,7 @@ import {
   SessionUserSchema,
   TeamSchema,
   TeamSummarySchema,
+  TransferKindInfoSchema,
   UserSchema,
   type ApiKey,
   type ChangePasswordRequest,
@@ -29,6 +30,7 @@ import {
   type SetupRequest,
   type Team,
   type TeamSummary,
+  type TransferKindInfo,
   type UpdateMemberRequest,
   type UpdateTeamRequest,
   type UploadFontFaceQuery,
@@ -205,6 +207,11 @@ const coreApi = api.enhanceEndpoints({ addTagTypes: ['Users', 'ApiKeys', 'Teams'
       transformResponse: (response: unknown) => FontFamilySchema.parse(response),
       invalidatesTags: ['Fonts'],
     }),
+    // The kinds of item you may export or import, for the Import / export page.
+    getTransferKinds: build.query<TransferKindInfo[], void>({
+      query: () => 'core/transfer/kinds',
+      transformResponse: (response: unknown) => TransferKindInfoSchema.array().parse(response),
+    }),
     removeFontFace: build.mutation<void, string>({
       query: (id) => ({ url: `core/fonts/faces/${encodeURIComponent(id)}`, method: 'DELETE' }),
       invalidatesTags: ['Fonts'],
@@ -242,4 +249,5 @@ export const {
   useGetFontsQuery,
   useUploadFontFaceMutation,
   useRemoveFontFaceMutation,
+  useGetTransferKindsQuery,
 } = coreApi;
