@@ -60,7 +60,7 @@ export const TeamItemSchema = z
   .strictObject({
     ...CreateTeamRequestSchema.shape,
     logo: MediaPathSchema.nullable().default(null),
-    members: z.array(MemberItemSchema).max(200, 'Use at most 200 members'),
+    members: z.array(MemberItemSchema),
   })
   .superRefine((team, context) => {
     const problem = rosterProblem(team.members);

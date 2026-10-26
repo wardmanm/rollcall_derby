@@ -95,6 +95,11 @@ describe('TeamItemSchema', () => {
     );
     expect(problem({ ...TEAM, name: '  ' })).toBe('name: Give the team a name');
   });
+
+  it('takes as many members as the Team pages do, so any team exported can be imported again', () => {
+    const members = Array.from({ length: 201 }, (_, n) => ({ kind: 'skater', name: `Skater ${n}`, number: `${n}` }));
+    expect(TeamItemSchema.parse({ ...TEAM, members }).members).toHaveLength(201);
+  });
 });
 
 describe('FontFaceItemSchema', () => {
