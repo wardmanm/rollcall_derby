@@ -169,7 +169,7 @@ const MEDIA = new Map([
 ]);
 
 // An export file holding `items`, with every media file the tests use unless told otherwise.
-const fileOf = (items: ManifestItem[], { media = MEDIA } = {}) =>
+const fileOf = (items: ManifestItem[], { media = MEDIA }: { media?: ReadonlyMap<string, Uint8Array> } = {}) =>
   packExport(
     {
       format: 'rollcall-export',
@@ -187,6 +187,12 @@ const face = (family: string, weight = '700'): ManifestItem => ({
   version: 1,
   data: { family, weight, style: 'normal', file: FONT },
 });
+// A file's real first bytes, padded past 5 MB.
+const padded = (bytes: Uint8Array) => {
+  const big = new Uint8Array(5 * 1024 * 1024 + 1);
+  big.set(bytes);
+  return big;
+};
 // The manifest of an exported file.
 const manifestOf = (body: Buffer) =>
   ManifestSchema.parse(JSON.parse(strFromU8(unzipSync(body)['rollcall-export.json']!)));
@@ -371,6 +377,25 @@ describe('previewing an import', () => {
     expect(message.length).toBeLessThan(200);
     const unknown = await preview(fileOf([{ kind: 'core:screen', version: 1, data: { name: 'B'.repeat(10_000) } }]));
     expect(unknown.body?.items[0]?.name).toBe(`${'B'.repeat(63)}…`);
+  });
+
+  it('refuses an image or font file over its kind’s 5 MB limit', async () => {
+    const { preview } = await as();
+    const bigLogo = padded(IMAGES.png);
+    const bigFont = padded(FONTS.woff2);
+    const logo = mediaPathFor(bigLogo, 'image/png');
+    const file = mediaPathFor(bigFont, 'font/woff2');
+    const refusal = async (item: ManifestItem, media: Map<string, Uint8Array>) =>
+      (await preview(fileOf([item], { media }))).res.json<{ error: string; message: string }>();
+    expect(await refusal(team({ ...TEAM, logo, members: [] }), new Map([[logo, bigLogo]]))).toEqual({
+      error: 'bad_media',
+      message: 'Item 1 (team “All Stars”): the logo is over 5 MB',
+    });
+    const font = { kind: 'core:font-face', version: 1, data: { family: 'Jammer', weight: '700', file } };
+    expect(await refusal(font, new Map([[file, bigFont]]))).toEqual({
+      error: 'bad_media',
+      message: 'Item 1 (font “Jammer 700”): the font file is over 5 MB',
+    });
   });
 
   it('refuses a file that isn’t an export, is newer, or holds a broken item or media file, saying where', async () => {

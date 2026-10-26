@@ -4,6 +4,7 @@ import {
   EXPORT_FORMAT_VERSION,
   ManifestHeadSchema,
   ManifestSchema,
+  MAX_FONT_BYTES,
   MAX_IMAGE_BYTES,
   type ConflictTarget,
   type ImportPreview,
@@ -54,6 +55,7 @@ export interface ImportPlan {
 const NEWER = 'This file was made by a newer Rollcall. Update Rollcall to import it.';
 const CHANGED = 'Something changed since you checked this file. Check it again.';
 const TYPE_CHECKS = { image: imageTypeOf, font: fontTypeOf } as const;
+const SIZE_LIMITS = { image: MAX_IMAGE_BYTES, font: MAX_FONT_BYTES } as const;
 const TYPE_WORDS = { image: "isn't a PNG, JPEG or WebP image", font: "isn't a WOFF2, WOFF, TTF or OTF font" } as const;
 
 // A kind this server doesn't store, for people: core:screen → "Screens".
@@ -122,8 +124,8 @@ export function planImport({
       const bytes = media.get(file.path);
       const problem = !bytes
         ? 'is missing from the file'
-        : bytes.length > MAX_IMAGE_BYTES
-          ? 'is over 5 MB'
+        : bytes.length > SIZE_LIMITS[file.type]
+          ? `is over ${SIZE_LIMITS[file.type] / (1024 * 1024)} MB`
           : TYPE_CHECKS[file.type](bytes)
             ? undefined
             : TYPE_WORDS[file.type];
