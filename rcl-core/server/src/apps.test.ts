@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { FastifyBaseLogger } from 'fastify';
-import type { AppModule } from '@rollcall/app-sdk';
+import type { AppModule, TransferKind } from '@rollcall/app-sdk';
 import coreJournal from '../drizzle/meta/_journal.json' with { type: 'json' };
 import { hostApps, migrationsTableFor } from './apps.ts';
 import { openMemoryDatabase } from './db.ts';
@@ -118,6 +118,24 @@ describe("an app's context", () => {
     const { hosted } = host([demo]);
     expect(hosted.contextFor(demo)).toBe(hosted.contextFor(demo));
     expect(hosted.contextFor(demo)).not.toBe(hosted.contextFor(core));
+  });
+});
+
+// A kind whose name is all that matters here.
+const kind = (name: string) => ({ name }) as unknown as TransferKind;
+
+describe("apps' export kinds", () => {
+  it('are gathered by name, each named after its app, skipping and logging any that are not', () => {
+    const { hosted, log } = host([app({ transfer: () => [kind('demo:note'), kind('core:team'), kind('demo:note')] })]);
+    expect([...hosted.kinds.keys()]).toEqual(['demo:note']);
+    expect(log.error).toHaveBeenCalledWith(
+      { app: 'demo' },
+      'Skipping export kind "core:team": it must be named demo:<thing>',
+    );
+    expect(log.error).toHaveBeenCalledWith(
+      { app: 'demo' },
+      'Skipping export kind "demo:note": another kind has that name',
+    );
   });
 });
 

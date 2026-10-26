@@ -54,6 +54,10 @@ export function registerApiDocs(
         { name: 'core/api-keys', description: 'API keys for devices and scripts (Admin only)' },
         { name: 'core/teams', description: 'Teams, their skaters and bench staff, logos and photos' },
         { name: 'core/fonts', description: 'The font library: bundled and uploaded fonts' },
+        {
+          name: 'core/transfer',
+          description: 'Import and export: Rollcall export files of teams, themes and their media',
+        },
       ],
       components: {
         securitySchemes: {

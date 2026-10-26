@@ -83,6 +83,31 @@ export function copyName(name: string, n: number, max = 64): string {
   return `${name.slice(0, max - suffix.length).trimEnd()}${suffix}`;
 }
 
+/** What to export: chosen items, or everything of some kinds. */
+export type ExportSelection = { items: { kind: string; id: string }[] } | { kinds: string[] };
+
+// A comma-separated list, without empty entries.
+const commaList = (text: string) => text.split(',').filter((part) => part !== '');
+
+/**
+ * `GET /transfer/export`'s query string: `items=core:team:<id>,producer:theme:<id>` for chosen items, or
+ * `kinds=core:team,producer:theme` for everything of those kinds.
+ */
+export const ExportQuerySchema = z
+  .strictObject({ items: z.string().optional(), kinds: z.string().optional() })
+  .transform(({ items, kinds }, context): ExportSelection => {
+    if (items !== undefined && kinds === undefined) {
+      const picked = commaList(items).map((item) => /^([a-z][a-z0-9-]*:[a-z][a-z0-9-]*):(.+)$/.exec(item));
+      if (picked.length > 0 && picked.every((match): match is RegExpExecArray => match !== null)) {
+        return { items: picked.map(([, kind = '', id = '']) => ({ kind, id })) };
+      }
+    }
+    if (kinds !== undefined && items === undefined) return { kinds: commaList(kinds) };
+    context.addIssue({ code: 'custom', message: 'Choose items, as kind:id, or kinds to export' });
+    return z.NEVER;
+  });
+export type ExportQuery = z.input<typeof ExportQuerySchema>;
+
 /** One fact about an item, shown when it conflicts with one here, such as "Skaters: 14". */
 export const TransferFactSchema = z.strictObject({ label: z.string(), value: z.string() });
 export type TransferFact = z.infer<typeof TransferFactSchema>;

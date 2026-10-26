@@ -17,6 +17,7 @@ import { registerAuthRoutes } from './routes/auth.ts';
 import { registerSetupRoutes } from './routes/setup.ts';
 import { registerTeamImageRoutes } from './routes/team-images.ts';
 import { registerTeamRoutes } from './routes/teams.ts';
+import { registerTransferRoutes } from './routes/transfer.ts';
 import { registerUserRoutes } from './routes/users.ts';
 import { teamKind } from './teams/transfer.ts';
 
@@ -85,6 +86,7 @@ export function coreApp({
       registerTeamRoutes(fastify, { db, mediaDir });
       registerTeamImageRoutes(fastify, { db, mediaDir });
       registerFontRoutes(fastify, { db, mediaDir });
+      registerTransferRoutes(fastify, { db, mediaDir });
     },
     // Teams and their fonts' faces travel in export files (ADR-0024).
     transfer: () => [teamKind({ db }), fontFaceKind({ db })],

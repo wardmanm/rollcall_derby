@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   copyName,
+  ExportQuerySchema,
   FontFaceItemSchema,
   ImportQuerySchema,
   ManifestHeadSchema,
@@ -137,5 +138,27 @@ describe('copyName', () => {
     ]);
     expect(copyName('x'.repeat(64), 1)).toBe(`${'x'.repeat(59)} copy`);
     expect(copyName('x'.repeat(64), 2)).toBe(`${'x'.repeat(57)} copy 2`);
+  });
+});
+
+describe('ExportQuerySchema', () => {
+  it('reads chosen items as kind:id, or whole kinds', () => {
+    expect(ExportQuerySchema.parse({ items: 'core:team:t1,producer:theme:th-2' })).toEqual({
+      items: [
+        { kind: 'core:team', id: 't1' },
+        { kind: 'producer:theme', id: 'th-2' },
+      ],
+    });
+    expect(ExportQuerySchema.parse({ kinds: 'core:team,producer:theme' })).toEqual({
+      kinds: ['core:team', 'producer:theme'],
+    });
+  });
+
+  it('refuses both, neither, an empty list of items, and an item with no kind', () => {
+    for (const query of [{ items: 'core:team:t1', kinds: 'core:team' }, {}, { items: '' }, { items: 't1' }]) {
+      expect(ExportQuerySchema.safeParse(query).error?.issues[0]?.message, JSON.stringify(query)).toBe(
+        'Choose items, as kind:id, or kinds to export',
+      );
+    }
   });
 });

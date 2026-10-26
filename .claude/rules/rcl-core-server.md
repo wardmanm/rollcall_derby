@@ -31,6 +31,7 @@ paths:
 - **Bundled fonts** are in `fonts/`, listed in `src/fonts/bundled.ts` and served at `/fonts/<folder>/<file>` to anyone, so `fonts` is a reserved app id too.
 - **Export files** (ADR-0024) are read and written in `src/transfer/`: `zip.ts` packs and reads the zip within the limits, judging each entry's stated size before unzipping, and refusals are `TransferError`s.
   - Core's kinds are `teamKind` (`src/teams/transfer.ts`) and `fontFaceKind` (`src/fonts/transfer.ts`), listed by `coreApp`'s `transfer`. A kind's `save` is synchronous and returns media it no longer uses, which core removes after the commit.
+  - `hostApps` gathers every app's kinds (`hostedApps.kinds`). `src/routes/transfer.ts` exports (`buildExport`, `src/transfer/export.ts`) and imports in two steps (`planImport` and `applyImport`, `src/transfer/import.ts`): the routes are for signed-in people, and each item's kind is checked against its own permission with `deny`.
 - **Socket.IO:** each app creates its namespaces with `rt.namespace(name, { access })` in its module's `realtime()`, at or below `/<id>`. `/` refuses everyone, and namespaces take sessions only, never API keys.
 - **Database changes:**
   1. Edit `src/db/schema.ts`.

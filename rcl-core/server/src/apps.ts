@@ -2,7 +2,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import type { FastifyBaseLogger } from 'fastify';
 import { satisfies, validRange } from 'semver';
-import type { AppContext, AppModule } from '@rollcall/app-sdk';
+import type { AppContext, AppModule, TransferKind } from '@rollcall/app-sdk';
 import { createPermissions, type Permissions } from './auth/access.ts';
 import type { AppDatabase } from './db.ts';
 import { listFonts } from './fonts/fonts.ts';
@@ -17,6 +17,8 @@ export interface HostedApps {
   /** Each hosted app's web build, below `/<id>/`. Core's comes first, so `/` redirects to it. */
   webApps: WebApp[];
   contextFor(module: AppModule): AppContext;
+  /** Every hosted app's kinds of item for export files, by name (ADR-0024). */
+  kinds: ReadonlyMap<string, TransferKind>;
 }
 
 const APP_ID = /^[a-z][a-z0-9-]*$/;
@@ -90,14 +92,29 @@ export function hostApps({
     db: (schema) => drizzle(db.$client, { schema }),
     fonts: { list: () => listFonts(db) },
   });
+  const contextFor = (module: AppModule) => {
+    const ctx = contexts.get(module.id) ?? newContext(module);
+    contexts.set(module.id, ctx);
+    return ctx;
+  };
+  // Each app's kinds, each named after its app, as its permissions are.
+  const kinds = new Map<string, TransferKind>();
+  for (const module of modules) {
+    for (const kind of module.transfer?.(contextFor(module)) ?? []) {
+      const problem = !kind.name.startsWith(`${module.id}:`)
+        ? `it must be named ${module.id}:<thing>`
+        : kinds.has(kind.name)
+          ? 'another kind has that name'
+          : null;
+      if (problem) log.error({ app: module.id }, `Skipping export kind "${kind.name}": ${problem}`);
+      else kinds.set(kind.name, kind);
+    }
+  }
   return {
     modules,
     permissions: createPermissions(modules.flatMap((module) => module.permissions)),
     webApps: modules.flatMap((module) => (module.web ? [{ base: `/${module.id}/`, ...module.web }] : [])),
-    contextFor: (module) => {
-      const ctx = contexts.get(module.id) ?? newContext(module);
-      contexts.set(module.id, ctx);
-      return ctx;
-    },
+    contextFor,
+    kinds,
   };
 }
