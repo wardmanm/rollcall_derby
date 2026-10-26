@@ -10,6 +10,7 @@ import {
 import type { AppDatabase } from './db.ts';
 import { ERROR_RESPONSES } from './http.ts';
 import { CORE_APP_ID, CORE_PERMISSIONS } from './auth/permissions.ts';
+import { fontFaceKind } from './fonts/transfer.ts';
 import { registerApiKeyRoutes } from './routes/api-keys.ts';
 import { registerFontRoutes } from './routes/fonts.ts';
 import { registerAuthRoutes } from './routes/auth.ts';
@@ -17,6 +18,7 @@ import { registerSetupRoutes } from './routes/setup.ts';
 import { registerTeamImageRoutes } from './routes/team-images.ts';
 import { registerTeamRoutes } from './routes/teams.ts';
 import { registerUserRoutes } from './routes/users.ts';
+import { teamKind } from './teams/transfer.ts';
 
 // rcl-core as an app module, hosted like any other (ADR-0019): its routes below /api/core and its web build at
 // /core/. It owns the database connection, so its routes use it directly rather than through AppContext.
@@ -84,5 +86,7 @@ export function coreApp({
       registerTeamImageRoutes(fastify, { db, mediaDir });
       registerFontRoutes(fastify, { db, mediaDir });
     },
+    // Teams and their fonts' faces travel in export files (ADR-0024).
+    transfer: () => [teamKind({ db }), fontFaceKind({ db })],
   };
 }

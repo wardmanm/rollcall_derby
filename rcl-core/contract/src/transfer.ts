@@ -74,6 +74,15 @@ export type TeamItem = z.input<typeof TeamItemSchema>;
 export const FontFaceItemSchema = z.strictObject({ ...FONT_FACE_FIELDS, file: MediaPathSchema }).transform(faceWeights);
 export type FontFaceItem = z.input<typeof FontFaceItemSchema>;
 
+/**
+ * The name an item kept as a copy gets: "<name> copy" for the first, "<name> copy 2" and so on, with the name
+ * shortened so the whole fits in `max` characters.
+ */
+export function copyName(name: string, n: number, max = 64): string {
+  const suffix = n === 1 ? ' copy' : ` copy ${n}`;
+  return `${name.slice(0, max - suffix.length).trimEnd()}${suffix}`;
+}
+
 /** One fact about an item, shown when it conflicts with one here, such as "Skaters: 14". */
 export const TransferFactSchema = z.strictObject({ label: z.string(), value: z.string() });
 export type TransferFact = z.infer<typeof TransferFactSchema>;

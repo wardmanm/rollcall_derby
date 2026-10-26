@@ -54,7 +54,8 @@ const teamFields = (row: TeamRow) => ({
   updatedAt: row.updatedAt,
 });
 
-const membersOf = (db: Queryable, teamId: string) =>
+/** A team's members, in no particular order. */
+export const membersOf = (db: Queryable, teamId: string): MemberRow[] =>
   db.select().from(teamMembers).where(eq(teamMembers.teamId, teamId)).all();
 
 /** Every team, by name, with how many skaters and bench staff each has. */
@@ -197,6 +198,35 @@ export function deleteMember(db: Queryable, teamId: string, memberId: string): {
     .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.id, memberId)))
     .run();
   return { team: touchTeam(db, teamId), photo: member?.photoMediaId ?? null };
+}
+
+/**
+ * Puts `members` in place of all of a team's members, as an import replacing a team does, and marks the team updated.
+ * Returns the photos the old members had, for the caller to remove. The caller has checked the members together.
+ */
+export function replaceMembers(
+  db: Queryable,
+  teamId: string,
+  members: readonly (MemberFields & { photoMediaId: string | null })[],
+): (string | null)[] {
+  const photos = membersOf(db, teamId).map((member) => member.photoMediaId);
+  db.delete(teamMembers).where(eq(teamMembers.teamId, teamId)).run();
+  const now = new Date().toISOString();
+  for (const member of members) {
+    db.insert(teamMembers)
+      .values({
+        id: randomUUID(),
+        teamId,
+        ...member,
+        roles: [...member.roles],
+        customRoles: [...member.customRoles],
+        createdAt: now,
+        updatedAt: now,
+      })
+      .run();
+  }
+  touchTeam(db, teamId);
+  return photos;
 }
 
 // Marks a team updated after a change to its members, and returns it.

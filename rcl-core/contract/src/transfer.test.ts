@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  copyName,
   FontFaceItemSchema,
   ImportQuerySchema,
   ManifestHeadSchema,
@@ -124,5 +125,17 @@ describe('ImportQuerySchema', () => {
       const choices = JSON.stringify({ file: FILE, items: [item] });
       expect(ImportQuerySchema.safeParse({ choices }).success, JSON.stringify(item)).toBe(false);
     }
+  });
+});
+
+describe('copyName', () => {
+  it('names copies "<name> copy", then "copy 2", shortened to fit', () => {
+    expect([1, 2, 3].map((n) => copyName('All Stars', n))).toEqual([
+      'All Stars copy',
+      'All Stars copy 2',
+      'All Stars copy 3',
+    ]);
+    expect(copyName('x'.repeat(64), 1)).toBe(`${'x'.repeat(59)} copy`);
+    expect(copyName('x'.repeat(64), 2)).toBe(`${'x'.repeat(57)} copy 2`);
   });
 });

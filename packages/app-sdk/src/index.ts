@@ -144,13 +144,16 @@ export interface TransferKind<Data = unknown> {
   /** Whether it was the default where it was exported, shown only as a hint. */
   wasDefault?(data: Data): boolean;
   match(data: Data): TransferMatch;
-  /** Saves it, with each media path turned into its new media id by `mediaId`, and returns the name it was saved under. */
+  /**
+   * Saves it, with each media path turned into its new media id by `mediaId`. Returns the name it was saved under, and
+   * the media ids it no longer uses (a replaced team's old photos), which core removes once the import is committed.
+   */
   save(
     data: Data,
     how: TransferSave,
     mediaId: (path: string) => string,
     options: { makeDefault: boolean },
-  ): { name: string };
+  ): { name: string; unusedMedia?: readonly (string | null)[] };
   /** Runs once an import that saved items of this kind is committed, such as telling overlays about a new default. */
   afterImport?(): void;
 }
