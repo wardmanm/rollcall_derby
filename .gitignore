@@ -29,3 +29,6 @@ __screenshots__/
 # Personal agent settings (not shared)
 CLAUDE.local.md
 .claude/settings.local.json
+
+# Agents' working files, such as a plan's progress ledger (not shared)
+.superpowers/
