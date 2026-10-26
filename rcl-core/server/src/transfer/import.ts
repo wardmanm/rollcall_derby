@@ -153,32 +153,38 @@ export function planImport({
   });
 
   // Of two items in the file that would be saved under one name, of a kind whose names are unique, the later can't be.
+  const firstNamed = new Map<string, number>();
   for (const [n, item] of items.entries()) {
     const unique = item.kind?.uniqueNames;
     if (!unique || (item.status !== 'new' && item.status !== 'conflict')) continue;
-    const key = (name: string) => (unique === 'exact' ? name : name.toLowerCase());
-    const first = items
-      .slice(0, n)
-      .find(
-        (other) =>
-          other.kindName === item.kindName &&
-          (other.status === 'new' || other.status === 'conflict') &&
-          key(other.name) === key(item.name),
-      );
-    if (first) {
-      const reason = `Same name as item ${first.index + 1} of this file`;
-      items[n] = { ...item, status: 'cant', reason, targets: [], canBeDefault: false };
-    }
+    const named = `${item.kindName}\n${unique === 'exact' ? item.name : item.name.toLowerCase()}`;
+    const first = firstNamed.get(named);
+    if (first === undefined) firstNamed.set(named, item.index);
+    else
+      items[n] = {
+        ...item,
+        status: 'cant',
+        reason: `Same name as item ${first + 1} of this file`,
+        targets: [],
+        canBeDefault: false,
+      };
   }
 
-  // Which items of the file each needs, such as a theme's fonts.
+  // Which items of the file each needs, such as a theme's fonts, found by kind and key: each item's key is asked for
+  // once, so a big file takes no longer than its items.
+  const byKey = new Map<string, number[]>();
+  for (const item of items) {
+    const key = item.status === 'cant' ? undefined : item.kind?.needKey?.(item.data);
+    if (key === undefined) continue;
+    const keyed = `${item.kindName}\n${key.toLowerCase()}`;
+    const found = byKey.get(keyed);
+    if (found) found.push(item.index);
+    else byKey.set(keyed, [item.index]);
+  }
   for (const item of items) {
     if (item.status === 'cant' || !item.kind?.needs) continue;
     for (const need of item.kind.needs(item.data)) {
-      for (const other of items) {
-        const key = other.status === 'cant' ? undefined : other.kind?.needKey?.(other.data);
-        if (other.kindName === need.kind && key?.toLowerCase() === need.key.toLowerCase()) item.needs.push(other.index);
-      }
+      item.needs.push(...(byKey.get(`${need.kind}\n${need.key.toLowerCase()}`) ?? []));
     }
   }
   return { file: sha256(zip), items, media };
@@ -230,14 +236,16 @@ function decide(plan: ImportPlan, choices: Choices): (TransferSave | null)[] {
 // free name is free of the names the file's other items are saved under.
 function saveOrder(plan: ImportPlan, how: readonly (TransferSave | null)[]): PlannedItem[] {
   const ordered: PlannedItem[] = [];
+  const done = new Set<number>();
   const visit = (item: PlannedItem, path: Set<number>) => {
-    if (ordered.includes(item) || path.has(item.index)) return;
+    if (done.has(item.index) || path.has(item.index)) return;
     path.add(item.index);
     for (const need of item.needs) {
       const needed = plan.items[need];
       if (needed) visit(needed, path);
     }
     ordered.push(item);
+    done.add(item.index);
   };
   const isCopy = (item: PlannedItem) => (how[item.index]?.as === 'copy' ? 1 : 0);
   for (const item of plan.items.toSorted((a, b) => isCopy(a) - isCopy(b))) visit(item, new Set());
