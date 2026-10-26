@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { strFromU8, unzipSync } from 'fflate';
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { FontFamilySchema, ImportPreviewSchema, ManifestSchema, type Role } from '@rollcall/core-contract';
 import { SESSION_COOKIE } from '../auth/guard.ts';
 import { createSession } from '../auth/sessions.ts';
@@ -112,5 +112,55 @@ describe('themes in export files', () => {
       ['Derby Night', false],
       ['Derby Night copy', true],
     ]);
+  });
+
+  it('keep a copy’s name clear of the themes the same file adds', async () => {
+    const { admin, call, send } = await installed();
+    await call(admin, 'POST', '/api/producer/themes', { name: 'Derby Night' });
+    const copy = (await call(admin, 'POST', '/api/producer/themes', { name: 'Derby Night copy' })).json<Theme>();
+    const zip = (await call(admin, 'GET', '/api/core/transfer/export?kinds=producer:theme')).rawPayload;
+    await call(admin, 'DELETE', `/api/producer/themes/${copy.id}`);
+
+    // The file's Derby Night is kept as a copy, as the dialog first suggests, and its Derby Night copy is new.
+    const preview = ImportPreviewSchema.parse((await send(admin, '/api/core/transfer/import/preview', zip)).json());
+    expect(preview.items.map((item) => [item.name, item.status])).toEqual([
+      ['Derby Night', 'conflict'],
+      ['Derby Night copy', 'new'],
+    ]);
+    const choices = { file: preview.file, items: [{ action: 'keep-both' }, { action: 'add' }] };
+    const imported = await send(
+      admin,
+      `/api/core/transfer/import?choices=${encodeURIComponent(JSON.stringify(choices))}`,
+      zip,
+    );
+    expect(imported.json()).toEqual({ added: 1, replaced: 0, keptBoth: 1, skipped: 0, copies: ['Derby Night copy 2'] });
+    const themes = (await call(admin, 'GET', '/api/producer/themes')).json<Theme[]>();
+    expect(themes.map((t) => t.name)).toEqual(['Derby Night', 'Derby Night copy', 'Derby Night copy 2']);
+  });
+
+  it('can’t share a name within one file: the second can’t be imported', async () => {
+    const { admin, call, send } = await installed();
+    const theme = (await call(admin, 'POST', '/api/producer/themes', { name: 'Derby Night' })).json<Theme>();
+    const exported = await call(admin, 'GET', `/api/core/transfer/export?items=producer:theme:${theme.id}`);
+    const manifest = ManifestSchema.parse(
+      JSON.parse(strFromU8(unzipSync(exported.rawPayload)['rollcall-export.json']!)),
+    );
+    // A file put together by hand, holding the theme twice.
+    const twice = { ...manifest, items: [...manifest.items, ...manifest.items] };
+    const zip = zipSync({ 'rollcall-export.json': strToU8(JSON.stringify(twice)) });
+    await call(admin, 'DELETE', `/api/producer/themes/${theme.id}`);
+
+    const preview = ImportPreviewSchema.parse((await send(admin, '/api/core/transfer/import/preview', zip)).json());
+    expect(preview.items.map((item) => [item.name, item.status, item.reason, item.canBeDefault])).toEqual([
+      ['Derby Night', 'new', null, true],
+      ['Derby Night', 'cant', 'Same name as item 1 of this file', false],
+    ]);
+    const choices = { file: preview.file, items: [{ action: 'add' }, { action: 'skip' }] };
+    const imported = await send(
+      admin,
+      `/api/core/transfer/import?choices=${encodeURIComponent(JSON.stringify(choices))}`,
+      zip,
+    );
+    expect(imported.json()).toEqual({ added: 1, replaced: 0, keptBoth: 0, skipped: 1, copies: [] });
   });
 });

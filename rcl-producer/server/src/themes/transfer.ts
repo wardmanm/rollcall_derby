@@ -43,6 +43,7 @@ export function themeKind({ db, announce }: { db: ProducerDatabase; announce: ()
     exportPermission: 'producer:themes.read',
     importPermission: 'producer:themes.manage',
     canBeDefault: true,
+    uniqueNames: 'exact',
 
     list: () => listThemes(db).map(({ id, name }) => ({ id, name })),
 

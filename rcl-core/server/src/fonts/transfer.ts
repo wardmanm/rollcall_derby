@@ -37,6 +37,8 @@ export function fontFaceKind({ db }: { db: Queryable }): TransferKind<FontFaceDa
     exportPermission: 'core:fonts.read',
     importPermission: 'core:fonts.manage',
     onlyAsNeed: true,
+    // A face's name is its family, weights and style, and families match regardless of case.
+    uniqueNames: 'ignoring case',
 
     list: () => faces().map((face) => ({ id: face.id, name: faceName(face) })),
 

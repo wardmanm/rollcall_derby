@@ -351,6 +351,18 @@ describe('previewing an import', () => {
     expect(body?.items.map((item) => item.canBeDefault)).toEqual([false, false, false, true]);
   });
 
+  it('can’t import a second font face the same as another in the file, whatever the family’s case', async () => {
+    const { preview, importFile } = await as();
+    const zip = fileOf([face('Rollerball'), face('rollerball')]);
+    const { body } = await preview(zip);
+    expect(body?.items.map((item) => [item.name, item.status, item.reason])).toEqual([
+      ['Rollerball 700', 'new', null],
+      ['rollerball 700', 'cant', 'Same name as item 1 of this file'],
+    ]);
+    const imported = await importFile(zip, choose(body!.file, { action: 'add' }, { action: 'skip' }));
+    expect(imported.json()).toEqual({ added: 1, replaced: 0, keptBoth: 0, skipped: 1, copies: [] });
+  });
+
   it('refuses a file that isn’t an export, is newer, or holds a broken item or media file, saying where', async () => {
     const { send, preview } = await as();
     const refusal = async (zip: Uint8Array) => (await preview(zip)).res.json<{ error: string; message: string }>();

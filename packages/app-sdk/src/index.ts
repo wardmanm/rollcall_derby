@@ -125,6 +125,11 @@ export interface TransferKind<Data = unknown> {
   onlyAsNeed?: true;
   /** An import can make one item of it the default (themes). */
   canBeDefault?: true;
+  /**
+   * No two of its items share a name, compared as written (themes) or ignoring case (font faces). Of two items in one
+   * file with a name, the later can't be imported.
+   */
+  uniqueNames?: 'exact' | 'ignoring case';
   /** Every item that can be exported, by id and name. */
   list(): readonly { id: string; name: string }[];
   /** An item for an export file, with each media id turned into a path by `mediaPath`. Undefined for an unknown id. */

@@ -147,6 +147,25 @@ export function planImport({
     };
   });
 
+  // Of two items in the file that would be saved under one name, of a kind whose names are unique, the later can't be.
+  for (const [n, item] of items.entries()) {
+    const unique = item.kind?.uniqueNames;
+    if (!unique || (item.status !== 'new' && item.status !== 'conflict')) continue;
+    const key = (name: string) => (unique === 'exact' ? name : name.toLowerCase());
+    const first = items
+      .slice(0, n)
+      .find(
+        (other) =>
+          other.kindName === item.kindName &&
+          (other.status === 'new' || other.status === 'conflict') &&
+          key(other.name) === key(item.name),
+      );
+    if (first) {
+      const reason = `Same name as item ${first.index + 1} of this file`;
+      items[n] = { ...item, status: 'cant', reason, targets: [], canBeDefault: false };
+    }
+  }
+
   // Which items of the file each needs, such as a theme's fonts.
   for (const item of items) {
     if (item.status === 'cant' || !item.kind?.needs) continue;
@@ -201,8 +220,9 @@ function decide(plan: ImportPlan, choices: Choices): (TransferSave | null)[] {
   });
 }
 
-// The order to save in: each item after the items it needs.
-function saveOrder(plan: ImportPlan): PlannedItem[] {
+// The order to save in: each item after the items it needs, and items kept as copies after the rest, so a copy's
+// free name is free of the names the file's other items are saved under.
+function saveOrder(plan: ImportPlan, how: readonly (TransferSave | null)[]): PlannedItem[] {
   const ordered: PlannedItem[] = [];
   const visit = (item: PlannedItem, path: Set<number>) => {
     if (ordered.includes(item) || path.has(item.index)) return;
@@ -213,7 +233,8 @@ function saveOrder(plan: ImportPlan): PlannedItem[] {
     }
     ordered.push(item);
   };
-  for (const item of plan.items) visit(item, new Set());
+  const isCopy = (item: PlannedItem) => (how[item.index]?.as === 'copy' ? 1 : 0);
+  for (const item of plan.items.toSorted((a, b) => isCopy(a) - isCopy(b))) visit(item, new Set());
   return ordered;
 }
 
@@ -242,7 +263,7 @@ export function applyImport({
   const kindsSaved = new Set<TransferKind>();
   try {
     db.$client.transaction(() => {
-      for (const item of saveOrder(plan)) {
+      for (const item of saveOrder(plan, how)) {
         const save = how[item.index];
         if (!save || !item.kind) {
           result.skipped += 1;
