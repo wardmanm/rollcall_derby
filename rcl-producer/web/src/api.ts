@@ -75,3 +75,9 @@ export const {
   useDeleteThemeMutation,
   useSetDefaultThemeMutation,
 } = producerApi;
+
+/**
+ * After an import (docs/features/import-export.md): themes and fonts are fetched again wherever they're shown, and
+ * anything cached but not shown is dropped, so no page shows what was there before.
+ */
+export const imported = () => producerApi.util.invalidateTags(['Themes', 'Fonts']);

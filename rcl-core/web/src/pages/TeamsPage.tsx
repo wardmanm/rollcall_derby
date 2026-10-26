@@ -15,8 +15,8 @@ import {
   VisuallyHidden,
 } from '@mantine/core';
 import { CreateTeamRequestSchema, type TeamSummary } from '@rollcall/core-contract';
-import { exportUrl, fieldErrors, ImportDialog, problemWith, useGetMeQuery } from '@rollcall/web-sdk';
-import { useCreateTeamMutation, useGetTeamsQuery } from '../api.ts';
+import { exportUrl, fieldErrors, ImportDialog, problemWith, useAppDispatch, useGetMeQuery } from '@rollcall/web-sdk';
+import { imported, useCreateTeamMutation, useGetTeamsQuery } from '../api.ts';
 
 // The teams (docs/features/team-builder.md). Anyone holding core:teams.read sees the list; core:teams.manage can
 // create teams too. Hiding things is only for convenience: the server checks every request (hard rule 5).
@@ -28,6 +28,7 @@ export function TeamsPage() {
 
 function TeamList({ canManage }: { canManage: boolean }) {
   const teams = useGetTeamsQuery();
+  const dispatch = useAppDispatch();
   const [importing, setImporting] = useState(false);
   return (
     <Stack maw={980}>
@@ -48,7 +49,7 @@ function TeamList({ canManage }: { canManage: boolean }) {
       </Group>
       {canManage && <NewTeam />}
       {canManage && (
-        <ImportDialog opened={importing} onClose={() => setImporting(false)} onImported={() => void teams.refetch()} />
+        <ImportDialog opened={importing} onClose={() => setImporting(false)} onImported={() => dispatch(imported())} />
       )}
       {teams.isError && <Alert color="red">{problemWith(teams.error)}</Alert>}
       {teams.data?.length === 0 && <Text>No teams yet.</Text>}

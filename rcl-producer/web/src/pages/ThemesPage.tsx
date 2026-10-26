@@ -18,8 +18,9 @@ import {
   VisuallyHidden,
 } from '@mantine/core';
 import { CreateThemeRequestSchema, type Theme } from '@rollcall/producer-contract';
-import { exportUrl, fieldErrors, ImportDialog, problemWith, useGetMeQuery } from '@rollcall/web-sdk';
+import { exportUrl, fieldErrors, ImportDialog, problemWith, useAppDispatch, useGetMeQuery } from '@rollcall/web-sdk';
 import {
+  imported,
   useCreateThemeMutation,
   useDeleteThemeMutation,
   useDuplicateThemeMutation,
@@ -40,6 +41,7 @@ export function ThemesPage() {
 
 function ThemeList({ canManage }: { canManage: boolean }) {
   const themes = useGetThemesQuery();
+  const dispatch = useAppDispatch();
   const [deleting, setDeleting] = useState<Theme | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
@@ -91,7 +93,7 @@ function ThemeList({ canManage }: { canManage: boolean }) {
       )}
       {deleting && <DeleteTheme theme={deleting} onClose={() => setDeleting(null)} />}
       {canManage && (
-        <ImportDialog opened={importing} onClose={() => setImporting(false)} onImported={() => void themes.refetch()} />
+        <ImportDialog opened={importing} onClose={() => setImporting(false)} onImported={() => dispatch(imported())} />
       )}
     </Stack>
   );

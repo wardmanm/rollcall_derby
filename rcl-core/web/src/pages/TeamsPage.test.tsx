@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, within } from '@testing-library/react';
-import type { Team, TeamSummary } from '@rollcall/core-contract';
+import type { ImportPreview, Team, TeamSummary } from '@rollcall/core-contract';
 import { ANNOUNCER, json, PRODUCER, signedIn } from '@rollcall/web-sdk/testing';
 import { openCore, whereIs } from '../test/open-core.tsx';
 
@@ -119,5 +119,45 @@ describe('the Teams page', () => {
     openCore('/core/teams');
     expect(await screen.findByText("Your account can't view teams.")).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Teams' })).toBeNull();
+  });
+
+  it('fetches the font library again after an import, as the import may have added fonts', async () => {
+    const PREVIEW: ImportPreview = {
+      file: 'a'.repeat(64),
+      items: [
+        {
+          index: 0,
+          kind: 'core:team',
+          label: 'Team',
+          name: 'Visitors',
+          facts: [],
+          status: 'new',
+          reason: null,
+          conflicts: [],
+          needs: [],
+          canBeDefault: false,
+          wasDefault: false,
+        },
+      ],
+    };
+    const { requests } = signedIn(PRODUCER, {
+      'GET /api/core/teams': json(TEAMS),
+      'GET /api/core/fonts': json([]),
+      'POST /api/core/transfer/import/preview': json(PREVIEW),
+      'POST /api/core/transfer/import': json({ added: 1, replaced: 0, keptBoth: 0, skipped: 0, copies: [] }),
+    });
+    const fetched = (path: string) => requests.filter((r) => r.method === 'GET' && r.path === path).length;
+    const router = openCore('/core/fonts');
+    await vi.waitFor(() => expect(fetched('/api/core/fonts')).toBe(1));
+    await router.navigate('/teams');
+    fireEvent.click(await screen.findByRole('button', { name: 'Import…' }));
+    await screen.findByRole('button', { name: 'Choose file' });
+    const input = document.body.querySelector<HTMLInputElement>('input[type="file"]')!;
+    fireEvent.change(input, { target: { files: [new File(['PK'], 'setup.zip')] } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Import 1 item' }));
+    await screen.findByText('Imported 1: 1 new.');
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    await router.navigate('/fonts');
+    await vi.waitFor(() => expect(fetched('/api/core/fonts')).toBe(2));
   });
 });

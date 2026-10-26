@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Alert, Button, Checkbox, Loader, Stack, Text, Title } from '@mantine/core';
-import { exportUrl, ImportDialog, problemWith } from '@rollcall/web-sdk';
-import { useGetTransferKindsQuery } from '../api.ts';
+import { exportUrl, ImportDialog, problemWith, useAppDispatch } from '@rollcall/web-sdk';
+import { imported, useGetTransferKindsQuery } from '../api.ts';
 
 const capitalized = (text: string) => `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 
@@ -9,6 +9,7 @@ const capitalized = (text: string) => `${text.charAt(0).toUpperCase()}${text.sli
 // through the Import dialog. The page offers only the kinds the server says you may export or import (hard rule 5).
 export function TransferPage() {
   const kinds = useGetTransferKindsQuery();
+  const dispatch = useAppDispatch();
   // The kinds ticked for export, until someone changes them: every kind that has something to export.
   const [ticked, setTicked] = useState<string[] | null>(null);
   const [importing, setImporting] = useState(false);
@@ -64,7 +65,7 @@ export function TransferPage() {
           </div>
         </Stack>
       )}
-      <ImportDialog opened={importing} onClose={() => setImporting(false)} onImported={() => void kinds.refetch()} />
+      <ImportDialog opened={importing} onClose={() => setImporting(false)} onImported={() => dispatch(imported())} />
     </Stack>
   );
 }

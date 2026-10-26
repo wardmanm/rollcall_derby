@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, within } from '@testing-library/react';
+import type { ImportPreview } from '@rollcall/core-contract';
 import { DEFAULT_TOKENS, type Theme } from '@rollcall/producer-contract';
 import { ADMIN, ANNOUNCER, json, noContent, PRODUCER, signedIn } from '@rollcall/web-sdk/testing';
 import { openProducer, whereIs } from '../test/open-producer.tsx';
@@ -136,5 +137,49 @@ describe('the Themes page', () => {
     openProducer('/producer/themes');
     expect(await screen.findByText("Your account can't view themes.")).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Themes' })).toBeNull();
+  });
+
+  it('fetches themes and fonts again after an import, so a theme opened before shows what was imported', async () => {
+    const PREVIEW: ImportPreview = {
+      file: 'a'.repeat(64),
+      items: [
+        {
+          index: 0,
+          kind: 'producer:theme',
+          label: 'Theme',
+          name: 'Rink Side',
+          facts: [],
+          status: 'new',
+          reason: null,
+          conflicts: [],
+          needs: [],
+          canBeDefault: true,
+          wasDefault: false,
+        },
+      ],
+    };
+    const { requests } = signedIn(ADMIN, {
+      'GET /api/producer/themes': json(THEMES),
+      'GET /api/producer/themes/t1': json(NIGHT),
+      'GET /api/core/fonts': json([]),
+      'POST /api/core/transfer/import/preview': json(PREVIEW),
+      'POST /api/core/transfer/import': json({ added: 1, replaced: 0, keptBoth: 0, skipped: 0, copies: [] }),
+    });
+    const fetched = (path: string) => requests.filter((r) => r.method === 'GET' && r.path === path).length;
+    const router = openProducer('/producer/themes/t1');
+    await vi.waitFor(() => expect(fetched('/api/producer/themes/t1')).toBe(1));
+    await router.navigate('/themes');
+    fireEvent.click(await screen.findByRole('button', { name: 'Import…' }));
+    await screen.findByRole('button', { name: 'Choose file' });
+    const input = document.body.querySelector<HTMLInputElement>('input[type="file"]')!;
+    fireEvent.change(input, { target: { files: [new File(['PK'], 'setup.zip')] } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Import 1 item' }));
+    await screen.findByText('Imported 1: 1 new.');
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    await router.navigate('/themes/t1');
+    await vi.waitFor(() => {
+      expect(fetched('/api/producer/themes/t1')).toBe(2);
+      expect(fetched('/api/core/fonts')).toBe(2);
+    });
   });
 });

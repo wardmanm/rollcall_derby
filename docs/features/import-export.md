@@ -43,7 +43,7 @@ R1–R5 are built for teams and themes. Screens join with the [Screen Builder](s
    - **New** items, each with a tick box. A font face identical to one here is reused instead; one named after a bundled family isn't imported, and themes use the bundled family.
    - **Can't import**, each with why: a kind this server doesn't know yet, a newer version, a kind your account may not import, or a second theme or font face with the name of another in the file.
    - **The default theme never changes on its own.** Each theme being imported has a **Make default** switch, off to start with; turning one on turns the others off. A theme that was the default where it was exported says so.
-3. **Import** saves everything chosen in one go, or nothing. The dialog says what it did: "Imported 5: 3 new, 1 replaced, 1 kept as a copy (“All Stars copy”)." If something here changed since the file was checked, it's checked again for you to choose afresh.
+3. **Import** saves everything chosen in one go, or nothing. The dialog says what it did: "Imported 5: 3 new, 1 replaced, 1 kept as a copy (“All Stars copy”)." If something here changed since the file was checked, it's checked again for you to choose afresh. Every page of the app then shows what was imported, without a reload.
 
 **Who:** Admins import and export everything. Producers import and export teams, and export themes. Announcers do neither. See the [role matrix](users-and-access.md#role-matrix).
 
