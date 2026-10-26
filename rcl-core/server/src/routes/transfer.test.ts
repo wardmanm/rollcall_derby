@@ -511,6 +511,19 @@ describe('importing', () => {
     expect(findTeam(db, second)?.leagueName).toBe('Rose City Rollers');
   });
 
+  it('saves an item kept as a copy under its own name when nothing here has that name, fonts included', async () => {
+    const { db, preview, importFile, allStars } = await as();
+    const here = allStars();
+    const zip = fileOf([team(), face('Jammer')]);
+    const { body } = await preview(zip);
+    expect(body?.items.map((item) => item.status)).toEqual(['conflict', 'new']);
+    // The team here goes before the import, and a font face, which never conflicts, is sent as Keep both.
+    deleteTeam(db, here);
+    const res = await importFile(zip, choose(body!.file, { action: 'keep-both' }, { action: 'keep-both' }));
+    expect(res.json()).toEqual({ added: 2, replaced: 0, keptBoth: 0, skipped: 0, copies: [] });
+    expect(listTeams(db).map((t) => t.name)).toEqual(['All Stars']);
+  });
+
   it('migrates old items, saves needs first, makes only the chosen item the default, then runs after-import', async () => {
     const { notes, preview, importFile } = await as('admin', { demo: true });
     const zip = fileOf([

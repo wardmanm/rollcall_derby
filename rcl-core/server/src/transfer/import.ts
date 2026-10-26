@@ -213,7 +213,8 @@ function decide(plan: ImportPlan, choices: Choices): (TransferSave | null)[] {
     const choice = choices.items[index] ?? { action: 'skip' };
     if (choice.action === 'skip' || item.status === 'reused') return null;
     if (item.status === 'cant') throw new TransferError(400, 'bad_choices', `Item ${index + 1} can't be imported`);
-    if (choice.action === 'keep-both') return { as: 'copy' };
+    // Keep both makes a copy only of an item that clashes with one here; otherwise its own name is free.
+    if (choice.action === 'keep-both') return item.status === 'conflict' ? { as: 'copy' } : { as: 'new' };
     if (choice.action === 'add') {
       if (item.status === 'conflict') throw new TransferError(409, 'changed_since_preview', CHANGED);
       return { as: 'new' };

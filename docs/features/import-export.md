@@ -39,7 +39,7 @@ R1–R5 are built for teams and themes. Screens join with the [Screen Builder](s
 2. **See what's in it.** Nothing is saved yet.
    - **Conflicts** come first: an item with the same name as one here (teams regardless of case, themes exactly). Each shows the item in the file next to the one here, with the differences highlighted, and **Replace**, **Keep both** (the first choice) or **Skip**.
      - **Replace** keeps the item here, with its place in screens and games: a team takes the file's details, members, logo and photos; a theme takes the file's tokens, and stays the default if it was. When several teams here have the name, you choose which.
-     - **Keep both** adds the file's item as "<name> copy", "copy 2" and so on: the first name free once the file's other items are saved.
+     - **Keep both** adds the file's item as "<name> copy", "copy 2" and so on: the first name free once the file's other items are saved. If nothing here has its name by the time you import, it keeps that name.
    - **New** items, each with a tick box. A font face identical to one here is reused instead; one named after a bundled family isn't imported, and themes use the bundled family.
    - **Can't import**, each with why: a kind this server doesn't know yet, a newer version, a kind your account may not import, or a second theme or font face with the name of another in the file.
    - **The default theme never changes on its own.** Each theme being imported has a **Make default** switch, off to start with; turning one on turns the others off. A theme that was the default where it was exported says so.
