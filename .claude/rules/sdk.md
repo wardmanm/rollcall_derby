@@ -12,6 +12,7 @@ paths:
   - the app shell (`App`, `AppLayout` with its links and `UserMenu`, `PageNotFound`, the Mantine `theme`), `SignInGate` and `ServerStatus`;
   - the RTK Query base API (health, setup status, who's signed in, logout) and store, and `ROLE_NAMES` for showing roles;
   - the form helpers `fieldErrors`, `pathErrors` and `problemWith`;
+  - import and export (ADR-0024): the `ImportDialog` both apps open in place, and `exportUrl` for download links (`src/transfer.ts`);
   - `CORE_PAGES`, `safeNext` and `useGoTo`, for sending people to rcl-core's sign-in pages and back;
   - the jsdom test setup, the test helpers (`@rollcall/web-sdk/testing`) and the dev proxy helpers (`@rollcall/web-sdk/vite`).
   - TypeScript source with no build step, like the contracts.
