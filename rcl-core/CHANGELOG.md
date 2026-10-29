@@ -6,6 +6,8 @@ rcl-core hosts the other rcl apps, which have their own changelogs, such as [rcl
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-29
+
 ### Added
 
 - Import and export: export teams and themes, with their logos, photos and fonts, to a file, and import it on another Rollcall. Before anything is saved, the Import dialog shows what's in the file, side by side with anything here of the same name, so you choose to replace it, keep both or skip it. An import saves everything or nothing. Admins and Producers import and export teams (#22)
@@ -47,6 +49,7 @@ rcl-core hosts the other rcl apps, which have their own changelogs, such as [rcl
 - The first failed sign-in after the server starts takes as long as later ones, so it doesn't reveal whether the username exists (#8)
 - Logging out works even after the session has ended, and always clears the cookie (#11)
 
-[Unreleased]: https://github.com/wardmanm/rollcall_derby/compare/rcl-core-v0.2.0...HEAD
+[Unreleased]: https://github.com/wardmanm/rollcall_derby/compare/rcl-core-v0.3.0...HEAD
+[0.3.0]: https://github.com/wardmanm/rollcall_derby/releases/tag/rcl-core-v0.3.0
 [0.2.0]: https://github.com/wardmanm/rollcall_derby/releases/tag/rcl-core-v0.2.0
 [0.1.0]: https://github.com/wardmanm/rollcall_derby/releases/tag/rcl-core-v0.1.0

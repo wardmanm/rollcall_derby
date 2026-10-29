@@ -10,6 +10,10 @@ rcl-producer runs on rcl-core, Rollcall's server, which has [its own changelog](
 
 - Themes travel in export files with the uploaded fonts they use: Export and Export all on the Themes page, and Import… for Admins. Importing a theme makes it the default only if you turn on its Make default switch. Producers can export themes (#23)
 
+### Changed
+
+- Needs rcl-core 0.3.0 or later, for import and export: upgrade rcl-core first (#23)
+
 ## [0.3.0] - 2026-10-25
 
 ### Added
