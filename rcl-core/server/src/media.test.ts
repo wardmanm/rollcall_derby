@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { media, teamMembers, teams } from './db/schema.ts';
-import { fontTypeOf, imageTypeOf, mediaUrl, removeMedia, saveMedia, sweepMedia } from './media.ts';
+import { fontTypeOf, imageTypeOf, mediaUrl, removeMedia, saveMedia, sweepMedia, writeMediaFile } from './media.ts';
 import { FONTS, IMAGES, testApp } from './testing.ts';
 
 const NOW = '2026-10-23T10:00:00.000Z';
@@ -152,6 +152,16 @@ describe('sweepMedia', () => {
       { photo: null },
     ]);
     expect(sweepMedia(db, mediaDir)).toEqual({ files: 0, rows: 0 });
+  });
+
+  it('removes a file an import wrote but never gave a row, as after a crash mid-import', async () => {
+    const { db, mediaDir } = fresh();
+    const kept = saveMedia(db, mediaDir, IMAGES.png)!;
+    db.insert(teams).values({ id: 't1', name: 'All Stars', logoMediaId: kept, createdAt: NOW, updatedAt: NOW }).run();
+    const written = await writeMediaFile(mediaDir, IMAGES.jpeg);
+    expect(readdirSync(mediaDir).toSorted()).toEqual([kept, written].toSorted());
+    expect(sweepMedia(db, mediaDir)).toEqual({ files: 1, rows: 0 });
+    expect(readdirSync(mediaDir)).toEqual([kept]);
   });
 
   it('makes the media folder when there is none yet', () => {

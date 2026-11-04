@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { createReadStream, existsSync, mkdirSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { FastifyInstance } from 'fastify';
 import { eq, inArray, isNotNull } from 'drizzle-orm';
@@ -58,8 +59,34 @@ export function saveMedia(
   // Written under a temporary name first, so a crash mid-write leaves nothing under a real id.
   writeFileSync(join(dir, `${id}${UPLOADING}`), bytes);
   renameSync(join(dir, `${id}${UPLOADING}`), join(dir, id));
-  db.insert(media).values({ id, contentType, size: bytes.length, createdAt: new Date().toISOString() }).run();
+  addMediaRow(db, { id, contentType, size: bytes.length });
   return id;
+}
+
+/**
+ * Writes a media file under a new id without holding up the server, as `.uploading` first, then renamed, and returns
+ * its id. It has no row until `addMediaRow` adds one, so an import can write its files before its transaction, which
+ * stays synchronous. Its bytes are checked by the caller.
+ */
+export async function writeMediaFile(dir: string, bytes: Uint8Array): Promise<string> {
+  await mkdir(dir, { recursive: true });
+  const id = randomBytes(16).toString('hex');
+  const uploading = join(dir, `${id}${UPLOADING}`);
+  try {
+    await writeFile(uploading, bytes);
+    await rename(uploading, join(dir, id));
+  } catch (error) {
+    await rm(uploading, { force: true });
+    throw error;
+  }
+  return id;
+}
+
+/** Adds the row for a media file, once its file is written: its type, from its bytes, and its size. */
+export function addMediaRow(db: Queryable, file: { id: string; contentType: MediaType; size: number }): void {
+  db.insert(media)
+    .values({ ...file, createdAt: new Date().toISOString() })
+    .run();
 }
 
 /** Deletes images, rows and files, once nothing points at them any more. Nulls are skipped. */
@@ -71,8 +98,9 @@ export function removeMedia(db: Queryable, dir: string, ids: readonly (string | 
 }
 
 /**
- * Cleans up after a crash, at startup: deletes files with no row (including half-written uploads), rows with no file,
- * and rows nothing refers to. Returns how many of each it removed.
+ * Cleans up after a crash, at startup: deletes files with no row (including half-written uploads, and the files of an
+ * import that never committed), rows with no file, and rows nothing refers to. Returns how many of each it removed.
+ * It must never run while the server is up: an import's files have no rows until its transaction adds them.
  */
 export function sweepMedia(db: AppDatabase, dir: string): { files: number; rows: number } {
   mkdirSync(dir, { recursive: true });

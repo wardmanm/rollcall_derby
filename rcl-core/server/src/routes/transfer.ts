@@ -193,7 +193,13 @@ export function registerTransferRoutes(
             return await inTurn(async () => {
               const file = await read(request);
               recheck(request);
-              return applyImport({ db, mediaDir, plan: plan(request, file), choices: request.query.choices });
+              return await applyImport({
+                db,
+                mediaDir,
+                plan: () => plan(request, file),
+                choices: request.query.choices,
+                recheck: () => recheck(request),
+              });
             });
           } catch (error) {
             return refuse(error, reply);

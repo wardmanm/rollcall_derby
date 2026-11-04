@@ -16,7 +16,7 @@ import type { TransferKind, TransferMediaType, TransferSave } from '@rollcall/ap
 import type { z } from 'zod';
 import type { ImportChoicesSchema } from '@rollcall/core-contract';
 import type { AppDatabase } from '../db.ts';
-import { fontTypeOf, imageTypeOf, removeMedia, saveMedia } from '../media.ts';
+import { addMediaRow, fontTypeOf, imageTypeOf, removeMedia, writeMediaFile, type MediaType } from '../media.ts';
 import { NOT_AN_EXPORT, readExport, TransferError, type ExportRead } from './zip.ts';
 
 // Importing an export file (docs/features/import-export.md, ADR-0024), in two steps that each read the whole file: a
@@ -215,7 +215,7 @@ function decide(plan: ImportPlan, choices: Choices): (TransferSave | null)[] {
   if (choices.items.length !== plan.items.length) {
     throw new TransferError(400, 'bad_choices', 'Choose what happens to each item of the file');
   }
-  return plan.items.map((item, index) => {
+  const how = plan.items.map((item, index): TransferSave | null => {
     const choice = choices.items[index] ?? { action: 'skip' };
     if (choice.action === 'skip' || item.status === 'reused') return null;
     if (item.status === 'cant') throw new TransferError(400, 'bad_choices', `Item ${index + 1} can't be imported`);
@@ -230,6 +230,13 @@ function decide(plan: ImportPlan, choices: Choices): (TransferSave | null)[] {
     }
     return { as: 'replace', id: choice.target };
   });
+  if (choices.default !== null) {
+    const chosen = plan.items[choices.default];
+    if (!chosen?.canBeDefault || !how[choices.default]) {
+      throw new TransferError(400, 'bad_choices', 'Only a theme being imported can be made the default');
+    }
+  }
+  return how;
 }
 
 // The order to save in: each item after the items it needs, and items kept as copies after the rest, so a copy's
@@ -252,46 +259,72 @@ function saveOrder(plan: ImportPlan, how: readonly (TransferSave | null)[]): Pla
   return ordered;
 }
 
-/** Saves the chosen items of a planned file in one transaction, or nothing, and says what it did. */
-export function applyImport({
+/**
+ * Saves the chosen items of a read file in one transaction, or nothing, and says what it did. `plan` plans the read
+ * file against what's here at the time; `recheck` is called once the media files are written, and throws to stop.
+ *
+ * The choices are checked first, so bad ones are refused before any file is written. The chosen items' media files are
+ * then written under new ids without holding up the server. Once access is rechecked, the file is planned and the
+ * choices checked again, with no await from there to the end of the transaction, and each file's row is added when a
+ * kind asks for its id. If anything fails, every file written is deleted before the error goes on.
+ */
+export async function applyImport({
   db,
   mediaDir,
   plan,
   choices,
+  recheck,
 }: {
   db: AppDatabase;
   mediaDir: string;
-  plan: ImportPlan;
+  plan: () => ImportPlan;
   choices: Choices;
-}): ImportResult {
-  const how = decide(plan, choices);
-  if (choices.default !== null) {
-    const chosen = plan.items[choices.default];
-    if (!chosen?.canBeDefault || !how[choices.default]) {
-      throw new TransferError(400, 'bad_choices', 'Only a theme being imported can be made the default');
+  recheck: () => void;
+}): Promise<ImportResult> {
+  const before = plan();
+  const chosen = decide(before, choices);
+  // Each media file the chosen items use, once, with the type its bytes are.
+  const toWrite = new Map<string, { bytes: Uint8Array; contentType: MediaType }>();
+  for (const item of before.items) {
+    if (!chosen[item.index]) continue;
+    for (const [path, type] of item.media) {
+      const bytes = before.media.get(path);
+      const contentType = bytes && TYPE_CHECKS[type](bytes);
+      if (!bytes || !contentType) throw new Error(`Media ${path} wasn't checked`);
+      if (!toWrite.has(path)) toWrite.set(path, { bytes, contentType });
     }
   }
+
+  const written = new Map<string, { id: string; contentType: MediaType; size: number }>();
+  const rows = new Set<string>();
   const result: ImportResult = { added: 0, replaced: 0, keptBoth: 0, skipped: 0, copies: [] };
-  const saved = new Map<string, string>();
   const unused: (string | null)[] = [];
   const kindsSaved = new Set<TransferKind>();
   try {
+    for (const [path, { bytes, contentType }] of toWrite) {
+      // oxlint-disable-next-line eslint/no-await-in-loop -- one file at a time, so a big import never holds many open
+      written.set(path, { id: await writeMediaFile(mediaDir, bytes), contentType, size: bytes.length });
+    }
+    recheck();
+
+    // From here to the commit nothing awaits, so what's checked now is what's saved.
+    const now = plan();
+    const how = decide(now, choices);
     db.$client.transaction(() => {
-      for (const item of saveOrder(plan, how)) {
+      for (const item of saveOrder(now, how)) {
         const save = how[item.index];
         if (!save || !item.kind) {
           result.skipped += 1;
           continue;
         }
         const mediaId = (path: string) => {
-          const known = saved.get(path);
-          const bytes = plan.media.get(path);
-          const type = item.media.get(path);
-          if (known) return known;
-          const id = bytes && type ? saveMedia(db, mediaDir, bytes, TYPE_CHECKS[type]) : null;
-          if (!id) throw new Error(`Media ${path} wasn't checked`);
-          saved.set(path, id);
-          return id;
+          if (!item.media.has(path)) throw new Error(`Media ${path} wasn't checked`);
+          // A file not written for this import: something here changed while the files were written.
+          const file = written.get(path);
+          if (!file) throw new TransferError(409, 'changed_since_preview', CHANGED);
+          if (!rows.has(path)) addMediaRow(db, file);
+          rows.add(path);
+          return file.id;
         };
         const done = item.kind.save(item.data, save, mediaId, { makeDefault: choices.default === item.index });
         unused.push(...(done.unusedMedia ?? []));
@@ -305,10 +338,12 @@ export function applyImport({
       }
     })();
   } catch (error) {
-    // The rows rolled back; the files saved for them go too.
-    for (const id of saved.values()) rmSync(join(mediaDir, id), { force: true });
+    // The rows rolled back; the files written for them go too.
+    for (const { id } of written.values()) rmSync(join(mediaDir, id), { force: true });
     throw error;
   }
+  // Files written for items that, by the time they were saved, didn't use them.
+  for (const [path, { id }] of written) if (!rows.has(path)) rmSync(join(mediaDir, id), { force: true });
   removeMedia(db, mediaDir, unused);
   for (const kind of kindsSaved) kind.afterImport?.();
   return result;

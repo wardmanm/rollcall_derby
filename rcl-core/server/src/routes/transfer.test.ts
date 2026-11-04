@@ -1,5 +1,5 @@
 import { existsSync, readdirSync } from 'node:fs';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { z } from 'zod';
 import type { AppModule, TransferKind } from '@rollcall/app-sdk';
@@ -15,15 +15,31 @@ import {
 import { eq } from 'drizzle-orm';
 import { SESSION_COOKIE } from '../auth/guard.ts';
 import { createSession, revokeSession } from '../auth/sessions.ts';
-import { teams } from '../db/schema.ts';
-import { addFontFace, listFonts } from '../fonts/fonts.ts';
+import { fontFaces, media as mediaTable, teams } from '../db/schema.ts';
+import { addFontFace, deleteFontFace, listFonts } from '../fonts/fonts.ts';
+import type * as Media from '../media.ts';
 import { fontTypeOf, saveMedia } from '../media.ts';
 import { addMember, createTeam, deleteTeam, findTeam, listTeams, updateMember, updateTeam } from '../teams/teams.ts';
 import { addUser, FONTS, IMAGES, longestStall, testApp } from '../testing.ts';
 import { mediaPathFor, packZip, sha256 } from '../transfer/zip.ts';
 
+// Lets a test change things while an import writes its media files: `onWrite` runs after each one is written.
+const writing = vi.hoisted(() => ({ onWrite: undefined as (() => void) | undefined }));
+vi.mock('../media.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof Media>();
+  return {
+    ...actual,
+    writeMediaFile: async (...args: Parameters<typeof actual.writeMediaFile>) => {
+      const id = await actual.writeMediaFile(...args);
+      writing.onWrite?.();
+      return id;
+    },
+  };
+});
+
 const opened: ReturnType<typeof testApp>['app'][] = [];
 afterEach(async () => {
+  writing.onWrite = undefined;
   await Promise.all(opened.splice(0).map((app) => app.close()));
 });
 
@@ -198,6 +214,22 @@ const padded = (bytes: Uint8Array) => {
 const manifestOf = (body: Buffer) =>
   ManifestSchema.parse(JSON.parse(strFromU8(unzipSync(body)['rollcall-export.json']!)));
 const choose = (file: string, ...items: ImportChoices['items']): ImportChoices => ({ file, items });
+const CHANGED = {
+  error: 'changed_since_preview',
+  message: 'Something changed since you checked this file. Check it again.',
+};
+// The files in the media folder that have no row, which nothing can show: there should never be any once an import
+// has answered.
+const strays = (db: ReturnType<typeof testApp>['db'], mediaDir: string) => {
+  const rows = new Set(
+    db
+      .select({ id: mediaTable.id })
+      .from(mediaTable)
+      .all()
+      .map(({ id }) => id),
+  );
+  return existsSync(mediaDir) ? readdirSync(mediaDir).filter((file) => !rows.has(file)) : [];
+};
 // Five milliseconds, for racing against something slow.
 const pause = () => new Promise<false>((resolve) => setTimeout(() => resolve(false), 5));
 // An export file of 30 media files of 5 MB that nothing uses, compressed, so reading it means inflating 150 MB.
@@ -653,6 +685,66 @@ describe('importing', () => {
     expect(listTeams(db).map((t) => t.name)).toEqual(['Here already']);
     expect(notes.notes).toEqual([]);
     expect(readdirSync(mediaDir).toSorted()).toEqual(before.toSorted());
+  });
+
+  it('saves nothing, and leaves no files, if the caller loses access while the files are written', async () => {
+    const { db, mediaDir, cookies, preview, importFile } = await as();
+    const zip = fileOf([team()]);
+    const { body } = await preview(zip);
+    writing.onWrite = () => revokeSession(db, cookies[SESSION_COOKIE]);
+    const res = await importFile(zip, choose(body!.file, { action: 'add' }));
+    expect(res.statusCode).toBe(401);
+    expect(res.json()).toEqual({ error: 'unauthenticated' });
+    expect(listTeams(db)).toEqual([]);
+    expect(strays(db, mediaDir)).toEqual([]);
+  });
+
+  it('refuses the import as changed, saving nothing and leaving no files, if a team it replaces goes meanwhile', async () => {
+    const { db, mediaDir, preview, importFile, allStars } = await as();
+    const here = allStars();
+    const zip = fileOf([team({ ...TEAM, leagueName: 'From the file' })]);
+    const { body } = await preview(zip);
+    writing.onWrite = () => {
+      writing.onWrite = undefined;
+      deleteTeam(db, here);
+    };
+    const res = await importFile(zip, choose(body!.file, { action: 'replace', target: here }));
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toEqual(CHANGED);
+    expect(listTeams(db)).toEqual([]);
+    expect(strays(db, mediaDir)).toEqual([]);
+  });
+
+  it('refuses the import as changed if an item comes to need a file it didn’t write, as a reused font went', async () => {
+    const { db, mediaDir, preview, importFile, uploadFont } = await as();
+    uploadFont('Jammer', 700);
+    const zip = fileOf([team(), face('Jammer')]);
+    const { body } = await preview(zip);
+    expect(body?.items.map((item) => item.status)).toEqual(['new', 'reused']);
+    writing.onWrite = () => {
+      writing.onWrite = undefined;
+      for (const { id } of db.select().from(fontFaces).all()) deleteFontFace(db, id);
+    };
+    const res = await importFile(zip, choose(body!.file, { action: 'add' }, { action: 'add' }));
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toEqual(CHANGED);
+    expect(listTeams(db)).toEqual([]);
+    expect(db.select().from(fontFaces).all()).toEqual([]);
+    expect(strays(db, mediaDir)).toEqual([]);
+  });
+
+  it('deletes a file it wrote for an item that, by the time it’s saved, is reused instead', async () => {
+    const { db, mediaDir, preview, importFile, uploadFont } = await as();
+    const zip = fileOf([face('Jammer')]);
+    const { body } = await preview(zip);
+    writing.onWrite = () => {
+      writing.onWrite = undefined;
+      uploadFont('Jammer', 700);
+    };
+    const res = await importFile(zip, choose(body!.file, { action: 'add' }));
+    expect(res.json()).toEqual({ added: 0, replaced: 0, keptBoth: 0, skipped: 1, copies: [] });
+    expect(db.select().from(fontFaces).all()).toHaveLength(1);
+    expect(strays(db, mediaDir)).toEqual([]);
   });
 
   it('refuses choices made for another file, or that no longer fit what’s here', async () => {
