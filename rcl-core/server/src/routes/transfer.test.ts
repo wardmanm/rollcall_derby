@@ -200,6 +200,17 @@ const manifestOf = (body: Buffer) =>
 const choose = (file: string, ...items: ImportChoices['items']): ImportChoices => ({ file, items });
 // Five milliseconds, for racing against something slow.
 const pause = () => new Promise<false>((resolve) => setTimeout(() => resolve(false), 5));
+// An export file of 30 media files of 5 MB that nothing uses, compressed, so reading it means inflating 150 MB.
+const bigFile = () =>
+  zipSync({
+    'rollcall-export.json': strToU8(JSON.stringify({ ...MANIFEST, items: [] })),
+    ...Object.fromEntries(
+      Array.from(
+        { length: 30 },
+        (_, n) => [`media/${n}.png`, [new Uint8Array(5 * 1024 * 1024), { level: 1 }]] as const,
+      ),
+    ),
+  });
 
 describe('the kinds of item', () => {
   it('lists those the caller may export or import, with counts, leaving out those that only travel with others', async () => {
@@ -669,16 +680,7 @@ describe('importing', () => {
 
   it('answers other requests while it reads a big file, none of them waiting long', async () => {
     const { app, cookies, importFile } = await as();
-    // 30 media files of 5 MB that nothing uses, compressed, so reading the file means inflating 150 MB.
-    const big = zipSync({
-      'rollcall-export.json': strToU8(JSON.stringify({ ...MANIFEST, items: [] })),
-      ...Object.fromEntries(
-        Array.from(
-          { length: 30 },
-          (_, n) => [`media/${n}.png`, [new Uint8Array(5 * 1024 * 1024), { level: 1 }]] as const,
-        ),
-      ),
-    });
+    const big = bigFile();
     const importing = importFile(big, choose(sha256(big)));
     const imported = importing.then(() => true);
     // Another request every 5 ms or so, until the import is answered: the longest gap between their answers.
@@ -696,6 +698,20 @@ describe('importing', () => {
     expect((await importing).json()).toEqual({ added: 0, replaced: 0, keptBoth: 0, skipped: 0, copies: [] });
     expect(longest).toBeLessThan(100);
     expect(answered).toBeGreaterThan(1);
+  });
+
+  it('runs one export or import at a time, so one asked for meanwhile waits its turn', async () => {
+    const { exportOf, importFile, allStars } = await as();
+    const id = allStars();
+    const big = bigFile();
+    const finished: string[] = [];
+    const importing = importFile(big, choose(sha256(big))).then(() => finished.push('import'));
+    // The import is reading the file by now.
+    await pause();
+    await pause();
+    const exporting = exportOf(`items=core:team:${id}`).then(() => finished.push('export'));
+    await Promise.all([importing, exporting]);
+    expect(finished).toEqual(['import', 'export']);
   });
 
   it('refuses to import an item that can’t be imported', async () => {

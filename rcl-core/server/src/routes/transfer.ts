@@ -66,12 +66,25 @@ function plan(request: FastifyRequest, file: ExportRead) {
   return planFrom(file, { kinds, mayImport: (kind) => holds(request, kind.importPermission) });
 }
 
+// Runs jobs one at a time, in the order they're given: each starts once the one before has finished, however it ended.
+function oneAtATime() {
+  let last: Promise<unknown> = Promise.resolve();
+  return <T>(job: () => Promise<T>): Promise<T> => {
+    const run = last.then(job);
+    last = run.catch(() => undefined);
+    return run;
+  };
+}
+
 // Import and export (docs/features/import-export.md, ADR-0024), for signed-in people: each item's kind is checked
-// against the permission that kind names, since one file can hold several kinds.
+// against the permission that kind names, since one file can hold several kinds. Exports, previews and imports each
+// hold up to a few hundred MB, so they run one at a time, and the others wait their turn.
 export function registerTransferRoutes(
   fastify: FastifyInstance,
   { db, mediaDir }: { db: AppDatabase; mediaDir: string },
 ) {
+  const inTurn = oneAtATime();
+
   fastify.withTypeProvider<ZodTypeProvider>().get(
     '/transfer/kinds',
     {
@@ -111,15 +124,17 @@ export function registerTransferRoutes(
     async (request, reply) => {
       try {
         const { modules, kinds } = request.server.hostedApps;
-        const file = await buildExport({
-          db,
-          mediaDir,
-          modules,
-          kinds,
-          selection: request.query,
-          mayExport: (kind) => holds(request, kind.exportPermission),
-          recheck: () => recheck(request),
-        });
+        const file = await inTurn(() =>
+          buildExport({
+            db,
+            mediaDir,
+            modules,
+            kinds,
+            selection: request.query,
+            mayExport: (kind) => holds(request, kind.exportPermission),
+            recheck: () => recheck(request),
+          }),
+        );
         return await reply
           .type('application/zip')
           .header('content-disposition', `attachment; filename="${file.fileName}"`)
@@ -149,9 +164,11 @@ export function registerTransferRoutes(
         },
         async (request, reply) => {
           try {
-            const file = await read(request);
-            recheck(request);
-            return previewOf(plan(request, file));
+            return await inTurn(async () => {
+              const file = await read(request);
+              recheck(request);
+              return previewOf(plan(request, file));
+            });
           } catch (error) {
             return refuse(error, reply);
           }
@@ -173,9 +190,11 @@ export function registerTransferRoutes(
         },
         async (request, reply) => {
           try {
-            const file = await read(request);
-            recheck(request);
-            return applyImport({ db, mediaDir, plan: plan(request, file), choices: request.query.choices });
+            return await inTurn(async () => {
+              const file = await read(request);
+              recheck(request);
+              return applyImport({ db, mediaDir, plan: plan(request, file), choices: request.query.choices });
+            });
           } catch (error) {
             return refuse(error, reply);
           }

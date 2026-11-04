@@ -45,6 +45,8 @@ R1–R5 are built for teams and themes. Screens join with the [Screen Builder](s
    - **The default theme never changes on its own.** Each theme being imported has a **Make default** switch, off to start with; turning one on turns the others off. A theme that was the default where it was exported says so.
 3. **Import** saves everything chosen in one go, or nothing. The dialog says what it did: "Imported 5: 3 new, 1 replaced, 1 kept as a copy (“All Stars copy”)." If something here changed since the file was checked, it's checked again for you to choose afresh. Every page of the app then shows what was imported, without a reload.
 
+**One at a time:** the server builds or reads one file at a time, so an export, check or import asked for while another runs waits its turn. Meanwhile it goes on answering everything else, OBS overlays and the CRG connection included.
+
 **Who:** Admins import and export everything. Producers import and export teams, and export themes. Announcers do neither. See the [role matrix](users-and-access.md#role-matrix).
 
 **Versions:** each kind's data has a version. An older one is brought up to date when it's imported, so an export always stays importable; a released version never changes (R4).
