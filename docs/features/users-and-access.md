@@ -42,7 +42,7 @@ Basic user accounts and role-based access control. The app runs on a shared venu
 
 ## Permissions
 
-Routes and live connections check [permissions](../product/glossary.md#permission), not roles ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)). Each permission belongs to one rcl app and is named `<app>:<action>`. Admins hold every permission. This table says which other roles hold each one, and whether an [API key](../product/glossary.md#api-key) may hold it. The API explorer at `/docs` shows the permission each route needs. A test keeps the table in step with the code.
+Routes and live connections check [permissions](../product/glossary.md#permission), not roles ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)). Each permission belongs to one rcl app and is named `<app>:<action>`. Admins hold every permission. This table says which other roles hold each one, and whether an [API key](../product/glossary.md#api-key) may hold it. The API explorer at `/docs` shows the permission each route needs, and offers an API key only on routes that accept one. A test keeps the table in step with the code.
 
 | Permission | Allows | Admin | Producer | Announcer | API keys |
 |---|---|---|---|---|---|

@@ -58,7 +58,7 @@ describe('API explorer', () => {
     expect(at(doc, 'paths', '/api/core/users/{id}', 'delete', 'tags')).toEqual(['core/users']);
   });
 
-  it('says who may call each operation, and that public ones need no session', async () => {
+  it('says who may call each operation, that public ones need no session, and which take only a session', async () => {
     const { app } = testApp({ apiDocs: true });
     const doc = (await app.inject({ method: 'GET', url: '/docs/json' })).json<unknown>();
     expect(at(doc, 'security')).toEqual([{ session: [] }, { bearer: [] }]);
@@ -73,7 +73,9 @@ describe('API explorer', () => {
     expect(at(doc, 'paths', '/api/core/users', 'get', 'description')).toBe(
       '**Needs `core:users.manage`:** Admin. Not API keys: people only.',
     );
-    expect(at(doc, 'paths', '/api/core/users', 'get', 'security')).toBeUndefined();
+    // Operations that refuse API keys offer only the session, for any signed-in user and for people-only permissions.
+    expect(at(doc, 'paths', '/api/core/auth/me', 'get', 'security')).toEqual([{ session: [] }]);
+    expect(at(doc, 'paths', '/api/core/users', 'get', 'security')).toEqual([{ session: [] }]);
   });
 
   it("documents an upload's body as a file of each image type it accepts, so Try it out offers a file picker", async () => {
@@ -106,6 +108,8 @@ describe('API explorer', () => {
     expect(at(doc, 'paths', '/api/demo/things', 'get', 'description')).toBe(
       '**Needs `demo:things.read`:** Admin, Producer. Also API keys that hold it.',
     );
+    // It keeps the document's security: a session or an API key.
+    expect(at(doc, 'paths', '/api/demo/things', 'get', 'security')).toBeUndefined();
   });
 
   it("keeps an operation's own description, after who may call it", async () => {

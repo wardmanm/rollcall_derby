@@ -35,6 +35,14 @@ function describeAccess(access: Access, permissions: Permissions): string {
   return `**Needs \`${access.permission}\`:** ${roles.join(', ')}. ${keys}`;
 }
 
+// What an operation takes, matching its line above (ADR-0020): nothing when it's public; only a session when it's for
+// any signed-in user or needs a people-only permission; otherwise the document's own, a session or an API key.
+function securityOf(access: Access, permissions: Permissions) {
+  if (access.public !== undefined) return { security: [] };
+  if (access.signedIn || permissions.find(access.permission)?.peopleOnly) return { security: [{ session: [] }] };
+  return {};
+}
+
 // The OpenAPI document is built from the schemas every route declares (ADR-0014), plus who may call each operation.
 // Swagger UI, and the document at /docs/json, are served only when asked for: always in `yarn dev`, on a venue
 // server only with ROLLCALL_API_DOCS=1.
@@ -75,10 +83,9 @@ export function registerApiDocs(
       const schema = uploads ? { ...converted, body: { type: 'string', format: 'binary' } } : converted;
       const access = input.route.config?.access;
       if (!access) return { schema, url };
-      const security = access.public !== undefined ? { security: [] } : {};
       // Who may call it comes first, then the route's own description, if it gives one.
       const description = [describeAccess(access, permissions), schema?.description].filter(Boolean).join('\n\n');
-      return { schema: { ...schema, description, ...security }, url };
+      return { schema: { ...schema, description, ...securityOf(access, permissions) }, url };
     },
   });
   // validatorUrl stays off: Swagger UI must not contact validator.swagger.io (hard rule 4: works offline).
