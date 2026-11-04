@@ -239,7 +239,11 @@ function CreateApiKey({ onCreated }: { onCreated: (created: CreateApiKeyResponse
             }}
           />
         </Group>
-        {grantable.data?.length === 0 ? (
+        {grantable.isError ? (
+          <Alert color="red" title="Couldn't load the permissions a key may hold">
+            {problemWith(grantable.error)}
+          </Alert>
+        ) : grantable.data?.length === 0 ? (
           <Text size="sm" c="dimmed">
             No permissions can be given to API keys yet: a key can call public routes only.
           </Text>

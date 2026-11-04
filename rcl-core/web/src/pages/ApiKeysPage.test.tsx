@@ -102,6 +102,12 @@ describe('the API keys page', () => {
     });
   });
 
+  it('says so when the permissions a key may hold fail to load', async () => {
+    await openApiKeys({ 'GET /api/core/api-keys/grantable': json({ error: 'internal_error' }, 500) });
+    expect(await screen.findByText("Couldn't load the permissions a key may hold")).toBeTruthy();
+    expect(screen.getByText('Something went wrong. Try again.')).toBeTruthy();
+  });
+
   it('asks for a name before sending anything', async () => {
     const { requests } = await openApiKeys();
     fireEvent.click(screen.getByRole('button', { name: 'Create key' }));

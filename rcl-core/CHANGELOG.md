@@ -15,6 +15,7 @@ rcl-core hosts the other rcl apps, which have their own changelogs, such as [rcl
 - Logging out from **Choose your own password**, the page that follows signing in with a temporary password, no longer sends the next person who signs in on that device to a **Change your password** form (#14)
 - If the server is running but answers with an error while the app checks who's signed in, the app says what went wrong instead of "Can't reach the Rollcall server", so you know the network is fine (#14)
 - When the server refuses a request for several reasons, it gives them as separate sentences, such as "Use 3–32 letters, digits, dots, dashes or underscores. Use at least 10 characters", instead of running them together (#14)
+- The API keys page says so if the permissions a key may hold fail to load. Before, it showed an empty Permissions list with no explanation (#14)
 
 ## [0.3.0] - 2026-10-29
 
