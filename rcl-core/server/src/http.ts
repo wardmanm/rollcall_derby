@@ -19,9 +19,10 @@ const ERROR_CODES: Partial<Record<number, string>> = {
 // SQL or file paths.
 export function sendApiError(error: FastifyError, request: FastifyRequest, reply: FastifyReply) {
   // A body, path or query that fails its route schema (ADR-0014). The message is each problem's own words, such as
-  // "Use at least 10 characters", without Fastify's "body/password" prefix: the web app shows it as it is.
+  // "Use at least 10 characters", without Fastify's "body/password" prefix, and several are joined as sentences: the
+  // web app shows it as it is.
   if (error.validation) {
-    const message = error.validation.flatMap((problem) => problem.message ?? []).join(' ');
+    const message = error.validation.flatMap((problem) => problem.message ?? []).join('. ');
     return reply.code(400).send({ error: 'validation_failed', message: message || error.message });
   }
   const status = error.statusCode !== undefined && error.statusCode >= 400 ? error.statusCode : 500;

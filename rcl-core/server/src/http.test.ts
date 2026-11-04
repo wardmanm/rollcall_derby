@@ -39,6 +39,20 @@ describe('errors raised by Fastify and its plugins', () => {
     expect(res.json()).toMatchObject({ error: 'bad_request' });
   });
 
+  it('name each problem with a body that fails its schema, as sentences', async () => {
+    const { app } = testApp();
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/core/setup',
+      payload: { username: 'ab', password: 'short' },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json()).toEqual({
+      error: 'validation_failed',
+      message: 'Use 3–32 letters, digits, dots, dashes or underscores. Use at least 10 characters',
+    });
+  });
+
   it('hide the details of a server error', async () => {
     const { app } = testApp({
       registerRoutes: (api) => {
