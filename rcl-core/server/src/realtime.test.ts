@@ -119,12 +119,14 @@ async function notRefused(
 describe('namespace inventory', () => {
   it('pins the public namespaces of the installed apps', () => {
     const rt = attach(INSTALLED_APPS);
-    expect(rt.namespaces.filter((n) => 'public' in n.access).map((n) => n.name)).toEqual(['/producer/overlay']);
+    expect(rt.namespaces.filter((n) => n.access.public !== undefined).map((n) => n.name)).toEqual([
+      '/producer/overlay',
+    ]);
   });
 
   it('refuses an anonymous client on every namespace that is not public', async () => {
     const rt = await startRealtime();
-    const gated = rt.namespaces.filter((n) => !('public' in n.access)).map((n) => n.name);
+    const gated = rt.namespaces.filter((n) => n.access.public === undefined).map((n) => n.name);
     const asAdmin = async () => ({ cookie: await rt.cookieFor('admin') });
     expect(await notRefused(rt, gated, async () => ({}), 'unauthenticated')).toEqual([]);
     expect(await notRefused(rt, gated, asAdmin, 'unauthenticated')).toHaveLength(gated.length);
@@ -132,7 +134,7 @@ describe('namespace inventory', () => {
 
   it('refuses every namespace that is not public while a password change is pending', async () => {
     const rt = await startRealtime();
-    const gated = rt.namespaces.filter((n) => !('public' in n.access)).map((n) => n.name);
+    const gated = rt.namespaces.filter((n) => n.access.public === undefined).map((n) => n.name);
     const pending = async () => ({ cookie: await rt.cookieFor('producer', { mustChangePassword: true }) });
     const asAdmin = async () => ({ cookie: await rt.cookieFor('admin') });
     expect(await notRefused(rt, gated, pending, 'password_change_required')).toEqual([]);
@@ -144,7 +146,7 @@ describe('namespace inventory', () => {
     const asAdmin = async () => ({ cookie: await rt.cookieFor('admin') });
     for (const role of ['producer', 'announcer'] as const) {
       const lacking = rt.namespaces
-        .filter((n) => 'permission' in n.access && !rt.hosted.permissions.granted(role, n.access.permission))
+        .filter((n) => n.access.permission !== undefined && !rt.hosted.permissions.granted(role, n.access.permission))
         .map((n) => n.name);
       expect(lacking, role).toContain('/probe/watch');
       const asRole = async () => ({ cookie: await rt.cookieFor(role) });

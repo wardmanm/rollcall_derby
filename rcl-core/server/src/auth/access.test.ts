@@ -108,6 +108,19 @@ describe('route access declarations', () => {
     );
   });
 
+  it('stop the server at startup when a declaration is not exactly one kind of access, which its type refuses too', async () => {
+    // @ts-expect-error -- public, signedIn and permission exclude each other
+    const mixed: Access = { public: 'Looks public', permission: 'core:users.manage' };
+    await expect(startWith(routeAt('/api/core/mixed', mixed))).rejects.toThrow(
+      'GET /api/core/mixed must declare exactly one of public, signedIn or a permission',
+    );
+    // @ts-expect-error -- and one of them is needed
+    const none: Access = {};
+    await expect(startWith(routeAt('/api/core/none', none))).rejects.toThrow(
+      'GET /api/core/none must declare exactly one of public, signedIn or a permission',
+    );
+  });
+
   it("stop the server at startup when a core route uses another app's permission", async () => {
     await expect(startWith(routeAt('/api/core/borrowed', { permission: 'producer:themes.edit' }))).rejects.toThrow(
       'GET /api/core/borrowed needs producer:themes.edit, but core may only use its own core:… permissions',

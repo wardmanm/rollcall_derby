@@ -63,21 +63,21 @@ export function deny(
   principal: Principal | null | undefined,
   permissions: Permissions,
 ): Denial | undefined {
-  if ('public' in access) return undefined;
+  if (access.public !== undefined) return undefined;
   if (!principal) return { status: 401, error: 'unauthenticated' };
   if (principal.kind === 'apiKey') {
     // A key isn't a person, so routes for any signed-in user refuse it. It holds exactly its own permissions, never
     // a people-only one, even if it was given one before the permission became people-only.
-    if ('signedIn' in access) return { status: 403, error: 'forbidden' };
+    if (access.signedIn) return { status: 403, error: 'forbidden' };
     const def = permissions.find(access.permission);
     const held = def !== undefined && !def.peopleOnly && principal.key.permissions.includes(access.permission);
     return held ? undefined : { status: 403, error: 'forbidden' };
   }
   const { user } = principal;
-  if (user.mustChangePassword && !('signedIn' in access && access.allowPendingPasswordChange)) {
+  if (user.mustChangePassword && !(access.signedIn && access.allowPendingPasswordChange)) {
     return { status: 403, error: 'password_change_required' };
   }
-  if ('permission' in access && !permissions.granted(user.role, access.permission)) {
+  if (access.permission !== undefined && !permissions.granted(user.role, access.permission)) {
     return { status: 403, error: 'forbidden' };
   }
   return undefined;
@@ -85,8 +85,11 @@ export function deny(
 
 /** What's wrong with a declaration owned by app `appId`, or null when nothing is. */
 export function accessProblem(access: Access, { appId, permissions }: { appId: string; permissions: Permissions }) {
-  if ('public' in access && access.public.trim() === '') return 'is public but gives no reason';
-  if ('permission' in access) {
+  // The type allows only one, but a cast or a JavaScript app could mix them, and a mix would be treated as public.
+  const kinds = [access.public !== undefined, access.signedIn === true, access.permission !== undefined];
+  if (kinds.filter(Boolean).length !== 1) return 'must declare exactly one of public, signedIn or a permission';
+  if (access.public !== undefined && access.public.trim() === '') return 'is public but gives no reason';
+  if (access.permission !== undefined) {
     const key = access.permission;
     if (!key.startsWith(`${appId}:`)) return `needs ${key}, but ${appId} may only use its own ${appId}:… permissions`;
     if (!permissions.find(key)) return `needs ${key}, which ${appId} doesn't declare`;
@@ -122,7 +125,7 @@ export function enforceRouteAccess(
     if (!access) throw new Error(`${name} declares no access. Give it config.access: public, signedIn or a permission`);
     const problem = accessProblem(access, { appId, permissions: options.permissions });
     if (problem) throw new Error(`${name} ${problem}`);
-    if ('public' in access) {
+    if (access.public !== undefined) {
       if (!this.hasRequestDecorator('principal')) {
         throw new Error(`${name} is public but outside the /api plugin, so it would skip the cross-site check`);
       }

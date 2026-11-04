@@ -9,14 +9,19 @@ import type { ConflictTarget, FontFamily, KindName, Role, TransferFact } from '@
 /** `<app id>:<action>`, such as `core:users.manage`. Each rcl app declares its own, prefixed with its id. */
 export type Permission = `${string}:${string}`;
 
-/** Who may call a route or join a Socket.IO namespace (ADR-0018). Every /api route declares one in `config.access`. */
+/**
+ * Who may call a route or join a Socket.IO namespace (ADR-0018). Every /api route declares one in `config.access`.
+ * It's exactly one of the three: the `never` keys make a mix, such as a public route that also names a permission, a
+ * type error, and the server refuses to start with one. Tell them apart by value (`access.public !== undefined`), not
+ * with `in`.
+ */
 export type Access =
   /** Anyone, signed in or not. The reason is shown in the API explorer. */
-  | { public: string }
+  | { public: string; signedIn?: never; allowPendingPasswordChange?: never; permission?: never }
   /** Any signed-in user. Only `me` and `password` let a pending password change through. */
-  | { signedIn: true; allowPendingPasswordChange?: true }
+  | { signedIn: true; allowPendingPasswordChange?: true; public?: never; permission?: never }
   /** A signed-in user whose role holds this permission. Admins hold every permission. */
-  | { permission: Permission };
+  | { permission: Permission; public?: never; signedIn?: never; allowPendingPasswordChange?: never };
 
 declare module 'fastify' {
   interface FastifyContextConfig {

@@ -105,8 +105,8 @@ async function notRefused(
 const keysOf = (routes: readonly ApiRoute[]) => [...new Set(routes.map((r) => r.key))].toSorted(byName);
 const where = (routes: readonly ApiRoute[], test: (access: Access) => boolean) =>
   routes.filter((r) => r.access !== undefined && test(r.access));
-const isPublic = (access: Access) => 'public' in access;
-const allowsPendingChange = (access: Access) => 'signedIn' in access && access.allowPendingPasswordChange === true;
+const isPublic = (access: Access) => access.public !== undefined;
+const allowsPendingChange = (access: Access) => access.signedIn === true && access.allowPendingPasswordChange === true;
 
 describe('route inventory', () => {
   it('pins the public routes and those that work while a password change is pending', async () => {
@@ -149,7 +149,7 @@ describe('route inventory', () => {
     const forbidden = { status: 403, error: 'forbidden' };
     for (const role of ['producer', 'announcer'] as const) {
       const { permissions } = inv.app.hostedApps;
-      const lacking = where(inv.routes, (a) => 'permission' in a && !permissions.granted(role, a.permission));
+      const lacking = where(inv.routes, (a) => a.permission !== undefined && !permissions.granted(role, a.permission));
       expect(keysOf(lacking), role).toContain('GET /api/core/users');
       expect(await notRefused(inv, lacking, inv.as(role), forbidden), role).toEqual([]);
       expect(await notRefused(inv, lacking, inv.as('admin'), forbidden), role).toHaveLength(lacking.length);
@@ -160,7 +160,7 @@ describe('route inventory', () => {
   it('lets an API key call only routes needing a permission it holds, and never a people-only one', async () => {
     const inv = await inventory();
     const grantable = inv.app.hostedApps.permissions.all.filter((def) => !def.peopleOnly).map((def) => def.key);
-    const keyMayCall = (access: Access) => 'permission' in access && grantable.includes(access.permission);
+    const keyMayCall = (access: Access) => access.permission !== undefined && grantable.includes(access.permission);
     const refusedToKeys = where(inv.routes, (access) => !isPublic(access) && !keyMayCall(access));
     const forbidden = { status: 403, error: 'forbidden' };
     const key = inv.key(grantable);

@@ -23,8 +23,8 @@ const ROLE_NAMES = { admin: 'Admin', producer: 'Producer', announcer: 'Announcer
 
 // One line saying who may call an operation, from its access declaration (ADR-0018).
 function describeAccess(access: Access, permissions: Permissions): string {
-  if ('public' in access) return `**Public:** ${access.public}.`;
-  if ('signedIn' in access) {
+  if (access.public !== undefined) return `**Public:** ${access.public}.`;
+  if (access.signedIn) {
     return access.allowPendingPasswordChange
       ? '**Any signed-in user**, even with a password change pending. Not API keys.'
       : '**Any signed-in user.** Not API keys.';
@@ -75,7 +75,7 @@ export function registerApiDocs(
       const schema = uploads ? { ...converted, body: { type: 'string', format: 'binary' } } : converted;
       const access = input.route.config?.access;
       if (!access) return { schema, url };
-      const security = 'public' in access ? { security: [] } : {};
+      const security = access.public !== undefined ? { security: [] } : {};
       return { schema: { ...schema, description: describeAccess(access, permissions), ...security }, url };
     },
   });

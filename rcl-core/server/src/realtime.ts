@@ -43,7 +43,7 @@ export function attachRealtime(httpServer: HttpServer, { db, log, hosted, onName
       creating = name;
       const nsp = io.of(name);
       creating = undefined;
-      if (!('public' in access)) {
+      if (access.public === undefined) {
         nsp.use((socket, next) => {
           // Socket.IO awaits this middleware without ever handling a rejection, so a throw here (a closed database
           // handle, a full disk during findSession's last-seen write, any I/O error) would otherwise be an unhandled
