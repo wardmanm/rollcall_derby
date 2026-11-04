@@ -20,19 +20,22 @@ export function serverProxy(
   };
 }
 
-// The front door's proxy (rcl-core's Vite): the server's paths, plus the Producer app's own Vite below /producer,
-// WebSockets included, so its hot reload works through the front door too.
+// The front door's proxy (rcl-core's Vite): the server's paths, plus the Producer app's own Vite at and below
+// /producer, WebSockets included, so its hot reload works through the front door too. Vite matches a key as a prefix,
+// or as a RegExp when it starts with ^. A RegExp keeps /producerish, which the production server answers with a 404,
+// out of the Producer app.
 export function frontDoorProxy(target?: string): Record<string, ProxyOptions> {
-  return { ...serverProxy(target), '/producer': { target: `http://localhost:${DEV_PORTS.producer}`, ws: true } };
+  const producer = { target: `http://localhost:${DEV_PORTS.producer}`, ws: true };
+  return { ...serverProxy(target), '^/producer(?:[/?]|$)': producer };
 }
 
-/** A Vite plugin that sends `/` to `home`, as the production server does. */
+/** A Vite plugin that sends `/` to `home`, with or without a query, as the production server does. */
 export function redirectRoot(home: string): Plugin {
   return {
     name: 'rollcall-redirect-root',
     configureServer(dev) {
       dev.middlewares.use((req, res, next) => {
-        if (req.url !== '/') return next();
+        if (req.url?.split('?', 1)[0] !== '/') return next();
         res.writeHead(302, { Location: home }).end();
       });
     },
