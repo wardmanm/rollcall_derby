@@ -7,6 +7,7 @@ import { join, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { checkDocs, collectOpenQuestions, nextAdrNumber } from './check-docs.mjs';
+import { APPS } from './release.mjs';
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'check-docs.mjs');
 
@@ -159,18 +160,18 @@ test('reports a feature that does not say which app it belongs to', () => {
   assertError(errorsFor({ 'docs/features/alpha.md': page }), 'docs/features/alpha.md: missing frontmatter field "app"');
 });
 
-test('reports a feature with an app that is not rcl-core, rcl-producer or both', () => {
+test("reports a feature with an app that is not in release.mjs's APPS, or both", () => {
   for (const app of ['core', 'obs-producer', 'rcl-core, rcl-producer']) {
     const page = BASELINE['docs/features/alpha.md'].replace('app: rcl-core', `app: ${app}`);
     assertError(
       errorsFor({ 'docs/features/alpha.md': page }),
-      `docs/features/alpha.md: invalid app "${app}" (use rcl-core, rcl-producer or both)`,
+      `docs/features/alpha.md: invalid app "${app}" (use ${Object.keys(APPS).join(', ')} or both)`,
     );
   }
 });
 
 test('accepts each app a feature can belong to, and lists it in the features table', () => {
-  for (const app of ['rcl-core', 'rcl-producer', 'both']) {
+  for (const app of [...Object.keys(APPS), 'both']) {
     const root = makeTree({ 'docs/features/alpha.md': BASELINE['docs/features/alpha.md'].replace('rcl-core', app) });
     assert.deepEqual(checkDocs(root, { fix: true }).errors, []);
     assert.match(
@@ -179,6 +180,21 @@ test('accepts each app a feature can belong to, and lists it in the features tab
       app,
     );
   }
+});
+
+const alphaFor = (app) => BASELINE['docs/features/alpha.md'].replace('app: rcl-core', `app: ${app}`);
+
+test("a feature's app comes from release.mjs's APPS, so a new app is added in one place", (t) => {
+  APPS['rcl-example'] = 'Rollcall Example';
+  t.after(() => delete APPS['rcl-example']);
+  assert.deepEqual(
+    checkDocs(makeTree({ 'docs/features/alpha.md': alphaFor('rcl-example') }), { fix: true }).errors,
+    [],
+  );
+  assertError(
+    errorsFor({ 'docs/features/alpha.md': alphaFor('core') }),
+    'docs/features/alpha.md: invalid app "core" (use rcl-core, rcl-producer, rcl-example or both)',
+  );
 });
 
 test('reports an ADR without a valid date', () => {

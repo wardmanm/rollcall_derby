@@ -107,7 +107,7 @@ Brainstorm specs and implementation plans are working papers. They live in `desi
 | `node scripts/check-docs.mjs --next-adr` | Print the next ADR number |
 
 It checks:
-1. **Frontmatter.** Required fields are present, and status and app values are valid.
+1. **Frontmatter.** Required fields are present, and status and app values are valid. A feature's valid apps are the ones in `APPS` in `scripts/release.mjs`, plus `both`.
 2. **Links.** Every relative link and `#anchor` resolves: in the wiki, in the root `AGENTS.md`, `CLAUDE.md` and `README.md`, and in each `rcl-*` app's `AGENTS.md`, `CLAUDE.md`, `README.md` and `CHANGELOG.md`.
 3. **Reachability.** Every page can be reached by following links from the [wiki home](README.md).
 4. **ADR numbering.** ADR filenames and numbers are well formed, unique and sequential.

@@ -11,9 +11,11 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join, relative, dirname, resolve, basename, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { APPS } from './release.mjs';
 
 const FEATURE_STATUSES = new Set(['planned', 'in-progress', 'shipped', 'deprecated']);
-const FEATURE_APPS = ['rcl-core', 'rcl-producer', 'both']; // the rcl app a feature belongs to (ADR-0021)
+// The rcl app a feature belongs to: one of the apps release.mjs releases (ADR-0021), or both.
+const featureApps = () => [...Object.keys(APPS), 'both'];
 const ADR_STATUSES = new Set(['proposed', 'accepted', 'superseded', 'deprecated']);
 const ADR_FILENAME = /^(\d{4})-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -126,10 +128,9 @@ function checkFrontmatter(pages, adrNumbers, errors) {
     need('title');
     if (isFeature(p)) {
       const app = need('app');
-      if (app && !FEATURE_APPS.includes(app)) {
-        errors.push(
-          `${p.rel}: invalid app "${app}" (use ${FEATURE_APPS.slice(0, -1).join(', ')} or ${FEATURE_APPS.at(-1)})`,
-        );
+      const apps = featureApps();
+      if (app && !apps.includes(app)) {
+        errors.push(`${p.rel}: invalid app "${app}" (use ${apps.slice(0, -1).join(', ')} or ${apps.at(-1)})`);
       }
       const status = need('status');
       if (status && !FEATURE_STATUSES.has(status)) errors.push(`${p.rel}: invalid status "${status}"`);
