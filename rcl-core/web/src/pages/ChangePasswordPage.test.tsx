@@ -85,6 +85,22 @@ describe('changing your password', () => {
     expect(await screen.findByText("That isn't the temporary password you signed in with.")).toBeTruthy();
   });
 
+  it('can be left by logging out, so the next person signs in to where you were going, not to this page', async () => {
+    let me: CurrentUser | null = { ...PRODUCER, mustChangePassword: true };
+    signedIn(me, {
+      'GET /api/core/auth/me': () =>
+        me ? Response.json(me) : Response.json({ error: 'unauthenticated' }, { status: 401 }),
+      'POST /api/core/auth/logout': () => {
+        me = null;
+        return new Response(null, { status: 204 });
+      },
+    });
+    const router = openCore('/core/change-password?next=%2Fcore%2Fteams');
+    fireEvent.click(await screen.findByRole('button', { name: 'Log out' }));
+    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeTruthy();
+    expect(whereIs(router)).toBe('/core/login?next=%2Fcore%2Fteams');
+  });
+
   it('can be cancelled when you chose to change it', async () => {
     signedIn(PRODUCER, { 'GET /api/core/apps': json([]) });
     const router = openCore('/core/change-password?next=%2Fcore%2F');

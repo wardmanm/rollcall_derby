@@ -30,13 +30,17 @@ export function ChangePasswordPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const signedOut = apiError(me.error)?.code === 'unauthenticated';
+  // Signed out, by Log out or otherwise: sign in, then come back here if you chose to change your password. If the
+  // change was forced, go on to `next` instead: whoever signs in next may have no temporary password. `me.data` is
+  // still the answer from before you were signed out.
+  const afterSignIn = me.data?.mustChangePassword ? next : here;
   // Changed: carry on once the server confirms no change is due any more, or the sign-in gate would see the old
   // answer and send you back here.
   const done = isSuccess && !me.isFetching && me.data?.mustChangePassword === false;
   useEffect(() => {
-    if (signedOut) goTo(withNext(CORE_PAGES.signIn, here));
+    if (signedOut) goTo(withNext(CORE_PAGES.signIn, afterSignIn));
     else if (done) goTo(next);
-  }, [signedOut, done, goTo, here, next]);
+  }, [signedOut, done, goTo, afterSignIn, next]);
 
   if (!me.data) {
     return (
