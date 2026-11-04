@@ -34,7 +34,10 @@ export interface PermissionDef {
   peopleOnly?: true;
 }
 
-/** An app's web build, served below `/<id>/`. index.html answers every path its pages don't. */
+/**
+ * An app's web build, served below `/<id>/`. index.html answers every path its files and pages don't, except one that
+ * looks like a file (under `assets/`, or with an extension): that's a 404.
+ */
 export interface AppWeb {
   /** The production build folder. Skipped while it has no index.html (e.g. in development). */
   dir: string;

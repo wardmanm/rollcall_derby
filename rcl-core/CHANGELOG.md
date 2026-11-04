@@ -6,6 +6,10 @@ rcl-core hosts the other rcl apps, which have their own changelogs, such as [rcl
 
 ## [Unreleased]
 
+### Fixed
+
+- A missing file below an app, such as an old script that a page left open across an upgrade asks for, now gets a 404 instead of the app's page (#12)
+
 ## [0.3.0] - 2026-10-29
 
 ### Added

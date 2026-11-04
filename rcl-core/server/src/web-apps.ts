@@ -17,9 +17,9 @@ export interface WebApp {
 }
 
 // Serves each hosted app's build below its base (ADR-0019): real files as they are, its pages at their paths, and
-// index.html for every other path below the base, so client-side routes like /producer/screens/3 load. `/`
-// redirects to the first app (core's). Returns the page for a path that no route or file answers, if any; the
-// server's not-found handler sends it.
+// index.html for every other path below the base, so client-side routes like /producer/screens/3 load. A path that
+// looks like a file gets no page, so a missing file is a 404. `/` redirects to the first app (core's). Returns the
+// page for a path that no route or file answers, if any; the server's not-found handler sends it.
 export function serveWebApps(
   app: FastifyInstance,
   webApps: readonly WebApp[],
@@ -36,7 +36,8 @@ export function serveWebApps(
   });
   return (path) => {
     const web = appAt(built, path);
-    return web && { dir: web.dir, file: pageAt(web, path) };
+    const file = web && pageAt(web, path);
+    return web && file !== undefined ? { dir: web.dir, file } : undefined;
   };
 }
 
@@ -47,9 +48,14 @@ function appAt(apps: readonly WebApp[], path: string): WebApp | undefined {
     .reduce<WebApp | undefined>((best, web) => (best && best.base.length >= web.base.length ? best : web), undefined);
 }
 
-// The page that answers `path`: one of the app's own pages, or its index.html.
-function pageAt(web: WebApp, path: string): string {
+// A path below a base that looks like a file: anything under assets/, or with a dot in its last part (an extension).
+// No page answers one, so an old hashed asset asked for after an upgrade gets a 404, not HTML the browser can't run.
+const FILE_PATH = /^assets\/|\.[^/]*$/;
+
+// The page that answers `path`: one of the app's own pages, or its index.html. None for a path that looks like a file.
+function pageAt(web: WebApp, path: string): string | undefined {
   const below = path.slice(web.base.length);
+  if (FILE_PATH.test(below)) return undefined;
   const page = Object.entries(web.pages ?? {}).find(([name]) => below === name || below.startsWith(`${name}/`));
   return page?.[1] ?? 'index.html';
 }

@@ -102,6 +102,24 @@ describe('serving the web apps', () => {
     }
   });
 
+  it('answers a missing file below an app with a 404, not a page', async () => {
+    // Such as an old hashed asset after an upgrade: as HTML, the browser would fail to run it as a script.
+    for (const method of ['GET', 'HEAD'] as const) {
+      for (const url of [
+        '/core/assets/index-old.js',
+        '/core/assets/no-extension',
+        '/core/favicon.ico',
+        '/core/teams/logo.png',
+        '/producer/assets/gone.css',
+        '/producer/overlay/old.js',
+      ]) {
+        const res = await get(appWithBuilds(), url, method);
+        expect(res.statusCode, `${method} ${url}`).toBe(404);
+        expect(res.headers['content-type'], `${method} ${url}`).toMatch(/application\/json/);
+      }
+    }
+  });
+
   it("does not treat look-alike paths as an app's page", async () => {
     expect((await get(appWithBuilds(), '/producer/overlays-list')).body).toContain('<div id="producer-root">');
   });

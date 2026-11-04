@@ -53,6 +53,12 @@ These workspaces are planned in [ADR-0017](../decisions/0017-rcl-app-workspace-l
 | `packages/app-sdk` | The types an app module is written against: `AppModule`, `AppContext` with core's read-only data services ([ADR-0023](../decisions/0023-core-data-services-for-apps.md)), `Access` and permissions |
 | `packages/web-sdk` | Code every app's Mantine GUI shares: the app shell, the sign-in gate that sends people to rcl-core's sign-in page and back, the account menu, the server badge, the RTK Query base API and store, and the dev proxy. Overlay entries never use it |
 
+## How apps are hosted
+
+rcl-core's server hosts each rcl app as an [app module](../product/glossary.md#app-module), on one port ([ADR-0019](../decisions/0019-rcl-apps-as-modules.md)).
+
+- **Web builds.** An app's build is served at `/<id>/`. Its real files are served as they are. Every other path below `/<id>/` gets one of the app's pages, such as `/producer/overlay`, or its `index.html`, so client-side routes load. A path that looks like a file, under `assets/` or with an extension, never gets a page: a missing one is a 404. A page left open across an upgrade that asks for an old hashed asset gets an error, not HTML.
+
 ## How data flows
 
 **Setup time.** The admin UI reads and writes teams, themes and screens through the REST API. In the browser, that data lives in the RTK Query cache ([ADR-0003](../decisions/0003-client-state-with-redux-toolkit.md)).
