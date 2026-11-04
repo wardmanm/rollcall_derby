@@ -11,7 +11,8 @@ rcl-producer/
 ├── server/    @rollcall/producer-server: the app module rcl-core hosts (depends only on @rollcall/app-sdk and contracts)
 ├── contract/  @rollcall/producer-contract: Zod schemas for /api/producer and its namespaces, such as the overlay's hello
 ├── web/       @rollcall/producer-web: the Producer app at /producer/ (Mantine), and the OBS overlay at /producer/overlay (no Mantine)
-└── CHANGELOG.md  rcl-producer's release notes: add a line under Unreleased for each user-visible change
+├── CHANGELOG.md  rcl-producer's release notes: add a line under Unreleased for each user-visible change
+└── sign-off/  one record per release: Mike's manual check of each new feature, written by /release (ADR-0025)
 ```
 
 The app shell, the server badge, the RTK Query base API and store, and the dev proxy come from `@rollcall/web-sdk` (`packages/web-sdk/`).

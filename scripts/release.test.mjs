@@ -24,6 +24,8 @@ import {
   milestoneCheck,
   milestoneRequired,
   issueRefs,
+  signOffFile,
+  parseSignOff,
 } from './release.mjs';
 
 // --- apps ---
@@ -186,6 +188,34 @@ const SECOND_PREPARED = `${HEADER}
 
 const EMPTY_HEADINGS = FIRST.replace('- Team Builder (#12)\n\n', '');
 
+const SIGN_OFF = 'rcl-core/sign-off/0.1.0.md';
+
+// A sign-off record for rcl-core 0.1.0 with one check per result, signed off unless `signedOff` is null.
+function signOffRecord(
+  results = ['pass'],
+  { title = 'Sign-off: Rollcall Core v0.1.0', signedOff = 'Signed off: 2026-10-14 by Mike' } = {},
+) {
+  return [
+    `# ${title}`,
+    '',
+    'Tested: `abc1234` on 2026-10-14',
+    ...(signedOff ? [signedOff] : []),
+    '',
+    '| # | Feature | Planned | Try | Expect | Result |',
+    '|---|---|---|---|---|---|',
+    ...results.map(
+      (result, n) =>
+        `| ${n + 1} | Team Builder (#12) | team-builder R${n + 1} | Add a team | It's listed | ${result} |`,
+    ),
+    '',
+  ].join('\n');
+}
+
+const SIGNED = { [SIGN_OFF]: signOffRecord() };
+
+// What check says about a prepared rcl-core 0.1.0 with this sign-off record.
+const checkWith = (record) => check(makeTree({ [LOG]: FIRST_PREPARED, [SIGN_OFF]: record }), APP, '0.1.0');
+
 // --- changelog parsing ---
 
 test('parseChangelog and formatChangelog round-trip a changelog unchanged', () => {
@@ -261,7 +291,7 @@ test('prepare refuses an app that is not released on its own', () => {
 });
 
 test("prepare and check accept an app's first release when its packages already have that version", () => {
-  const root = makeTree({ [LOG]: FIRST, 'rcl-core/server/package.json': pkg('0.1.0') });
+  const root = makeTree({ [LOG]: FIRST, 'rcl-core/server/package.json': pkg('0.1.0'), ...SIGNED });
   const { packages } = prepare(root, APP, '0.1.0', { date: '2026-10-14' });
   assert.deepEqual(packages, ['rcl-core/server/package.json']);
   assert.equal(read(root, 'rcl-core/server/package.json'), pkg('0.1.0'));
@@ -313,14 +343,14 @@ test('prepare fails clearly when the app has no CHANGELOG.md', () => {
 
 // --- check ---
 
-test('check passes for a prepared changelog', () => {
-  const root = makeTree({ [LOG]: FIRST });
+test('check passes for a prepared changelog with a signed-off record', () => {
+  const root = makeTree({ [LOG]: FIRST, ...SIGNED });
   prepare(root, APP, '0.1.0', { date: '2026-10-14' });
   assert.deepEqual(check(root, APP, '0.1.0'), []);
 });
 
 test('check reports Unreleased entries that were never prepared', () => {
-  const errors = check(makeTree({ [LOG]: FIRST }), APP, '0.1.0');
+  const errors = check(makeTree({ [LOG]: FIRST, ...SIGNED }), APP, '0.1.0');
   assert.deepEqual(errors, [
     'the Unreleased section of rcl-core/CHANGELOG.md still has entries; run: node scripts/release.mjs prepare 0.1.0 --app rcl-core',
     'rcl-core/CHANGELOG.md has no section for 0.1.0; run: node scripts/release.mjs prepare 0.1.0 --app rcl-core',
@@ -329,7 +359,7 @@ test('check reports Unreleased entries that were never prepared', () => {
 
 test('check ignores empty subsection headings under Unreleased', () => {
   const text = FIRST_PREPARED.replace('## [Unreleased]\n', '## [Unreleased]\n\n### Added\n');
-  assert.deepEqual(check(makeTree({ [LOG]: text }), APP, '0.1.0'), []);
+  assert.deepEqual(check(makeTree({ [LOG]: text, ...SIGNED }), APP, '0.1.0'), []);
 });
 
 test('check requires a dated section with entries', () => {
@@ -353,8 +383,85 @@ test("check requires the app's package.json versions to match, and ignores every
     'rcl-core/web/package.json': pkg('0.0.0'),
     'rcl-producer/web/package.json': pkg('0.0.0'),
     'packages/web-sdk/package.json': pkg('0.0.0'),
+    ...SIGNED,
   });
   assert.deepEqual(check(root, APP, '0.1.0'), ['rcl-core/web/package.json has version 0.0.0, expected 0.1.0']);
+});
+
+// --- sign-off (ADR-0025) ---
+
+test('signOffFile names the record beside the app’s changelog', () => {
+  assert.equal(signOffFile('rcl-core', '0.1.0'), SIGN_OFF);
+  assert.equal(signOffFile('rcl-producer', '0.5.0-beta.1'), 'rcl-producer/sign-off/0.5.0-beta.1.md');
+});
+
+test('parseSignOff reads the title, the tested commit, the sign-off date and each check, unescaping pipes', () => {
+  const text = signOffRecord(['pass', 'fail: shows A \\| B (#40, P1)']);
+  assert.deepEqual(parseSignOff(text), {
+    title: 'Sign-off: Rollcall Core v0.1.0',
+    tested: 'abc1234',
+    signedOff: '2026-10-14',
+    rows: [
+      {
+        number: '1',
+        feature: 'Team Builder (#12)',
+        planned: 'team-builder R1',
+        try: 'Add a team',
+        expect: "It's listed",
+        result: 'pass',
+      },
+      {
+        number: '2',
+        feature: 'Team Builder (#12)',
+        planned: 'team-builder R2',
+        try: 'Add a team',
+        expect: "It's listed",
+        result: 'fail: shows A | B (#40, P1)',
+      },
+    ],
+  });
+  assert.deepEqual(parseSignOff(signOffRecord([], { signedOff: null })), {
+    title: 'Sign-off: Rollcall Core v0.1.0',
+    tested: 'abc1234',
+    signedOff: null,
+    rows: [],
+  });
+});
+
+test('check requires a sign-off record for the version', () => {
+  assert.deepEqual(check(makeTree({ [LOG]: FIRST_PREPARED }), APP, '0.1.0'), [
+    'rcl-core/sign-off/0.1.0.md is missing: run /release rcl-core 0.1.0 and finish the sign-off',
+  ]);
+});
+
+test('check lets through checks that passed, or failed with only a P1 or P2 bug', () => {
+  const record = signOffRecord(['pass', 'fail: names cut off at 720p (#40, P1)', 'fail: slow to open (#41, P2)']);
+  assert.deepEqual(checkWith(record), []);
+});
+
+test('check refuses a check not yet tried, skipped, failed with no bug or a P0, or unreadable, naming each', () => {
+  const record = signOffRecord(['pending', '', 'skip', 'fail: it broke', 'fail: it broke (#40, P0)', 'maybe']);
+  assert.deepEqual(checkWith(record), [
+    'rcl-core/sign-off/0.1.0.md: check 1 "Team Builder (#12)" hasn’t been tried yet',
+    'rcl-core/sign-off/0.1.0.md: check 2 "Team Builder (#12)" hasn’t been tried yet',
+    'rcl-core/sign-off/0.1.0.md: check 3 "Team Builder (#12)" was skipped, and a skipped check still blocks the release',
+    'rcl-core/sign-off/0.1.0.md: check 4 "Team Builder (#12)" failed with no bug filed: end its result with (#<issue>, P0|P1|P2)',
+    'rcl-core/sign-off/0.1.0.md: check 5 "Team Builder (#12)" failed with P0 bug #40: fix it, then try the check again',
+    'rcl-core/sign-off/0.1.0.md: check 6 "Team Builder (#12)" has an unreadable result "maybe": use pass, skip, pending or fail: <what happened> (#<issue>, P1)',
+  ]);
+});
+
+test('check refuses a record that isn’t signed off, names another release, has no checks or no tested commit', () => {
+  assert.deepEqual(checkWith(signOffRecord(['pass'], { signedOff: null })), [
+    'rcl-core/sign-off/0.1.0.md isn’t signed off: add "Signed off: YYYY-MM-DD by Mike" once Mike signs it off',
+  ]);
+  assert.deepEqual(checkWith(signOffRecord(['pass'], { title: 'Sign-off: Rollcall Core v0.0.9' })), [
+    'rcl-core/sign-off/0.1.0.md should start "# Sign-off: Rollcall Core v0.1.0"',
+  ]);
+  assert.deepEqual(checkWith(signOffRecord([])), ['rcl-core/sign-off/0.1.0.md has no checks']);
+  assert.deepEqual(checkWith(signOffRecord(['pass']).replace(/^Tested: .*\n/m, '')), [
+    'rcl-core/sign-off/0.1.0.md needs the commit that was tested: Tested: `<sha>` on YYYY-MM-DD',
+  ]);
 });
 
 test('check reports an unknown app', () => {
@@ -399,6 +506,14 @@ test('CLI check exits 1 and lists problems', () => {
   const out = cli('check', '0.1.0', '--app', APP, '--root', makeTree({ [LOG]: FIRST }));
   assert.equal(out.status, 1);
   assert.match(out.stderr, /release check failed for rcl-core "0\.1\.0"/);
+});
+
+test('CLI check lists what keeps the sign-off from letting the release through', () => {
+  const root = makeTree({ [LOG]: FIRST_PREPARED, [SIGN_OFF]: signOffRecord(['pending'], { signedOff: null }) });
+  const out = cli('check', '0.1.0', '--app', APP, '--root', root);
+  assert.equal(out.status, 1);
+  assert.match(out.stderr, /- rcl-core\/sign-off\/0\.1\.0\.md: check 1 "Team Builder \(#12\)" hasn’t been tried yet/);
+  assert.match(out.stderr, /- rcl-core\/sign-off\/0\.1\.0\.md isn’t signed off/);
 });
 
 test('CLI notes prints the section body', () => {

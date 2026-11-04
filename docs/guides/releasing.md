@@ -52,16 +52,40 @@ These lines become the release notes, so write them for the people who run the a
 
 ## Cutting a release
 
-It takes three deliberate steps. Nothing happens until you do each one.
+It takes four deliberate steps. Nothing happens until you do each one. Run `/release <app> <version>` in Claude Code, which takes you through the first two on a branch, `release/<app>-v<version>`.
 
-### 1. Prepare
+### 1. Sign off
 
-Either run `/release <app> <version>` in Claude Code, which walks through this for you, or do it by hand on a branch. For rcl-core 0.2.0:
+Before anything is prepared, you check by hand that each new feature does what was planned, the way someone running the app would try it ([ADR-0025](../decisions/0025-release-sign-off.md)). This doesn't repeat the automated tests; it checks the features against their [feature pages](../features/README.md).
+
+1. **The checks.** Claude drafts one to three for each feature or fix in the `Unreleased` notes, from their issues and feature pages. Each names the feature, the requirement it checks (e.g. `import-export R5`), what to try and what should happen. You approve the list, or change it.
+2. **The walk-through.** Run the build of the release branch (`yarn build && yarn start`, with OBS when a check needs it). Claude asks about one check at a time, and you answer **Pass**, **Fail** (saying what happened) or **Skip for now**. Each answer is saved straight away, so you can stop and run `/release` again later to pick up where you left off.
+3. **Bugs.** Each failure becomes an issue (see [sign-off bugs](#sign-off-bugs)).
+4. **Signing off.** Once every check has a result, Claude asks whether you sign the release off, and records it.
+
+The record is `<app>/sign-off/<version>.md`: the commit you tested, a table with one row per check and its result, and the `Signed off:` line. A result is `pending`, `pass`, `skip`, or `fail: <what happened> (#<issue>, P0|P1|P2)`. If `main` changes after a check has passed, Claude lists what changed and you choose which checks to try again.
+
+#### Sign-off bugs
+
+Claude drafts each one from what you said. You confirm its title and Priority before it's filed. It gets the labels `bug`, `sign-off` and the app's label, and its Priority is set on the app's board:
+
+| Priority | Meaning | The release |
+|---|---|---|
+| P0 | Blocking | Waits. The bug goes in the release's milestone, which can't be released while it has open issues. Fix it on a branch as usual, then run `/release` again to try the check again. |
+| P1 | High, not blocking | Goes ahead. The check stays failed, with the bug linked. |
+| P2 | Deferred | Goes ahead. The bug waits on the board for a later release. |
+
+P1 and P2 bugs don't go in the milestone.
+
+### 2. Prepare
+
+`/release` does this once the sign-off is done. By hand, on the release branch, for rcl-core 0.2.0:
 
 ```bash
 node scripts/release.mjs prepare 0.2.0 --app rcl-core   # Unreleased → [0.2.0] - today; bumps rcl-core/*/package.json
-node scripts/release.mjs check 0.2.0 --app rcl-core     # confirms the changelog and versions are ready
+node scripts/release.mjs check 0.2.0 --app rcl-core     # confirms the changelog, versions and sign-off are ready
 git diff                                                # read the notes the way users will
+git add rcl-core/sign-off/0.2.0.md
 git commit -am "chore(rcl-core): prepare v0.2.0"
 ```
 
@@ -69,7 +93,7 @@ When you release rcl-core, check each other app's `rollcall.requiresCore` range 
 
 Get the commit onto `main` your usual way.
 
-### 2. Dry run
+### 3. Dry run
 
 In GitHub, go to **Actions** ▸ **rcl-core release** (or **rcl-producer release**) ▸ **Run workflow**. Choose branch `main`, version `0.2.0`, and leave **Dry run** ticked (the default). Both run the same checks, in `release.yml`:
 
@@ -78,13 +102,14 @@ In GitHub, go to **Actions** ▸ **rcl-core release** (or **rcl-producer release
 | The run is on `main` | Pick `main` in the branch dropdown |
 | The version is semver without a leading `v` | Type `0.2.0`, not `v0.2.0` |
 | Tag `rcl-core-v0.2.0` doesn't exist yet | That version is out already. Use the next one |
-| `rcl-core/CHANGELOG.md` has a dated `[0.2.0]` section with entries, `Unreleased` is empty, and every `rcl-core/*/package.json` version matches | Do step 1 |
+| `rcl-core/CHANGELOG.md` has a dated `[0.2.0]` section with entries, `Unreleased` is empty, and every `rcl-core/*/package.json` version matches | Do step 2 |
+| `rcl-core/sign-off/0.2.0.md` is signed off, and each check passed or failed with only a P1 or P2 bug | Run `/release rcl-core 0.2.0` and finish the sign-off (step 1) |
 | Milestone `rcl-core v0.2.0` exists with no open issues (required for `x.y.0`; enforced for other versions only if it exists) | Create it, or finish or move its open issues |
 | `yarn check`, the production build, the story tests and the Playwright tests pass, for the whole repository | Run the same commands locally and fix what they report |
 
 The run summary shows the release notes exactly as they'll be published.
 
-### 3. Publish
+### 4. Publish
 
 Run the workflow again with **Dry run** unticked. Once the checks pass, the **Publish** job waits for approval in the `release` environment. Read the notes in the summary, then choose **Approve and deploy**. The job then:
 1. checks again that the tag doesn't exist and the milestone has no open issues, because approval can come long after the checks ran;
@@ -103,4 +128,5 @@ If something stops working, check that these are still in place:
 - **Environment `release`:** required reviewer `wardmanm`; deployments allowed only from `main`.
 - **Tag ruleset "Release tags are permanent":** applies to `refs/tags/*-v*` and restricts updates and deletions.
 - **Immutable releases:** enabled in the repository settings.
-- **Labels:** `rcl-core` and `rcl-producer` put issues on boards #6 and #8; `chore` marks maintenance; `patch` marks fixes for the next patch release.
+- **Labels:** `rcl-core` and `rcl-producer` put issues on boards #6 and #8; `chore` marks maintenance; `patch` marks fixes for the next patch release; `sign-off` marks bugs found while signing off a release.
+- **Boards:** #6 and #8 each have a **Priority** field with the options P0, P1 and P2, which sign-off bugs use.

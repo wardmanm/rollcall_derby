@@ -44,7 +44,7 @@ Details and rationale are in the [ADRs](docs/decisions/README.md).
 rollcall_derby/
 ├── docs/              the wiki (living pages + ADRs)
 ├── design-docs/       dated specs and plans (working papers, not maintained after use)
-├── scripts/           check-docs.mjs (docs lint), release.mjs (release helper) + tests
+├── scripts/           check-docs.mjs (docs lint), release.mjs (release helper and checks, sign-off included) + tests
 ├── rcl-core/          the host app: server, admin web app, contract and CHANGELOG.md (see rcl-core/AGENTS.md)
 ├── rcl-producer/      the Producer app: its server module, contract, web app, the OBS overlay and CHANGELOG.md (see rcl-producer/AGENTS.md)
 ├── packages/          code shared across apps: app-sdk (@rollcall/app-sdk), web-sdk (@rollcall/web-sdk)

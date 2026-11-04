@@ -11,7 +11,8 @@ rcl-core/
 ├── server/     @rollcall/core-server: the host (Fastify, Socket.IO, SQLite, OBS/CRG connections) and core's own module
 ├── web/        @rollcall/core-web: the admin React SPA, served at /core/
 ├── contract/   @rollcall/core-contract: Zod schemas and types for /api/core, used as TypeScript source (no build step)
-└── CHANGELOG.md  rcl-core's release notes: add a line under Unreleased for each user-visible change
+├── CHANGELOG.md  rcl-core's release notes: add a line under Unreleased for each user-visible change
+└── sign-off/   one record per release: Mike's manual check of each new feature, written by /release (ADR-0025)
 ```
 
 ## Commands
