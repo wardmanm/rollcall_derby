@@ -1,10 +1,11 @@
 # Status: Rollcall
-Updated: 2026-11-04 · Branch: feat/release-sign-off
+Updated: 2026-11-04 · Branch: main
 
 ## Current focus
-Release sign-off is built on `feat/release-sign-off`, waiting for Mike to review and merge it. Phase 1 (Builders) is finished and released, and what to build next is still open.
+Phase 1 (Builders) is finished and released, and every release now gets a sign-off. Choosing what to build next; the roadmap's next phase is Phase 2 (Screens).
 
 ## Recent changes
+- 2026-11-04: Merged the release sign-off into main and pushed (Mike).
 - 2026-11-04: Built the release sign-off on `feat/release-sign-off` (ADR-0025). `/release` now has Mike sign off each new feature by hand before preparing: Claude drafts checks from the release's changelog entries, their issues and feature pages, then asks about one at a time (Pass, Fail or Skip). Answers go to `<app>/sign-off/<version>.md`. Failures become bugs labelled `bug` and `sign-off`, with Priority on the board; a P0 goes in the milestone and blocks the release. `release.mjs check` (and so the release workflow) refuses until the record is signed off. New GitHub label: `sign-off`.
 - 2026-11-04: Decided: sign off every release by hand with a walk-through, as in ProjectMythos. Checks are written at release time, failures are P0 (blocks), P1 (high, doesn't block) or P2 (deferred), and Claude may set Priority on the boards for these bugs.
 - 2026-11-04: rcl-producer v0.4.0 released (Mike, through the release workflow). Both Import / export milestones are closed.
@@ -21,7 +22,6 @@ Release sign-off is built on `feat/release-sign-off`, waiting for Mike to review
 - **What to build next** (raised 2026-11-04). Options: Phase 2 (Screens: overlay renderer, Screen Builder, team roster component) / #24 first (big export files blocking the server) / the small review fixes #12–#16. Blocks: the next spec.
 
 ## Loose ends
-- `feat/release-sign-off` isn't merged or pushed. `main` also has one unpushed status commit (bbd1b0c), which this branch includes.
 - The release sign-off's walk-through hasn't run for real yet: the next `/release` is its first use.
 - #24: big export files block the server while they're read and written. Fix before files grow, such as with screens.
 - Issues #12–#16: small fixes from earlier code reviews, not yet scheduled. None blocks a release.
