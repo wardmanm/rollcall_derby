@@ -64,8 +64,11 @@ describe('hostApps', () => {
     for (const [bad, problem] of [
       [app({ id: 'Demo' }), 'its id "Demo" must be lowercase letters, digits and dashes'],
       [app({ id: 'core' }), 'another app already uses the id "core"'],
+      [app({ id: 'api' }), 'its id "api" is a path the server uses itself'],
+      [app({ id: 'docs' }), 'its id "docs" is a path the server uses itself'],
       [app({ id: 'media' }), 'its id "media" is a path the server uses itself'],
       [app({ id: 'fonts' }), 'its id "fonts" is a path the server uses itself'],
+      [app({ id: 'socket.io' }), 'its id "socket.io" must be lowercase letters, digits and dashes'],
       [app({ requiresCore: 'soon' }), 'its requiresCore "soon" isn\'t a version range'],
       [
         app({ permissions: [{ key: 'core:users.manage', summary: 'x', roles: [] }] }),

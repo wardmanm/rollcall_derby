@@ -9,7 +9,7 @@ paths:
   - The server is the hub and works offline (ADR-0019).
   - Authorization happens on the server (ADR-0018).
 - **TypeScript runs directly on Node (ADR-0013):** `.ts` import extensions, erasable syntax only, no build step.
-- **This server hosts every rcl app as a module** (ADR-0019). `src/apps.ts` runs the startup checks and migrations, `src/app.ts` mounts each app's routes below `/api/<id>/`, and `src/realtime.ts` its namespaces. Database, Socket.IO and listening are wired in `startServer()` (`src/server.ts`).
+- **This server hosts every rcl app as a module** (ADR-0019). `src/apps.ts` runs the startup checks and migrations (a new server path outside `/api` reserves its id in `RESERVED_IDS`), `src/app.ts` mounts each app's routes below `/api/<id>/`, and `src/realtime.ts` its namespaces. Database, Socket.IO and listening are wired in `startServer()` (`src/server.ts`).
   - Installed apps are listed in `src/installed-apps.ts`, the only file that may import an app's server (`scripts/check-boundaries.test.mjs`).
   - Core's own routes go in its module, `src/core-app.ts`, with paths relative to `/api/core` (`/users`, not `/api/core/users`), so `app.inject()` can test them.
 - **Routes declare their schemas** (ADR-0019, ADR-0014).
