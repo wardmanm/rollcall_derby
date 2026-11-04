@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { TransferKind } from '@rollcall/app-sdk';
 import type { ManifestItem } from '@rollcall/core-contract';
-import { planImport } from './import.ts';
-import { packExport } from './zip.ts';
+import { planFrom, readImport } from './import.ts';
+import { packZip } from './zip.ts';
 
 type Thing = { name: string; uses?: string };
 
@@ -31,13 +31,13 @@ function kind(name: `test:${string}`, onNeedKey: () => void = () => undefined): 
 }
 
 const fileOf = (items: ManifestItem[]) =>
-  packExport(
+  packZip(
     { format: 'rollcall-export', formatVersion: 1, exportedAt: '2026-10-26T12:00:00.000Z', apps: {}, items },
     new Map(),
   );
 
-describe('planImport', () => {
-  it('finds what items need by looking each item up once, not by searching the file for every need', () => {
+describe('planFrom', () => {
+  it('finds what items need by looking each item up once, not by searching the file for every need', async () => {
     let lookups = 0;
     const fonts = kind('test:font', () => (lookups += 1));
     const themes = kind('test:theme');
@@ -53,7 +53,7 @@ describe('planImport', () => {
       [fonts.name, fonts],
       [themes.name, themes],
     ]);
-    const plan = planImport({ zip, kinds, mayImport: () => true });
+    const plan = planFrom(await readImport(zip), { kinds, mayImport: () => true });
     expect(plan.items.slice(50).map((item) => item.needs)).toEqual(Array.from({ length: 50 }, (_, n) => [n]));
     expect(lookups).toBe(50);
   });

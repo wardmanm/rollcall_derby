@@ -15,8 +15,8 @@ import { deny } from '../auth/access.ts';
 import type { AppDatabase } from '../db.ts';
 import { ERROR_RESPONSES } from '../http.ts';
 import { buildExport } from '../transfer/export.ts';
-import { applyImport, planImport, previewOf } from '../transfer/import.ts';
-import { TransferError } from '../transfer/zip.ts';
+import { applyImport, planFrom, previewOf, readImport } from '../transfer/import.ts';
+import { TransferError, type ExportRead } from '../transfer/zip.ts';
 import { registerUploads } from './uploads.ts';
 
 const SIGNED_IN: { config: { access: Access } } = { config: { access: { signedIn: true } } };
@@ -37,11 +37,16 @@ function refuse(error: unknown, reply: FastifyReply) {
   throw error;
 }
 
-// The request's file, planned for import, or a refusal: a body that isn't a file is refused as unsupported.
-function plan(request: FastifyRequest) {
+// The request's file, read, or a refusal: a body that isn't a file is refused as unsupported.
+function read(request: FastifyRequest) {
   if (!Buffer.isBuffer(request.body)) throw new TransferError(415, UNSUPPORTED.error, UNSUPPORTED.message);
+  return readImport(request.body);
+}
+
+// A read file planned against what's here now, with what the caller may import now.
+function plan(request: FastifyRequest, file: ExportRead) {
   const { kinds } = request.server.hostedApps;
-  return planImport({ zip: request.body, kinds, mayImport: (kind) => holds(request, kind.importPermission) });
+  return planFrom(file, { kinds, mayImport: (kind) => holds(request, kind.importPermission) });
 }
 
 // Import and export (docs/features/import-export.md, ADR-0024), for signed-in people: each item's kind is checked
@@ -89,7 +94,7 @@ export function registerTransferRoutes(
     async (request, reply) => {
       try {
         const { modules, kinds } = request.server.hostedApps;
-        const file = buildExport({
+        const file = await buildExport({
           db,
           mediaDir,
           modules,
@@ -126,7 +131,10 @@ export function registerTransferRoutes(
         },
         async (request, reply) => {
           try {
-            return previewOf(plan(request));
+            const file = await read(request);
+            const denial = request.recheckAccess();
+            if (denial) return await reply.code(denial.status).send({ error: denial.error });
+            return previewOf(plan(request, file));
           } catch (error) {
             return refuse(error, reply);
           }
@@ -148,7 +156,10 @@ export function registerTransferRoutes(
         },
         async (request, reply) => {
           try {
-            return applyImport({ db, mediaDir, plan: plan(request), choices: request.query.choices });
+            const file = await read(request);
+            const denial = request.recheckAccess();
+            if (denial) return await reply.code(denial.status).send({ error: denial.error });
+            return applyImport({ db, mediaDir, plan: plan(request, file), choices: request.query.choices });
           } catch (error) {
             return refuse(error, reply);
           }

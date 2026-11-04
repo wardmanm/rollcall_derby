@@ -17,11 +17,11 @@ import type { z } from 'zod';
 import type { ImportChoicesSchema } from '@rollcall/core-contract';
 import type { AppDatabase } from '../db.ts';
 import { fontTypeOf, imageTypeOf, removeMedia, saveMedia } from '../media.ts';
-import { NOT_AN_EXPORT, readExport, sha256, TransferError } from './zip.ts';
+import { NOT_AN_EXPORT, readExport, TransferError, type ExportRead } from './zip.ts';
 
 // Importing an export file (docs/features/import-export.md, ADR-0024), in two steps that each read the whole file: a
 // preview that checks everything and saves nothing, then the import, which checks again and saves the chosen items in
-// one transaction, or nothing.
+// one transaction, or nothing. Reading a file is async, in a worker; planning from what was read is synchronous.
 
 type Choices = z.output<typeof ImportChoicesSchema>;
 
@@ -70,17 +70,17 @@ const rawName = (data: unknown) => {
   return name.length > 64 ? `${name.slice(0, 63)}…` : name;
 };
 
-/** Reads and checks an export file, and matches its items with what's here. Throws a TransferError if it can't. */
-export function planImport({
-  zip,
-  kinds,
-  mayImport,
-}: {
-  zip: Uint8Array;
-  kinds: ReadonlyMap<string, TransferKind>;
-  mayImport: (kind: TransferKind) => boolean;
-}): ImportPlan {
-  const { manifest, media } = readExport(zip);
+/**
+ * Reads an export file, in a worker, refusing one that isn't an export or is over the limits with a TransferError.
+ * Its bytes are handed to the worker, so they can't be used afterwards.
+ */
+export const readImport = (zip: Uint8Array): Promise<ExportRead> => readExport(zip);
+
+/** Checks a read export file and matches its items with what's here now. Throws a TransferError if it can't. */
+export function planFrom(
+  { sha256, manifest, media }: ExportRead,
+  { kinds, mayImport }: { kinds: ReadonlyMap<string, TransferKind>; mayImport: (kind: TransferKind) => boolean },
+): ImportPlan {
   const head = ManifestHeadSchema.safeParse(manifest);
   if (!head.success) throw new TransferError(400, 'bad_file', NOT_AN_EXPORT);
   if (head.data.formatVersion > EXPORT_FORMAT_VERSION) throw new TransferError(400, 'newer_format', NEWER);
@@ -187,7 +187,7 @@ export function planImport({
       item.needs.push(...(byKey.get(`${need.kind}\n${need.key.toLowerCase()}`) ?? []));
     }
   }
-  return { file: sha256(zip), items, media };
+  return { file: sha256, items, media };
 }
 
 /** What the preview replies. */

@@ -20,7 +20,7 @@ import { addFontFace, listFonts } from '../fonts/fonts.ts';
 import { fontTypeOf, saveMedia } from '../media.ts';
 import { addMember, createTeam, deleteTeam, findTeam, listTeams, updateMember, updateTeam } from '../teams/teams.ts';
 import { addUser, FONTS, IMAGES, testApp } from '../testing.ts';
-import { mediaPathFor, packExport } from '../transfer/zip.ts';
+import { mediaPathFor, packZip, sha256 } from '../transfer/zip.ts';
 
 const opened: ReturnType<typeof testApp>['app'][] = [];
 afterEach(async () => {
@@ -168,18 +168,16 @@ const MEDIA = new Map([
   [FONT, FONTS.woff2],
 ]);
 
+const MANIFEST = {
+  format: 'rollcall-export',
+  formatVersion: 1,
+  exportedAt: '2026-10-26T12:00:00.000Z',
+  apps: { core: '0.3.0' },
+} as const;
+
 // An export file holding `items`, with every media file the tests use unless told otherwise.
 const fileOf = (items: ManifestItem[], { media = MEDIA }: { media?: ReadonlyMap<string, Uint8Array> } = {}) =>
-  packExport(
-    {
-      format: 'rollcall-export',
-      formatVersion: 1,
-      exportedAt: '2026-10-26T12:00:00.000Z',
-      apps: { core: '0.3.0' },
-      items,
-    },
-    media,
-  );
+  packZip({ ...MANIFEST, items }, media);
 const team = (data: object = TEAM): ManifestItem => ({ kind: 'core:team', version: 1, data });
 const note = (data: object, version = 2): ManifestItem => ({ kind: 'demo:note', version, data });
 const face = (family: string, weight = '700'): ManifestItem => ({
@@ -197,6 +195,8 @@ const padded = (bytes: Uint8Array) => {
 const manifestOf = (body: Buffer) =>
   ManifestSchema.parse(JSON.parse(strFromU8(unzipSync(body)['rollcall-export.json']!)));
 const choose = (file: string, ...items: ImportChoices['items']): ImportChoices => ({ file, items });
+// Five milliseconds, for racing against something slow.
+const pause = () => new Promise<false>((resolve) => setTimeout(() => resolve(false), 5));
 
 describe('the kinds of item', () => {
   it('lists those the caller may export or import, with counts, leaving out those that only travel with others', async () => {
@@ -592,6 +592,37 @@ describe('importing', () => {
       error: 'bad_choices',
       message: 'Choose what happens to each item of the file',
     });
+  });
+
+  it('answers other requests while it reads a big file, none of them waiting long', async () => {
+    const { app, cookies, importFile } = await as();
+    // 30 media files of 5 MB that nothing uses, compressed, so reading the file means inflating 150 MB.
+    const big = zipSync({
+      'rollcall-export.json': strToU8(JSON.stringify({ ...MANIFEST, items: [] })),
+      ...Object.fromEntries(
+        Array.from(
+          { length: 30 },
+          (_, n) => [`media/${n}.png`, [new Uint8Array(5 * 1024 * 1024), { level: 1 }]] as const,
+        ),
+      ),
+    });
+    const importing = importFile(big, choose(sha256(big)));
+    const imported = importing.then(() => true);
+    // Another request every 5 ms or so, until the import is answered: the longest gap between their answers.
+    let answered = 0;
+    let longest = 0;
+    let last = performance.now();
+    while (!(await Promise.race([imported, pause()]))) {
+      const res = await app.inject({ method: 'GET', url: '/api/core/transfer/kinds', cookies });
+      expect(res.statusCode).toBe(200);
+      const now = performance.now();
+      longest = Math.max(longest, now - last);
+      last = now;
+      answered += 1;
+    }
+    expect((await importing).json()).toEqual({ added: 0, replaced: 0, keptBoth: 0, skipped: 0, copies: [] });
+    expect(longest).toBeLessThan(100);
+    expect(answered).toBeGreaterThan(1);
   });
 
   it('refuses to import an item that can’t be imported', async () => {

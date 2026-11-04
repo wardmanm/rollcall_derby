@@ -23,7 +23,7 @@ const slug = (name: string) =>
     .replaceAll(/^-|-$/g, '') || 'item';
 
 /** An export file of `selection` and what it needs. `mayExport` says whether the caller may export a kind. */
-export function buildExport({
+export async function buildExport({
   db,
   mediaDir,
   modules,
@@ -37,7 +37,7 @@ export function buildExport({
   kinds: ReadonlyMap<string, TransferKind>;
   selection: ExportSelection;
   mayExport: (kind: TransferKind) => boolean;
-}): ExportFile {
+}): Promise<ExportFile> {
   const kindNamed = (name: string) => {
     const kind = kinds.get(name);
     if (!kind) throw new TransferError(404, 'not_found', `Nothing here is a ${name}`);
@@ -109,5 +109,5 @@ export function buildExport({
       : wanted.every(({ kind }) => kind === first?.kind) && first
         ? slug(first.kind.label.many)
         : 'export';
-  return { bytes: packExport(manifest, files), fileName: `rollcall-${what}-${today}.zip` };
+  return { bytes: await packExport(manifest, files), fileName: `rollcall-${what}-${today}.zip` };
 }

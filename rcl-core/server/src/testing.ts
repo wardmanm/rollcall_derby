@@ -43,6 +43,28 @@ export const FONTS = {
   otf: Buffer.concat([Buffer.from('OTTO'), Buffer.from([0x00, 0x0c, 0x00, 0x80])]),
 };
 
+/**
+ * The longest the main thread was held up while `job` ran, in milliseconds: the longest gap between the ticks of a
+ * 5 ms timer. A job that holds the main thread for all of its run shows all of it.
+ */
+export async function longestStall(job: () => unknown): Promise<number> {
+  let longest = 0;
+  let last = performance.now();
+  const tick = () => {
+    const now = performance.now();
+    longest = Math.max(longest, now - last);
+    last = now;
+  };
+  const timer = setInterval(tick, 5);
+  try {
+    await job();
+  } finally {
+    clearInterval(timer);
+  }
+  tick();
+  return longest;
+}
+
 export async function addUser(
   db: AppDatabase,
   username: string,

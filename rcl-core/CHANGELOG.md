@@ -16,6 +16,7 @@ rcl-core hosts the other rcl apps, which have their own changelogs, such as [rcl
 - If the server is running but answers with an error while the app checks who's signed in, the app says what went wrong instead of "Can't reach the Rollcall server", so you know the network is fine (#14)
 - When the server refuses a request for several reasons, it gives them as separate sentences, such as "Use 3–32 letters, digits, dots, dashes or underscores. Use at least 10 characters", instead of running them together (#14)
 - The API keys page says so if the permissions a key may hold fail to load. Before, it showed an empty Permissions list with no explanation (#14)
+- Import and export no longer hold up the server while they read or write a big file, so OBS overlays, the CRG connection and everyone else's pages carry on as normal meanwhile (#24)
 
 ## [0.3.0] - 2026-10-29
 
