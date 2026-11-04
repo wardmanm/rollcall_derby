@@ -207,5 +207,6 @@ describe("a hosted app's routes", () => {
     expect((await post(producer, { origin: 'http://evil.example' })).json()).toEqual({ error: 'cross_origin' });
     expect((await post(await cookieFor(db, 'a1', 'announcer'))).json()).toEqual({ error: 'forbidden' });
     expect((await post(producer)).json()).toEqual({ ok: true });
+    await app.close();
   });
 });

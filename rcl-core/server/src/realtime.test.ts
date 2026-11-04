@@ -194,7 +194,7 @@ describe('attachRealtime', () => {
     expect(() => io!.of('/sneaky')).toThrow('Socket.IO namespace /sneaky has no access; use namespace()');
   });
 
-  it("refuses a namespace outside the app's own /<id>, with a bad declaration, or that already exists", () => {
+  it("refuses a namespace outside the app's own /<id>, with a bad declaration, or that already exists", async () => {
     for (const [realtime, message] of [
       [
         (rt) => rt.namespace('/producer/overlay', { access: { public: 'x' } }),
@@ -216,9 +216,14 @@ describe('attachRealtime', () => {
         'Socket.IO namespace /probe/twice already exists',
       ],
     ] as const satisfies readonly (readonly [AppModule['realtime'], string])[]) {
-      expect(() => attach([appWith(realtime)]), message).toThrow(message);
-      io = undefined;
-      httpServer = undefined;
+      // attach() throws before it can return the Socket.IO server, so a good namespace made first keeps hold of it.
+      const app = appWith((rt) => {
+        io = rt.namespace('/probe', { access: { signedIn: true } }).server;
+        realtime(rt);
+      });
+      expect(() => attach([app]), message).toThrow(message);
+      await io?.close(); // closes its HTTP server too
+      io = httpServer = undefined;
     }
   });
 

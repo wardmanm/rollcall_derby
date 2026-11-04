@@ -6,7 +6,10 @@ import { findSession } from './sessions.ts';
 
 declare module 'fastify' {
   interface FastifyRequest {
-    /** Who's calling, from the session cookie; null when nobody is signed in. */
+    /**
+     * Who's calling: a signed-in session, from the cookie, or an API key, from the `Authorization` header (ADR-0020).
+     * Null when neither identifies anyone. See `resolvePrincipal`.
+     */
     principal: Principal | null;
     /**
      * Checks the caller again against the database as it is now. A handler that awaits (password hashing) before it
