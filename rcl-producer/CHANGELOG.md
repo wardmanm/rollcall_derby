@@ -6,6 +6,8 @@ rcl-producer runs on rcl-core, Rollcall's server, which has [its own changelog](
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-04
+
 ### Added
 
 - Themes travel in export files with the uploaded fonts they use: Export and Export all on the Themes page, and Import… for Admins. Importing a theme makes it the default only if you turn on its Make default switch. Producers can export themes (#23)
@@ -52,7 +54,8 @@ rcl-producer runs on rcl-core, Rollcall's server, which has [its own changelog](
 - Server with a health endpoint, and a web app shell that shows whether the server is reachable (wardmanm/GROBS#6, wardmanm/GROBS#8)
 - OBS overlay page at `/overlay`: transparent, fed live by the server, and reconnects on its own after a server restart (wardmanm/GROBS#9)
 
-[Unreleased]: https://github.com/wardmanm/rollcall_derby/compare/rcl-producer-v0.3.0...HEAD
+[Unreleased]: https://github.com/wardmanm/rollcall_derby/compare/rcl-producer-v0.4.0...HEAD
+[0.4.0]: https://github.com/wardmanm/rollcall_derby/releases/tag/rcl-producer-v0.4.0
 [0.3.0]: https://github.com/wardmanm/rollcall_derby/releases/tag/rcl-producer-v0.3.0
 [0.2.0]: https://github.com/wardmanm/rollcall_derby/releases/tag/rcl-producer-v0.2.0
 [0.1.0]: https://github.com/wardmanm/GROBS/releases/tag/obs-producer-v0.1.0
