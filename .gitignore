@@ -30,5 +30,6 @@ __screenshots__/
 CLAUDE.local.md
 .claude/settings.local.json
 
-# Agents' working files, such as a plan's progress ledger (not shared)
+# Agents' working files, such as a plan's progress ledger or a subagent's git worktree (not shared)
 .superpowers/
+.claude/worktrees/
