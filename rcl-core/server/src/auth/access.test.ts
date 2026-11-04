@@ -178,6 +178,16 @@ describe('an /api route registered outside the /api plugin', () => {
     await app.close();
   });
 
+  it('stops the server at startup when public, since only the /api plugin does the cross-site check', async () => {
+    const { app } = testApp();
+    for (const method of ['post', 'get'] as const) {
+      expect(() =>
+        app[method]('/api/core/outside', { config: { access: { public: 'a test' } } }, async () => ({})),
+      ).toThrow(`${method.toUpperCase()} /api/core/outside is public but outside the /api plugin`);
+    }
+    await app.close();
+  });
+
   it('refuses everyone, since only the /api plugin knows who is calling', async () => {
     const { app, db } = testApp();
     app.get('/api/core/outside', { config: { access: { signedIn: true } } }, async () => ({ ok: true }));

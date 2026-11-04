@@ -103,12 +103,15 @@ const APP_OF_ROUTE = /^\/api\/([^/]+)(\/|$)/;
 // already set the caller and done the cross-site check. It's installed on the root
 // instance, so it sees /api routes wherever they're registered. A route belongs to the app named in its path,
 // /api/<id> or below it, and may only use that app's permissions (ADR-0019). HEAD routes that Fastify adds for GET
-// routes pass through here too, with the same config.
+// routes pass through here too, with the same config. A route outside the /api plugin gets neither the cross-site
+// check nor a caller: a guarded one refuses everyone, and a public one stops the server.
 export function enforceRouteAccess(
   app: FastifyInstance,
   options: { appIds: readonly string[]; permissions: Permissions },
 ): void {
-  app.addHook('onRoute', (route) => {
+  // `this` is the instance the route is registered on. Only the /api plugin and its children have `request.principal`,
+  // decorated by installAuth (guard.ts) along with the cross-site check.
+  app.addHook('onRoute', function (route) {
     if (!API_ROUTE.test(route.url)) return;
     const name = `${[route.method].flat().join(',')} ${route.url}`;
     const appId = APP_OF_ROUTE.exec(route.url)?.[1];
@@ -119,7 +122,12 @@ export function enforceRouteAccess(
     if (!access) throw new Error(`${name} declares no access. Give it config.access: public, signedIn or a permission`);
     const problem = accessProblem(access, { appId, permissions: options.permissions });
     if (problem) throw new Error(`${name} ${problem}`);
-    if ('public' in access) return;
+    if ('public' in access) {
+      if (!this.hasRequestDecorator('principal')) {
+        throw new Error(`${name} is public but outside the /api plugin, so it would skip the cross-site check`);
+      }
+      return;
+    }
     const guard: onRequestAsyncHookHandler = async (request, reply) => {
       const denial = deny(access, request.principal, options.permissions);
       if (denial) return reply.code(denial.status).send({ error: denial.error });
