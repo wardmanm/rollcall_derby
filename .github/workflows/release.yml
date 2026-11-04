@@ -1,7 +1,8 @@
 # Cuts a release of one rcl app. Each app starts it from its own workflow, rcl-core-release.yml or
 # rcl-producer-release.yml, which calls this one with the app's name (ADR-0021). Deliberate by design:
 # manual start only, dry run by default, and publishing waits for approval in the protected "release"
-# environment. Only callers in this repo can use it, and it can't be started on its own.
+# environment. It can only be called, never started on its own; scripts/release-workflows.test.mjs
+# checks that it stays that way.
 # Guide: docs/guides/releasing.md
 name: release
 
@@ -21,6 +22,8 @@ on:
         required: true
         type: boolean
 
+# Every job asks for its own permissions. Without this default, a job added later that doesn't would run with
+# everything the caller grants (contents: write, issues: write).
 permissions: {}
 
 # Names as scripts/release.mjs builds them: tag rcl-core-v0.1.0, milestone 'rcl-core v0.1.0'.

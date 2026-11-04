@@ -126,6 +126,7 @@ Agents prepare; people publish. Agents never approve a release deployment. They 
 If something stops working, check that these are still in place:
 - **Workflows:** `rcl-core-release.yml` and `rcl-producer-release.yml` each call `release.yml` with their app. A script test (`scripts/release-workflows.test.mjs`) keeps them in step with `scripts/release.mjs`.
 - **Environment `release`:** required reviewer `wardmanm`; deployments allowed only from `main`.
+- **Visibility:** the repository stays public. On this GitHub plan, the `release` environment's required reviewer works only on a public repository ([ADR-0021](../decisions/0021-per-app-releases.md)).
 - **Tag ruleset "Release tags are permanent":** applies to `refs/tags/*-v*` and restricts updates and deletions.
 - **Immutable releases:** enabled in the repository settings.
 - **Labels:** `rcl-core` and `rcl-producer` put issues on boards #6 and #8; `chore` marks maintenance; `patch` marks fixes for the next patch release; `sign-off` marks bugs found while signing off a release.
