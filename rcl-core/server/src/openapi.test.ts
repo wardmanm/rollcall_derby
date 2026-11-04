@@ -107,4 +107,26 @@ describe('API explorer', () => {
       '**Needs `demo:things.read`:** Admin, Producer. Also API keys that hold it.',
     );
   });
+
+  it("keeps an operation's own description, after who may call it", async () => {
+    const demo: AppModule = {
+      id: 'demo',
+      title: 'Demo',
+      version: '1.0.0',
+      requiresCore: '*',
+      permissions: [],
+      register(api) {
+        api.get(
+          '/things',
+          { config: { access: { signedIn: true } }, schema: { description: 'Every thing, newest first.' } },
+          async () => ({ things: [] }),
+        );
+      },
+    };
+    const { app } = testApp({ apiDocs: true, apps: [demo] });
+    const doc = (await app.inject({ method: 'GET', url: '/docs/json' })).json<unknown>();
+    expect(at(doc, 'paths', '/api/demo/things', 'get', 'description')).toBe(
+      '**Any signed-in user.** Not API keys.\n\nEvery thing, newest first.',
+    );
+  });
 });

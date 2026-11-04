@@ -14,7 +14,7 @@ paths:
   - Core's own routes go in its module, `src/core-app.ts`, with paths relative to `/api/core` (`/users`, not `/api/core/users`), so `app.inject()` can test them.
 - **Routes declare their schemas** (ADR-0019, ADR-0014).
   - Use `fastify.withTypeProvider<ZodTypeProvider>()`.
-  - Give every `/api` route `schema: { tags, summary, body?, params?, response: { <status>: Schema, ...ERROR_RESPONSES } }`, with schemas from `@rollcall/core-contract`. Tags are named `core/<area>`.
+  - Give every `/api` route `schema: { tags, summary, description?, body?, params?, response: { <status>: Schema, ...ERROR_RESPONSES } }`, with schemas from `@rollcall/core-contract`. Tags are named `core/<area>`. The API explorer shows a `description` after the line saying who may call the route.
   - Fastify validates and serializes with them, so don't parse bodies by hand.
   - Socket payloads are validated with shared schemas too.
 - **Every `/api` route declares who may call it** (hard rule 5, ADR-0018).

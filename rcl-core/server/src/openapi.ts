@@ -76,7 +76,9 @@ export function registerApiDocs(
       const access = input.route.config?.access;
       if (!access) return { schema, url };
       const security = access.public !== undefined ? { security: [] } : {};
-      return { schema: { ...schema, description: describeAccess(access, permissions), ...security }, url };
+      // Who may call it comes first, then the route's own description, if it gives one.
+      const description = [describeAccess(access, permissions), schema?.description].filter(Boolean).join('\n\n');
+      return { schema: { ...schema, description, ...security }, url };
     },
   });
   // validatorUrl stays off: Swagger UI must not contact validator.swagger.io (hard rule 4: works offline).
