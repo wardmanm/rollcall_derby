@@ -78,11 +78,10 @@ These workspaces are planned in [ADR-0017](../decisions/0017-rcl-app-workspace-l
 Summaries only. The ADRs are canonical.
 
 - [ADR-0003](../decisions/0003-client-state-with-redux-toolkit.md): Redux Toolkit; server data only in RTK Query.
-- [ADR-0019](../decisions/0019-rcl-apps-as-modules.md): The server owns live state and all external connections, and the app works offline.
 - [ADR-0005](../decisions/0005-crg-is-listen-only.md): CRG is listen-only, and there are no score displays.
 - [ADR-0006](../decisions/0006-one-overlay-renderer-css-variable-theming.md): One overlay renderer; themes as CSS custom properties.
-- [ADR-0019](../decisions/0019-rcl-apps-as-modules.md): Shared Zod contract; versioned import/export.
 - [ADR-0018](../decisions/0018-declared-access-and-permissions.md): Server-side sessions; every route and namespace declares its access, checked by permission; a public overlay until output token URLs arrive.
+- [ADR-0019](../decisions/0019-rcl-apps-as-modules.md): rcl-core's server hosts every rcl app as a module, owns live state and all external connections, and works offline. Each app has its own Zod contract, and import/export files are versioned.
 - [ADR-0020](../decisions/0020-api-keys.md): API keys for devices and scripts, with their own permissions and never people-only ones; the `Authorization` header beats the cookie.
 - [ADR-0022](../decisions/0022-public-media.md): Uploaded images are files in the data folder, served to anyone at unguessable `/media/<id>` addresses, so OBS overlays can show them.
 - [ADR-0023](../decisions/0023-core-data-services-for-apps.md): rcl-core shares its data with apps through read-only services on `AppContext`, fonts first; apps never read core's tables.
