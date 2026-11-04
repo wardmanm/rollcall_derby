@@ -29,14 +29,14 @@ export function SetupPage() {
   }
 
   if (!status.data.canSetupHere) {
-    // The server only accepts setup from itself, reached by a localhost name (ADR-0018).
-    const port = window.location.port ? `:${window.location.port}` : '';
+    // The server only accepts setup from itself, reached by a localhost name (ADR-0018), with this page's protocol.
+    const { protocol, port } = window.location;
     return (
       <AuthCard title="Set up Rollcall">
         <Text>
           Rollcall has no accounts yet. Create the first Admin on the server machine: open this address in its browser.
         </Text>
-        <Code block>{`http://localhost${port}${CORE_PAGES.setup}`}</Code>
+        <Code block>{`${protocol}//localhost${port ? `:${port}` : ''}${CORE_PAGES.setup}`}</Code>
       </AuthCard>
     );
   }

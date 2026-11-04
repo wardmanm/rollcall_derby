@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+/// <reference types="vitest/jsdom" />
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import { ADMIN, asSessionUser, fakeServer, HEALTH, json } from '@rollcall/web-sdk/testing';
 import { openCore, whereIs } from '../test/open-core.tsx';
@@ -74,6 +75,15 @@ describe('first-run setup', () => {
     const port = window.location.port ? `:${window.location.port}` : '';
     expect(await screen.findByText(`http://localhost${port}/core/setup`)).toBeTruthy();
     expect(screen.queryByLabelText('Username')).toBeNull();
+  });
+
+  it('on another device reached over HTTPS, gives the localhost address over HTTPS too', async () => {
+    const before = window.location.href;
+    jsdom.reconfigure({ url: 'https://rollcall.example:5590/core/setup' });
+    onTestFinished(() => jsdom.reconfigure({ url: before }));
+    freshInstall({ canSetupHere: false });
+    openCore('/core/setup');
+    expect(await screen.findByText('https://localhost:5590/core/setup')).toBeTruthy();
   });
 
   it('once set up, sends people to sign in instead', async () => {
