@@ -48,6 +48,15 @@ export const ServerUnreachable: Story = {
   },
 };
 
+export const ServerError: Story = {
+  beforeEach: answerRequests(async () => Response.json({ error: 'internal_error' }, { status: 500 })),
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByText("The Rollcall server couldn't check who's signed in")).toBeVisible();
+    await expect(canvas.getByText('Something went wrong. Try again.')).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Try again' })).toBeVisible();
+  },
+};
+
 export const Checking: Story = {
   beforeEach: answerRequests(() => new Promise<Response>(() => undefined)),
   play: async ({ canvas }) => {

@@ -5,6 +5,7 @@ import { useHref, useLocation } from 'react-router';
 import { useGetMeQuery, useGetSetupStatusQuery } from './api.ts';
 import { CORE_PAGES, withNext } from './core-pages.ts';
 import { apiError } from './errors.ts';
+import { problemWith } from './forms.ts';
 import { useGoTo } from './navigation.ts';
 
 // Shows its pages only to someone signed in who has chosen their own password (split spec). Anyone else goes to
@@ -31,12 +32,21 @@ export function SignInGate({ children }: { children: ReactNode }) {
   // A check that fails once the page is showing, say when you come back to the tab as the Wi-Fi drops, leaves the
   // page as it is, half-typed forms and all: its own requests say if something is wrong.
   if (!target && (setup.isError || (me.isError && !me.data))) {
+    // A reply with an error code came from the server, so the network is fine: say what the server said instead.
+    const error = setup.isError ? setup.error : me.error;
+    const answered = apiError(error) !== undefined;
     return (
       <Center mih="100vh">
         <Stack align="center">
-          <Alert color="red" title="Can't reach the Rollcall server">
-            Check that the server is running and this device is on the venue network.
-          </Alert>
+          {answered ? (
+            <Alert color="red" title="The Rollcall server couldn't check who's signed in">
+              {problemWith(error)}
+            </Alert>
+          ) : (
+            <Alert color="red" title="Can't reach the Rollcall server">
+              Check that the server is running and this device is on the venue network.
+            </Alert>
+          )}
           <Button
             onClick={() => {
               void setup.refetch();

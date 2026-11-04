@@ -13,6 +13,7 @@ rcl-core hosts the other rcl apps, which have their own changelogs, such as [rcl
 - The API explorer describes each app's sections, such as the Producer app's themes, not only rcl-core's (#13)
 - If an Admin changes your role or signs you out while the app is open, it catches up when you come back to its tab or when the server refuses something you try: links you can no longer use, such as Users, disappear, or it asks you to sign in. Before, a demoted Admin kept the Users link until they reloaded the page (#14)
 - Logging out from **Choose your own password**, the page that follows signing in with a temporary password, no longer sends the next person who signs in on that device to a **Change your password** form (#14)
+- If the server is running but answers with an error while the app checks who's signed in, the app says what went wrong instead of "Can't reach the Rollcall server", so you know the network is fine (#14)
 
 ## [0.3.0] - 2026-10-29
 

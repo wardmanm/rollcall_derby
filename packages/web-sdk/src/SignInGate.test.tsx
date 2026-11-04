@@ -113,4 +113,19 @@ describe('SignInGate', () => {
     openApp('/core/');
     expect(await screen.findByText("Can't reach the Rollcall server")).toBeTruthy();
   });
+
+  it('says what went wrong when the server answers with an error', async () => {
+    fakeServer({ 'GET /api/core/setup': json({ error: 'internal_error' }, 500) });
+    openApp('/core/');
+    expect(await screen.findByText("The Rollcall server couldn't check who's signed in")).toBeTruthy();
+    expect(screen.getByText('Something went wrong. Try again.')).toBeTruthy();
+    expect(screen.queryByText("Can't reach the Rollcall server")).toBeNull();
+  });
+
+  it('says what went wrong when the server refuses to say who is signed in', async () => {
+    signedIn(ADMIN, { 'GET /api/core/auth/me': json({ error: 'forbidden' }, 403) });
+    openApp('/core/');
+    expect(await screen.findByText("The Rollcall server couldn't check who's signed in")).toBeTruthy();
+    expect(screen.getByText("Your account can't do that.")).toBeTruthy();
+  });
 });
