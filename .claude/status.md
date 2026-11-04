@@ -1,10 +1,11 @@
 # Status: Rollcall
-Updated: 2026-10-29 · Branch: release/rcl-core-v0.3.0
+Updated: 2026-11-04 · Branch: main
 
 ## Current focus
-Releasing Import / export: rcl-core v0.3.0 is prepared on `release/rcl-core-v0.3.0`, waiting for Mike to merge it and run the release workflow. rcl-producer v0.4.0 follows.
+Releasing Import / export: rcl-core v0.3.0 is prepared and on `main`, waiting for Mike to run the release workflow (dry run, then publish). rcl-producer v0.4.0 follows.
 
 ## Recent changes
+- 2026-11-04: Merged the rcl-core v0.3.0 preparation into main and pushed (Mike).
 - 2026-10-29: Decided: release rcl-core v0.3.0 (import and export). Prepared; the Producer app now requires rcl-core ^0.3.0, and its notes say to upgrade rcl-core first.
 - 2026-10-26: Decided: merge Import / export into main and push. Merged and pushed; #22 and #23 close with it.
 - 2026-10-26: Fixed seven of the Import / export review's minor findings on the branch: teams of any size import, Keep both on an item with no clash keeps its name, long names in messages are shortened, previews of big files stay quick, every page shows what an import changed, each media type uses its own size limit, and `.superpowers/` is gitignored. Decided: file the eighth, big files blocking the server, as #24 for later.
@@ -14,7 +15,6 @@ Releasing Import / export: rcl-core v0.3.0 is prepared on `release/rcl-core-v0.3
 - 2026-10-26: Import / export implementation plan written (9 tasks), built and checked on a throwaway branch first. It adds one package, `fflate` (MIT), to read and write the .zip files.
 - 2026-10-26: Import / export spec approved.
 - 2026-10-26: Import / export design agreed. Issues #22 and #23, milestones `rcl-core v0.3.0` and `rcl-producer v0.4.0`.
-- 2026-10-25: Decided: build Import / export next.
 
 ## Pending decisions
 - None.
