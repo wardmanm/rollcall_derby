@@ -1,10 +1,11 @@
 # Status: Rollcall
-Updated: 2026-11-04 · Branch: main
+Updated: 2026-11-04 · Branch: release/rcl-producer-v0.4.0
 
 ## Current focus
-Releasing Import / export: rcl-core v0.3.0 is out. rcl-producer v0.4.0 is next, when Mike runs `/release rcl-producer 0.4.0`.
+Releasing Import / export: rcl-core v0.3.0 is out. rcl-producer v0.4.0 is prepared on `release/rcl-producer-v0.4.0`, waiting for Mike to get it onto `main` and run the release workflow (dry run, then publish).
 
 ## Recent changes
+- 2026-11-04: Decided: release rcl-producer v0.4.0 (themes in export files). Prepared; its notes say to upgrade rcl-core first.
 - 2026-11-04: rcl-core v0.3.0 released (Mike, through the release workflow). Its Publish job started late during a GitHub Actions outage.
 - 2026-11-04: Merged the rcl-core v0.3.0 preparation into main and pushed (Mike).
 - 2026-10-29: Decided: release rcl-core v0.3.0 (import and export). Prepared; the Producer app now requires rcl-core ^0.3.0, and its notes say to upgrade rcl-core first.
