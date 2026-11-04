@@ -2,9 +2,10 @@
 Updated: 2026-11-04 · Branch: main
 
 ## Current focus
-Releasing Import / export: rcl-core v0.3.0 is out. rcl-producer v0.4.0 is prepared and on `main`, waiting for Mike to run the release workflow (dry run, then publish).
+Phase 1 (Builders) is finished and released. Choosing what to build next; the roadmap's next phase is Phase 2 (Screens).
 
 ## Recent changes
+- 2026-11-04: rcl-producer v0.4.0 released (Mike, through the release workflow). Both Import / export milestones are closed.
 - 2026-11-04: Merged the rcl-producer v0.4.0 preparation into main and pushed (Mike).
 - 2026-11-04: Decided: release rcl-producer v0.4.0 (themes in export files). Prepared; its notes say to upgrade rcl-core first.
 - 2026-11-04: rcl-core v0.3.0 released (Mike, through the release workflow). Its Publish job started late during a GitHub Actions outage.
@@ -20,7 +21,7 @@ Releasing Import / export: rcl-core v0.3.0 is out. rcl-producer v0.4.0 is prepar
 - 2026-10-26: Import / export design agreed. Issues #22 and #23, milestones `rcl-core v0.3.0` and `rcl-producer v0.4.0`.
 
 ## Pending decisions
-- None.
+- **What to build next** (raised 2026-11-04). Options: Phase 2 (Screens: overlay renderer, Screen Builder, team roster component) / #24 first (big export files blocking the server) / the small review fixes #12–#16. Blocks: the next spec.
 
 ## Loose ends
 - #24: big export files block the server while they're read and written. Fix before files grow, such as with screens.
