@@ -114,10 +114,12 @@ describe('route access declarations', () => {
     );
   });
 
-  it("stop the server at startup when a route isn't below a hosted app's /api/<id>/", async () => {
-    await expect(startWith(routeAt('/api/nobody/things', { signedIn: true }))).rejects.toThrow(
-      "GET /api/nobody/things isn't below /api/<id>/ for a hosted app (core, producer)",
-    );
+  it("stop the server at startup when a route isn't at or below a hosted app's /api/<id>", async () => {
+    for (const url of ['/api/nobody/things', '/api/nobody', '/api/producers']) {
+      await expect(startWith(routeAt(url, { signedIn: true })), url).rejects.toThrow(
+        `GET ${url} isn't at or below /api/<id> for a hosted app (core, producer)`,
+      );
+    }
   });
 
   it('leave routes outside /api alone', async () => {
@@ -198,6 +200,21 @@ const DEMO_APP: AppModule = {
 };
 
 describe("a hosted app's routes", () => {
+  it('may include one at its own root, /api/<id>', async () => {
+    const { app } = testApp({
+      apps: [
+        {
+          ...DEMO_APP,
+          register(api) {
+            api.get('/', { config: { access: { signedIn: true } } }, async () => ({ ok: true }));
+          },
+        },
+      ],
+    });
+    expect((await app.inject({ method: 'GET', url: '/api/demo' })).json()).toEqual({ error: 'unauthenticated' });
+    await app.close();
+  });
+
   it("get the same cross-site check, caller lookup and guard as core's", async () => {
     const { app, db } = testApp({ apps: [DEMO_APP] });
     const post = (cookies: Record<string, string>, headers: Record<string, string> = {}) =>

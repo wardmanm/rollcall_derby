@@ -95,15 +95,15 @@ export function accessProblem(access: Access, { appId, permissions }: { appId: s
 }
 
 const API_ROUTE = /^\/api(\/|$)/;
-const APP_OF_ROUTE = /^\/api\/([^/]+)\//;
+const APP_OF_ROUTE = /^\/api\/([^/]+)(\/|$)/;
 
 // Checks each /api route's declaration as it's registered, then puts the route's guard first in its onRequest hooks,
 // so a refused caller is turned away before its body is read: it never learns what a valid body looks like (ADR-0014),
 // and can't make the server read an upload (ADR-0022). A route's own hooks run after the /api plugin's, which have
 // already set the caller and done the cross-site check. It's installed on the root
 // instance, so it sees /api routes wherever they're registered. A route belongs to the app named in its path,
-// /api/<id>/…, and may only use that app's permissions (ADR-0019). HEAD routes that Fastify adds for GET routes pass
-// through here too, with the same config.
+// /api/<id> or below it, and may only use that app's permissions (ADR-0019). HEAD routes that Fastify adds for GET
+// routes pass through here too, with the same config.
 export function enforceRouteAccess(
   app: FastifyInstance,
   options: { appIds: readonly string[]; permissions: Permissions },
@@ -113,7 +113,7 @@ export function enforceRouteAccess(
     const name = `${[route.method].flat().join(',')} ${route.url}`;
     const appId = APP_OF_ROUTE.exec(route.url)?.[1];
     if (!appId || !options.appIds.includes(appId)) {
-      throw new Error(`${name} isn't below /api/<id>/ for a hosted app (${options.appIds.join(', ')})`);
+      throw new Error(`${name} isn't at or below /api/<id> for a hosted app (${options.appIds.join(', ')})`);
     }
     const access = route.config?.access;
     if (!access) throw new Error(`${name} declares no access. Give it config.access: public, signedIn or a permission`);

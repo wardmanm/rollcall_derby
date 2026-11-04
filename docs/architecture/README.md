@@ -57,6 +57,7 @@ These workspaces are planned in [ADR-0017](../decisions/0017-rcl-app-workspace-l
 
 rcl-core's server hosts each rcl app as an [app module](../product/glossary.md#app-module), on one port ([ADR-0019](../decisions/0019-rcl-apps-as-modules.md)).
 
+- **Routes.** An app's routes are at or below `/api/<id>`, such as `/api/producer` and `/api/producer/themes`. Each one declares who may call it ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)), and the server won't start with a route that no hosted app owns.
 - **Web builds.** An app's build is served at `/<id>/`. Its real files are served as they are. Every other path below `/<id>/` gets one of the app's pages, such as `/producer/overlay`, or its `index.html`, so client-side routes load. A path that looks like a file, under `assets/` or with an extension, never gets a page: a missing one is a 404. A page left open across an upgrade that asks for an old hashed asset gets an error, not HTML.
 
 ## How data flows
