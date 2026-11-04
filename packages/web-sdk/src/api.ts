@@ -18,9 +18,10 @@ import { parseHealth } from './health.ts';
 // Absolute so it also works where relative URLs can't be resolved (e.g. Node's fetch in tests).
 const fetchFromServer = fetchBaseQuery({ baseUrl: `${window.location.origin}/api/` });
 
-// A request refused because the session ended (`unauthenticated`) or a password change is now due means "who's signed
-// in" has changed: ask again, so the sign-in gate sends the person to the right page.
-const SESSION_CHANGED = new Set(['unauthenticated', 'password_change_required']);
+// A request refused because the session ended (`unauthenticated`), a password change is now due, or the role no
+// longer allows it (`forbidden`, say after an Admin demoted you) means "who's signed in" has changed: ask again, so
+// the sign-in gate sends the person to the right page and links they can no longer use disappear.
+const SESSION_CHANGED = new Set(['unauthenticated', 'password_change_required', 'forbidden']);
 
 const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, queryApi, extra) => {
   const result = await fetchFromServer(args, queryApi, extra);

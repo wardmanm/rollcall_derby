@@ -49,6 +49,17 @@ describe('AppLayout', () => {
     expect(screen.queryByRole('link', { name: 'Users' })).toBeNull();
   });
 
+  it('hides it when you come back to the tab after your role has changed', async () => {
+    let me: CurrentUser = ADMIN;
+    signedIn(ADMIN, { 'GET /api/core/auth/me': () => Response.json(me) });
+    openCore();
+    expect(await screen.findByRole('link', { name: 'Users' })).toBeTruthy();
+    me = { ...PRODUCER, id: ADMIN.id, username: ADMIN.username };
+    fireEvent.focus(window);
+    await vi.waitFor(() => expect(screen.queryByRole('link', { name: 'Users' })).toBeNull());
+    expect(screen.getByRole('button', { name: 'admin Producer' })).toBeTruthy();
+  });
+
   it('shows who is signed in, with their role', async () => {
     signedIn(PRODUCER);
     openCore();

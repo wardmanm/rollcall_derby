@@ -12,7 +12,8 @@ import { useGoTo } from './navigation.ts';
 // the server checks every request (hard rule 5).
 export function SignInGate({ children }: { children: ReactNode }) {
   const setup = useGetSetupStatusQuery();
-  const me = useGetMeQuery(setup.data?.needsSetup === false ? undefined : skipToken);
+  // Asked again when you come back to the tab, in case an Admin changed your role or signed you out meanwhile.
+  const me = useGetMeQuery(setup.data?.needsSetup === false ? undefined : skipToken, { refetchOnFocus: true });
   const here = useHref(useLocation());
   const goTo = useGoTo();
 
@@ -27,7 +28,9 @@ export function SignInGate({ children }: { children: ReactNode }) {
     if (target) goTo(target);
   }, [target, goTo]);
 
-  if (!target && (setup.isError || me.isError)) {
+  // A check that fails once the page is showing, say when you come back to the tab as the Wi-Fi drops, leaves the
+  // page as it is, half-typed forms and all: its own requests say if something is wrong.
+  if (!target && (setup.isError || (me.isError && !me.data))) {
     return (
       <Center mih="100vh">
         <Stack align="center">

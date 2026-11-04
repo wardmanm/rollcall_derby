@@ -6,6 +6,10 @@ rcl-producer runs on rcl-core, Rollcall's server, which has [its own changelog](
 
 ## [Unreleased]
 
+### Fixed
+
+- If an Admin changes your role or signs you out while the Producer app is open, it catches up when you come back to its tab or when the server refuses something you try: it shows only what your new role allows, or asks you to sign in (#14)
+
 ## [0.4.0] - 2026-11-04
 
 ### Added

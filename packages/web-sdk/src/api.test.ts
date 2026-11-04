@@ -51,3 +51,10 @@ describe('a request refused because a password change is now due', () => {
     await vi.waitFor(() => expect(meRequests()).toHaveLength(2));
   });
 });
+
+describe('a request refused because your role no longer allows it', () => {
+  it('makes the app ask the server again who is signed in, and so what you may do', async () => {
+    const meRequests = await meRequestsAfterRefusal({ error: 'forbidden' }, 403);
+    await vi.waitFor(() => expect(meRequests()).toHaveLength(2));
+  });
+});

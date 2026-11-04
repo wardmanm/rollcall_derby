@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { createMemoryRouter, Outlet, useLocation } from 'react-router';
+import type { CurrentUser } from '@rollcall/core-contract';
 import { App } from './App.tsx';
 import { browser } from './navigation.ts';
 import { SignInGate } from './SignInGate.tsx';
@@ -68,6 +69,38 @@ describe('SignInGate', () => {
     openApp('/producer/');
     await vi.waitFor(() => expect(replace).toHaveBeenCalledWith('/core/login?next=%2Fproducer%2Fscreens%2F3'));
     expect(screen.queryByText('The gated page')).toBeNull();
+  });
+
+  it('checks who is signed in again when you come back to the tab', async () => {
+    const replace = vi.spyOn(browser, 'replace').mockImplementation(() => undefined);
+    let me: CurrentUser | null = ADMIN;
+    signedIn(ADMIN, {
+      'GET /api/core/auth/me': () =>
+        me ? Response.json(me) : Response.json({ error: 'unauthenticated' }, { status: 401 }),
+    });
+    openApp('/producer/');
+    expect(await screen.findByText('The gated page')).toBeTruthy();
+    me = null; // An Admin signed you out while you were in another tab.
+    fireEvent.focus(window);
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledWith('/core/login?next=%2Fproducer%2Fscreens%2F3'));
+  });
+
+  it("keeps its page if it can't reach the server when you come back to the tab", async () => {
+    let reachable = true;
+    const { requests } = signedIn(ADMIN, {
+      'GET /api/core/auth/me': () => {
+        if (!reachable) throw new TypeError('Failed to fetch');
+        return Response.json(ADMIN);
+      },
+    });
+    openApp('/core/');
+    expect(await screen.findByText('The gated page')).toBeTruthy();
+    reachable = false; // The venue Wi-Fi drops for a moment.
+    fireEvent.focus(window);
+    await vi.waitFor(() => expect(requests.filter((r) => r.path === '/api/core/auth/me')).toHaveLength(2));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.getByText('The gated page')).toBeTruthy();
+    expect(screen.queryByText("Can't reach the Rollcall server")).toBeNull();
   });
 
   it("says so when the server can't be reached", async () => {
