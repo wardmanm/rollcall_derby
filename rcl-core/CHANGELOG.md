@@ -10,6 +10,7 @@ rcl-core hosts the other rcl apps, which have their own changelogs, such as [rcl
 
 - A missing file below an app, such as an old script that a page left open across an upgrade asks for, now gets a 404 instead of the app's page (#12)
 - The API explorer no longer offers an API key for operations that refuse keys, such as Who am I? and user management (#13)
+- The API explorer describes each app's sections, such as the Producer app's themes, not only rcl-core's (#13)
 
 ## [0.3.0] - 2026-10-29
 

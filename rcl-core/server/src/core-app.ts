@@ -41,6 +41,17 @@ export function coreApp({
     version,
     requiresCore: version,
     permissions: CORE_PERMISSIONS,
+    tags: {
+      'core/health': 'Is the server up?',
+      'core/apps': 'The rcl apps this server hosts',
+      'core/setup': 'Creating the first Admin',
+      'core/auth': 'Logging in and out, and your own password',
+      'core/users': 'User management (Admin only)',
+      'core/api-keys': 'API keys for devices and scripts (Admin only)',
+      'core/teams': 'Teams, their skaters and bench staff, logos and photos',
+      'core/fonts': 'The font library: bundled and uploaded fonts',
+      'core/transfer': 'Import and export: Rollcall export files of teams, themes and their media',
+    },
     ...(webDir ? { web: { dir: webDir } } : {}),
     register(fastify) {
       fastify.withTypeProvider<ZodTypeProvider>().get(

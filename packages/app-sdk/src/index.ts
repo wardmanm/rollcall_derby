@@ -180,6 +180,11 @@ export interface AppModule {
   /** The rcl-core versions it works with, as a semver range: its package.json `rollcall.requiresCore`. */
   requiresCore: string;
   permissions: readonly PermissionDef[];
+  /**
+   * What each tag its routes use is about, shown in the API explorer: `{ 'producer/themes': 'Themes for overlays' }`.
+   * Its tags are named `<id>/<area>`, and the explorer lists them after core's, in this order.
+   */
+  tags?: Readonly<Record<string, string>>;
   /** Its Drizzle migrations, run with their own migrations table, `__drizzle_migrations_<id>`. */
   migrationsFolder?: string;
   web?: AppWeb;

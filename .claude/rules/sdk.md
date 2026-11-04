@@ -7,6 +7,7 @@ paths:
 - **`@rollcall/app-sdk`** (`packages/app-sdk/`) is what an rcl app's server module is written against (ADR-0019): `AppModule`, `AppContext`, `Realtime`, and the `Access`, `Permission` and `PermissionDef` types. `PermissionDef.peopleOnly` keeps a permission off API keys (ADR-0020). Types only: rcl-core's server does the hosting.
   - An `Access` is exactly one of `public`, `signedIn` or `permission`: the other keys are `never`, and the server refuses to start with a mix. Tell them apart by value (`access.public !== undefined`), not with `in`.
   - `AppContext` is one object per app, passed to both `register()` and `realtime()`. Core's data reaches apps only through its read-only services, such as `fonts.list()` (ADR-0023), never through core's tables.
+  - An app module describes the tags its routes use, `<id>/<area>`, in `tags`; the API explorer lists them after core's.
   - An app module lists the kinds of item it stores that travel in export files with `transfer(ctx)` (`TransferKind`, ADR-0024).
   - Change it with care: every app module and rcl-core's host depend on these shapes.
 - **`@rollcall/web-sdk`** (`packages/web-sdk/`) is the code every rcl app's Mantine GUI shares:

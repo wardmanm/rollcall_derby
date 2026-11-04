@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AppModule } from '@rollcall/app-sdk';
-import { testApp } from './testing.ts';
+import { INSTALLED_APPS } from './installed-apps.ts';
+import { CORE_VERSION, testApp } from './testing.ts';
 
 // Reads a nested value from parsed JSON without a type for every level.
 const at = (value: unknown, ...keys: string[]): unknown =>
@@ -110,6 +111,35 @@ describe('API explorer', () => {
     );
     // It keeps the document's security: a session or an API key.
     expect(at(doc, 'paths', '/api/demo/things', 'get', 'security')).toBeUndefined();
+  });
+
+  it('describes every tag the operations of core and the installed apps use', async () => {
+    // Hosted at this core's version, so every installed app is too.
+    const { app } = testApp({ apiDocs: true, version: CORE_VERSION, apps: INSTALLED_APPS });
+    const doc = (await app.inject({ method: 'GET', url: '/docs/json' })).json<unknown>();
+    const operations = Object.values(at(doc, 'paths') as Record<string, Record<string, unknown>>).flatMap(
+      Object.values,
+    );
+    const used = new Set(operations.flatMap((operation) => (at(operation, 'tags') as string[] | undefined) ?? []));
+    const described = (at(doc, 'tags') as { name: string; description?: string }[]).filter((tag) => tag.description);
+    expect(used).toContain('producer/themes');
+    expect([...used].filter((tag) => !described.some((d) => d.name === tag))).toEqual([]);
+  });
+
+  it("describes a hosted app's own tags, after core's", async () => {
+    const demo: AppModule = {
+      id: 'demo',
+      title: 'Demo',
+      version: '1.0.0',
+      requiresCore: '*',
+      permissions: [],
+      tags: { 'demo/things': 'Things, for trying out an app' },
+    };
+    const { app } = testApp({ apiDocs: true, apps: [demo] });
+    const doc = (await app.inject({ method: 'GET', url: '/docs/json' })).json<unknown>();
+    const tags = at(doc, 'tags') as { name: string }[];
+    expect(tags[0]).toEqual({ name: 'core/health', description: 'Is the server up?' });
+    expect(tags.at(-1)).toEqual({ name: 'demo/things', description: 'Things, for trying out an app' });
   });
 
   it("keeps an operation's own description, after who may call it", async () => {

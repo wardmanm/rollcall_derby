@@ -23,6 +23,7 @@ export const producerApp: AppModule = {
       roles: [],
     },
   ],
+  tags: { 'producer/themes': 'Themes: how overlays look, and the default theme the OBS overlay uses' },
   migrationsFolder: fileURLToPath(new URL('../drizzle', import.meta.url)),
   web: {
     dir: fileURLToPath(new URL('../../web/dist', import.meta.url)),

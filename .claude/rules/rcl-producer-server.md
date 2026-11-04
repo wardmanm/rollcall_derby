@@ -8,7 +8,7 @@ paths:
 - **Depend only on `@rollcall/app-sdk` and contracts** (`@rollcall/producer-contract`, `@rollcall/core-contract`). Never on `@rollcall/core-server`: `scripts/check-boundaries.test.mjs` fails otherwise.
 - **Hard rules 1–5** in `AGENTS.md` apply here, as on rcl-core's server.
 - **Everything is named after the app:**
-  - routes are relative to `/api/producer` (`/themes`, not `/api/producer/themes`), with tags `producer/<area>`;
+  - routes are relative to `/api/producer` (`/themes`, not `/api/producer/themes`), with tags `producer/<area>`, each described in `producerApp.tags` for the API explorer;
   - namespaces are at or below `/producer`;
   - permissions are `producer:<action>`, listed in `permissions` with the roles that hold them, and in the table on `docs/features/users-and-access.md`;
   - tables are `producer_<name>`, in migrations under `migrationsFolder` (`rcl-core/server/src/installed-apps.test.ts` checks the names).

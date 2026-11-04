@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import { jsonSchemaTransform } from 'fastify-type-provider-zod';
+import type { AppModule } from '@rollcall/app-sdk';
 import type { Access, Permissions } from './auth/access.ts';
 import { SESSION_COOKIE } from './auth/guard.ts';
 
@@ -43,30 +44,24 @@ function securityOf(access: Access, permissions: Permissions) {
   return {};
 }
 
-// The OpenAPI document is built from the schemas every route declares (ADR-0014), plus who may call each operation.
-// Swagger UI, and the document at /docs/json, are served only when asked for: always in `yarn dev`, on a venue
-// server only with ROLLCALL_API_DOCS=1.
+// The OpenAPI document is built from the schemas every route declares (ADR-0014), plus who may call each operation
+// and what each hosted app says its tags are about, core's first. Swagger UI, and the document at /docs/json, are
+// served only when asked for: always in `yarn dev`, on a venue server only with ROLLCALL_API_DOCS=1.
 export function registerApiDocs(
   app: FastifyInstance,
-  { version, apiDocs, permissions }: { version: string; apiDocs: boolean; permissions: Permissions },
+  {
+    version,
+    apiDocs,
+    permissions,
+    modules,
+  }: { version: string; apiDocs: boolean; permissions: Permissions; modules: readonly AppModule[] },
 ) {
   void app.register(fastifySwagger, {
     openapi: {
       info: { title: 'Rollcall API', version, description: DESCRIPTION },
-      tags: [
-        { name: 'core/health', description: 'Is the server up?' },
-        { name: 'core/apps', description: 'The rcl apps this server hosts' },
-        { name: 'core/setup', description: 'Creating the first Admin' },
-        { name: 'core/auth', description: 'Logging in and out, and your own password' },
-        { name: 'core/users', description: 'User management (Admin only)' },
-        { name: 'core/api-keys', description: 'API keys for devices and scripts (Admin only)' },
-        { name: 'core/teams', description: 'Teams, their skaters and bench staff, logos and photos' },
-        { name: 'core/fonts', description: 'The font library: bundled and uploaded fonts' },
-        {
-          name: 'core/transfer',
-          description: 'Import and export: Rollcall export files of teams, themes and their media',
-        },
-      ],
+      tags: modules.flatMap((module) =>
+        Object.entries(module.tags ?? {}).map(([name, description]) => ({ name, description })),
+      ),
       components: {
         securitySchemes: {
           session: { type: 'apiKey', in: 'cookie', name: SESSION_COOKIE },
