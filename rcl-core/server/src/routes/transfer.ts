@@ -10,7 +10,7 @@ import {
   ImportResultSchema,
   MAX_EXPORT_BYTES,
 } from '@rollcall/core-contract';
-import type { Access } from '../auth/access.ts';
+import type { Access, Denial } from '../auth/access.ts';
 import { deny } from '../auth/access.ts';
 import type { AppDatabase } from '../db.ts';
 import { ERROR_RESPONSES } from '../http.ts';
@@ -30,10 +30,27 @@ const UNSUPPORTED = { error: 'unsupported_file', message: 'Send a Rollcall expor
 const holds = (request: FastifyRequest, permission: TransferKind['exportPermission']) =>
   deny({ permission }, request.principal, request.server.hostedApps.permissions) === undefined;
 
-// A TransferError as its reply; anything else goes on to the error handler.
+// The caller lost access while an export or import awaited (signed out, demoted or deleted).
+class AccessLost extends Error {
+  readonly denial: Denial;
+
+  constructor(denial: Denial) {
+    super(denial.error);
+    this.denial = denial;
+  }
+}
+
+// Checks the caller again after an await (rcl-core-server rules), throwing AccessLost if they may no longer go on.
+function recheck(request: FastifyRequest) {
+  const denial = request.recheckAccess();
+  if (denial) throw new AccessLost(denial);
+}
+
+// A TransferError, or lost access, as its reply; anything else goes on to the error handler.
 function refuse(error: unknown, reply: FastifyReply) {
   if (error instanceof TransferError)
     return reply.code(error.status).send({ error: error.code, message: error.message });
+  if (error instanceof AccessLost) return reply.code(error.denial.status).send({ error: error.denial.error });
   throw error;
 }
 
@@ -101,11 +118,12 @@ export function registerTransferRoutes(
           kinds,
           selection: request.query,
           mayExport: (kind) => holds(request, kind.exportPermission),
+          recheck: () => recheck(request),
         });
         return await reply
           .type('application/zip')
           .header('content-disposition', `attachment; filename="${file.fileName}"`)
-          .send(Buffer.from(file.bytes));
+          .send(file.bytes);
       } catch (error) {
         return refuse(error, reply);
       }
@@ -132,8 +150,7 @@ export function registerTransferRoutes(
         async (request, reply) => {
           try {
             const file = await read(request);
-            const denial = request.recheckAccess();
-            if (denial) return await reply.code(denial.status).send({ error: denial.error });
+            recheck(request);
             return previewOf(plan(request, file));
           } catch (error) {
             return refuse(error, reply);
@@ -157,8 +174,7 @@ export function registerTransferRoutes(
         async (request, reply) => {
           try {
             const file = await read(request);
-            const denial = request.recheckAccess();
-            if (denial) return await reply.code(denial.status).send({ error: denial.error });
+            recheck(request);
             return applyImport({ db, mediaDir, plan: plan(request, file), choices: request.query.choices });
           } catch (error) {
             return refuse(error, reply);

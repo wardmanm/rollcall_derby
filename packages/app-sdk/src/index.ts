@@ -140,7 +140,10 @@ export interface TransferKind<Data = unknown> {
   uniqueNames?: 'exact' | 'ignoring case';
   /** Every item that can be exported, by id and name. */
   list(): readonly { id: string; name: string }[];
-  /** An item for an export file, with each media id turned into a path by `mediaPath`. Undefined for an unknown id. */
+  /**
+   * An item for an export file, with each media id turned into a path by `mediaPath`. Undefined for an unknown id.
+   * Core asks twice per export, first to learn which media files to read, so this and `exportNeed` only read.
+   */
   exportItem(id: string, mediaPath: (mediaId: string) => string): ExportedItem | undefined;
   /** The items a need of another item names, such as the uploaded faces of a font family. */
   exportNeed?(key: string, mediaPath: (mediaId: string) => string): readonly ExportedItem[];

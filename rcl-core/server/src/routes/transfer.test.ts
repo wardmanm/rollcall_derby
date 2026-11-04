@@ -14,12 +14,12 @@ import {
 } from '@rollcall/core-contract';
 import { eq } from 'drizzle-orm';
 import { SESSION_COOKIE } from '../auth/guard.ts';
-import { createSession } from '../auth/sessions.ts';
+import { createSession, revokeSession } from '../auth/sessions.ts';
 import { teams } from '../db/schema.ts';
 import { addFontFace, listFonts } from '../fonts/fonts.ts';
 import { fontTypeOf, saveMedia } from '../media.ts';
 import { addMember, createTeam, deleteTeam, findTeam, listTeams, updateMember, updateTeam } from '../teams/teams.ts';
-import { addUser, FONTS, IMAGES, testApp } from '../testing.ts';
+import { addUser, FONTS, IMAGES, longestStall, testApp } from '../testing.ts';
 import { mediaPathFor, packZip, sha256 } from '../transfer/zip.ts';
 
 const opened: ReturnType<typeof testApp>['app'][] = [];
@@ -28,10 +28,12 @@ afterEach(async () => {
 });
 
 // A demo app with one kind, "demo:note", kept in memory: version 2, migrated from 1, able to be the default, needing a
-// font family, and failing to save a note named "boom", for what core's own kinds don't show.
+// font family, failing to save a note named "boom", and calling `onExport` each time it exports a note, for what core's
+// own kinds don't show.
 function demoApp(db: () => ReturnType<typeof testApp>['db']) {
   const notes: { id: string; name: string; text: string; isDefault: boolean; fontHere: boolean }[] = [];
   let afterImports = 0;
+  const hooks = { onExport: () => {} };
   const NoteSchema = z.strictObject({
     name: z.string().min(1, 'Give the note a name'),
     text: z.string(),
@@ -54,6 +56,7 @@ function demoApp(db: () => ReturnType<typeof testApp>['db']) {
     list: () => notes.map(({ id, name }) => ({ id, name })),
     exportItem: (id) => {
       const note = notes.find((n) => n.id === id);
+      hooks.onExport();
       return note && { name: note.name, data: { name: note.name, text: note.text } };
     },
     check(data) {
@@ -99,7 +102,7 @@ function demoApp(db: () => ReturnType<typeof testApp>['db']) {
     permissions: [{ key: 'demo:notes.manage', summary: 'Manage notes', roles: [] }],
     transfer: () => [kind],
   };
-  return { app, notes, afterImports: () => afterImports };
+  return { app, notes, hooks, afterImports: () => afterImports };
 }
 
 // An app with `role` signed in, and ways to export and import as them.
@@ -290,6 +293,76 @@ describe('exporting', () => {
       403,
       { error: 'forbidden', message: "Your account can't export teams" },
     ]);
+  });
+
+  it('exports items as they are once their files are read, with a file one took up meanwhile', async () => {
+    const { db, mediaDir, notes, exportOf, allStars } = await as('admin', { demo: true });
+    const id = allStars();
+    notes.notes.push({ id: 'n1', name: 'Hello', text: '', isDefault: false, fontHere: true });
+    // The team is exported first, then the note, which gives the team a new logo the first time it's exported.
+    const webp = saveMedia(db, mediaDir, IMAGES.webp)!;
+    let exported = 0;
+    notes.hooks.onExport = () => {
+      exported += 1;
+      if (exported === 1) updateTeam(db, id, { logoMediaId: webp });
+    };
+    const res = await exportOf(`items=core:team:${id},demo:note:n1`);
+    const logo = mediaPathFor(IMAGES.webp, 'image/webp');
+    expect((manifestOf(res.rawPayload).items[0]!.data as TeamItem).logo).toBe(logo);
+    expect(Object.keys(unzipSync(res.rawPayload)).toSorted()).toEqual(['rollcall-export.json', LOGO, logo].toSorted());
+  });
+
+  it('refuses the export if the caller loses access while its files are read', async () => {
+    const { db, cookies, notes, exportOf, allStars } = await as('admin', { demo: true });
+    const id = allStars();
+    notes.notes.push({ id: 'n1', name: 'Hello', text: '', isDefault: false, fontHere: true });
+    notes.hooks.onExport = () => revokeSession(db, cookies[SESSION_COOKIE]);
+    const res = await exportOf(`items=core:team:${id},demo:note:n1`);
+    expect(res.statusCode).toBe(401);
+    expect(res.json()).toEqual({ error: 'unauthenticated' });
+  });
+
+  it('builds a big file without holding up the server', async () => {
+    const { app, db, mediaDir, cookies } = await as();
+    // A team whose 30 skaters each have a photo of their own of 5 MB, the most one may be: 150 MB in all.
+    const { id } = createTeam(db, {
+      name: 'Big Team',
+      leagueName: null,
+      shortName: null,
+      primaryColor: null,
+      secondaryColor: null,
+    });
+    for (let n = 0; n < 30; n += 1) {
+      const name = `Skater ${n}`;
+      const { members } = addMember(db, id, {
+        kind: 'skater',
+        name,
+        number: String(n),
+        pronouns: null,
+        roles: [],
+        customRoles: [],
+      });
+      const photo = new Uint8Array(5 * 1024 * 1024).fill(n);
+      photo.set(IMAGES.png);
+      updateMember(db, id, members.find((member) => member.name === name)!.id, {
+        photoMediaId: saveMedia(db, mediaDir, photo),
+      });
+    }
+    // Downloaded over HTTP, a chunk at a time as a browser does: inject would copy the body and make a string of it.
+    const url = await app.listen({ host: '127.0.0.1', port: 0 });
+    let status = 0;
+    const chunks: Uint8Array[] = [];
+    const stall = await longestStall(async () => {
+      const res = await fetch(`${url}/api/core/transfer/export?items=core:team:${id}`, {
+        headers: { cookie: `${SESSION_COOKIE}=${cookies[SESSION_COOKIE]}` },
+      });
+      status = res.status;
+      for await (const chunk of res.body!) chunks.push(chunk);
+    });
+    expect(status).toBe(200);
+    expect(Object.keys(unzipSync(Buffer.concat(chunks)))).toHaveLength(31);
+    // Reading and hashing 150 MB on the main thread holds it for about 70 ms, so the bar is lower than the zip's.
+    expect(stall).toBeLessThan(40);
   });
 });
 

@@ -55,8 +55,14 @@ const EXTENSIONS: Record<MediaType, string> = {
 
 export const sha256 = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 
+const pathOf = (hash: string, type: MediaType) => `media/${hash}.${EXTENSIONS[type]}`;
+
 /** Where a media file goes in an export: named by its bytes, so the same file is stored once. */
-export const mediaPathFor = (bytes: Uint8Array, type: MediaType) => `media/${sha256(bytes)}.${EXTENSIONS[type]}`;
+export const mediaPathFor = (bytes: Uint8Array, type: MediaType) => pathOf(sha256(bytes), type);
+
+/** Where a media file goes in an export, as `mediaPathFor` says, hashed off the main thread. */
+export const mediaPathOf = async (bytes: Uint8Array<ArrayBuffer>, type: MediaType) =>
+  pathOf(Buffer.from(await crypto.subtle.digest('SHA-256', bytes)).toString('hex'), type);
 
 /** An export file as read: its SHA-256, its manifest, parsed as JSON but not yet checked, and its media files by path. */
 export interface ExportRead {
