@@ -21,6 +21,9 @@ export const INTRO_STATE_EVENT = 'intro:state';
 // The control page is sent the run's state the same way.
 export const INTRO_RUN_EVENT = 'intro:run';
 
-/** What an intro's browser sends in `socket.handshake.auth`: the id of the intro it shows or runs. */
-export const IntroHandshakeSchema = z.object({ intro: z.string().min(1) });
+/**
+ * What an intro's browser sends in `socket.handshake.auth`: the id of the intro it shows or runs. Ids are UUIDs; the
+ * bound is the 64 characters the contracts allow short strings such as names, since anyone can connect.
+ */
+export const IntroHandshakeSchema = z.object({ intro: z.string().min(1).max(64) });
 export type IntroHandshake = z.infer<typeof IntroHandshakeSchema>;
