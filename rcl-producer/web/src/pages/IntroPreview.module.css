@@ -1,0 +1,12 @@
+/* A 480x270 window on the overlay canvas at 25%. The transform gives the canvas's fixed-position window this box to
+   fill, so the preview stays inside the page. */
+.frame {
+  position: relative;
+  width: 480px;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  transform: translateZ(0);
+  border-radius: 8px;
+  background: #1a1b1e;
+}

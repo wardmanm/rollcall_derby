@@ -1,10 +1,21 @@
-import { FontFamilySchema, type FontFamily } from '@rollcall/core-contract';
 import {
+  FontFamilySchema,
+  TeamSchema,
+  TeamSummarySchema,
+  type FontFamily,
+  type Team,
+  type TeamSummary,
+} from '@rollcall/core-contract';
+import {
+  IntroSchema,
   SetDefaultThemeRequestSchema,
   ThemeSchema,
+  type CreateIntroRequest,
   type CreateThemeRequest,
+  type Intro,
   type SetDefaultThemeRequest,
   type Theme,
+  type UpdateIntroRequest,
   type UpdateThemeRequest,
 } from '@rollcall/producer-contract';
 import { api } from '@rollcall/web-sdk';
@@ -16,15 +27,57 @@ const themeChanged = (_theme: unknown, _error: unknown, { id }: { id: string }) 
   { type: 'Themes' as const, id: 'LIST' },
 ];
 
+const introUrl = (id: string) => `producer/intros/${encodeURIComponent(id)}`;
+// A change to one intro: that intro, and the list that shows it.
+const introChanged = (_intro: unknown, _error: unknown, { id }: { id: string }) => [
+  { type: 'Intros' as const, id },
+  { type: 'Intros' as const, id: 'LIST' },
+];
+
 // The Producer app's endpoints, added to the shared base API. Each reply is checked against the contract (ADR-0019).
 // Body-less POSTs send `{}`: the server refuses an empty body labelled as JSON.
-const producerApi = api.enhanceEndpoints({ addTagTypes: ['Themes', 'Fonts'] }).injectEndpoints({
+const producerApi = api.enhanceEndpoints({ addTagTypes: ['Themes', 'Fonts', 'Intros', 'Teams'] }).injectEndpoints({
   endpoints: (build) => ({
     // rcl-core's font library, which theme fonts are picked from.
     getFonts: build.query<FontFamily[], void>({
       query: () => 'core/fonts',
       transformResponse: (response: unknown) => FontFamilySchema.array().parse(response),
       providesTags: ['Fonts'],
+    }),
+    // rcl-core's teams, which an intro's two teams are picked from.
+    getTeams: build.query<TeamSummary[], void>({
+      query: () => 'core/teams',
+      transformResponse: (response: unknown) => TeamSummarySchema.array().parse(response),
+      providesTags: ['Teams'],
+    }),
+    getTeam: build.query<Team, string>({
+      query: (id) => `core/teams/${encodeURIComponent(id)}`,
+      transformResponse: (response: unknown) => TeamSchema.parse(response),
+      providesTags: ['Teams'],
+    }),
+    getIntros: build.query<Intro[], void>({
+      query: () => 'producer/intros',
+      transformResponse: (response: unknown) => IntroSchema.array().parse(response),
+      providesTags: [{ type: 'Intros', id: 'LIST' }],
+    }),
+    getIntro: build.query<Intro, string>({
+      query: (id) => introUrl(id),
+      transformResponse: (response: unknown) => IntroSchema.parse(response),
+      providesTags: (_intro, _error, id) => [{ type: 'Intros', id }],
+    }),
+    createIntro: build.mutation<Intro, CreateIntroRequest>({
+      query: (body) => ({ url: 'producer/intros', method: 'POST', body }),
+      transformResponse: (response: unknown) => IntroSchema.parse(response),
+      invalidatesTags: [{ type: 'Intros', id: 'LIST' }],
+    }),
+    updateIntro: build.mutation<Intro, { id: string; changes: UpdateIntroRequest }>({
+      query: ({ id, changes }) => ({ url: introUrl(id), method: 'PATCH', body: changes }),
+      transformResponse: (response: unknown) => IntroSchema.parse(response),
+      invalidatesTags: introChanged,
+    }),
+    deleteIntro: build.mutation<void, { id: string }>({
+      query: ({ id }) => ({ url: introUrl(id), method: 'DELETE' }),
+      invalidatesTags: introChanged,
     }),
     getThemes: build.query<Theme[], void>({
       query: () => 'producer/themes',
@@ -66,6 +119,13 @@ const producerApi = api.enhanceEndpoints({ addTagTypes: ['Themes', 'Fonts'] }).i
 
 export const {
   useGetFontsQuery,
+  useGetTeamsQuery,
+  useGetTeamQuery,
+  useGetIntrosQuery,
+  useGetIntroQuery,
+  useCreateIntroMutation,
+  useUpdateIntroMutation,
+  useDeleteIntroMutation,
   useGetThemesQuery,
   useGetThemeQuery,
   useLazyGetThemeQuery,
@@ -80,4 +140,4 @@ export const {
  * After an import (docs/features/import-export.md): themes and fonts are fetched again wherever they're shown, and
  * anything cached but not shown is dropped, so no page shows what was there before.
  */
-export const imported = () => producerApi.util.invalidateTags(['Themes', 'Fonts']);
+export const imported = () => producerApi.util.invalidateTags(['Themes', 'Fonts', 'Teams']);
