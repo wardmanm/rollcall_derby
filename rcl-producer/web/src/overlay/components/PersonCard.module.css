@@ -1,10 +1,16 @@
 /* Mockup card C (1-person-card.html): 22cqw wide there, so each size below is the mockup's cqw value times 100/22,
    as a share of the card's own width. The card is its own size container, so it scales to any width. */
+/* The figure is the size container; the frame inside it carries the border, because a cqw unit on the container itself
+   would not resolve against the container. */
 .card {
   container-type: inline-size;
+  flex: none;
+  margin: 0;
+}
+
+.frame {
   box-sizing: border-box;
   overflow: hidden;
-  flex: none;
   font-family: var(--theme-font-body);
   font-weight: var(--theme-font-body-weight);
   color: var(--theme-color-text);
@@ -58,14 +64,16 @@
   text-align: center;
 }
 
-/* Fits one line down to 60% of the base size (11.8cqw), then wraps to two. An uppercase heading is about 0.7em wide
-   per character, so the size that fits is the text width divided by that. */
+/* Fits one line down to 60% of the base size (11.8cqw), then wraps to two. This is an approximation, not a
+   measurement: an uppercase heading is taken to be about 0.7em wide per character, so a condensed or wide heading font
+   may shrink or wrap a little early or late. The name sits in the card's width less the frame's border (2 x 1.8cqw)
+   and the text padding (2 x 7.3cqw), 81.8cqw. */
 .name {
   --base: 11.8cqw;
   font-family: var(--theme-font-heading);
   font-weight: var(--theme-font-heading-weight);
   text-transform: var(--theme-heading-transform);
-  font-size: clamp(calc(var(--base) * 0.6), calc((100cqw - 14.6cqw) / (var(--name-length) * 0.7)), var(--base));
+  font-size: clamp(calc(var(--base) * 0.6), calc((81.8cqw) / (var(--name-length) * 0.7)), var(--base));
   line-height: 1.1;
   overflow-wrap: anywhere;
 }

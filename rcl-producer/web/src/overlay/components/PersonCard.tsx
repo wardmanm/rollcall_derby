@@ -27,8 +27,9 @@ export function PersonCard({ card, width, logoUrl, onReady }: PersonCardProps) {
   }, [src, ready]);
 
   const onError = () => {
+    // A failed photo fails over to the logo, which then has to load (or fail) before the card is ready.
     if (showPhoto) setPhotoFailed(true);
-    ready();
+    else ready();
   };
 
   return (
@@ -37,24 +38,26 @@ export function PersonCard({ card, width, logoUrl, onReady }: PersonCardProps) {
       className={classes.card}
       style={{ width, ...cssVars({ '--name-length': Math.max(card.name.length, 1) }) }}
     >
-      <div className={classes.top}>
-        {card.number !== null && <div className={classes.number}>{card.number}</div>}
-        <div className={classes.photo}>
-          {src !== null && (
-            <img
-              key={src}
-              src={src}
-              alt=""
-              className={showPhoto ? classes.cover : classes.logo}
-              onLoad={ready}
-              onError={onError}
-            />
-          )}
+      <div className={classes.frame}>
+        <div className={classes.top}>
+          {card.number !== null && <div className={classes.number}>{card.number}</div>}
+          <div className={classes.photo}>
+            {src !== null && (
+              <img
+                key={src}
+                src={src}
+                alt=""
+                className={showPhoto ? classes.cover : classes.logo}
+                onLoad={ready}
+                onError={onError}
+              />
+            )}
+          </div>
         </div>
-      </div>
-      <div className={classes.text}>
-        <div className={classes.name}>{card.name}</div>
-        <div className={classes.role}>{card.roleLine}</div>
+        <div className={classes.text}>
+          <div className={classes.name}>{card.name}</div>
+          <div className={classes.role}>{card.roleLine}</div>
+        </div>
       </div>
     </figure>
   );

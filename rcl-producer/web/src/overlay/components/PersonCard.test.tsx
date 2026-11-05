@@ -34,13 +34,30 @@ describe('PersonCard', () => {
     expect(onReady).toHaveBeenCalledTimes(1);
   });
 
-  it('a failed photo shows the team logo and is ready', () => {
+  it('a failed photo shows the team logo and is ready once the logo has loaded', () => {
     const onReady = vi.fn<() => void>();
     const { container } = render(<PersonCard card={skater} width={420} logoUrl={LOGO} onReady={onReady} />);
     fireEvent.error(container.querySelector('img')!);
-    expect(container.querySelector('img')!.getAttribute('src')).toBe(LOGO);
+    const logo = container.querySelector('img')!;
+    expect(logo.getAttribute('src')).toBe(LOGO);
+    expect(onReady).not.toHaveBeenCalled();
+    fireEvent.load(logo);
     expect(onReady).toHaveBeenCalledTimes(1);
-    fireEvent.load(container.querySelector('img')!);
+  });
+
+  it('is ready when the fallback logo fails too', () => {
+    const onReady = vi.fn<() => void>();
+    const { container } = render(<PersonCard card={skater} width={420} logoUrl={LOGO} onReady={onReady} />);
+    fireEvent.error(container.querySelector('img')!);
+    fireEvent.error(container.querySelector('img')!);
+    expect(onReady).toHaveBeenCalledTimes(1);
+  });
+
+  it('a failed photo with no logo is ready at once', () => {
+    const onReady = vi.fn<() => void>();
+    const { container } = render(<PersonCard card={skater} width={420} logoUrl={null} onReady={onReady} />);
+    fireEvent.error(container.querySelector('img')!);
+    expect(container.querySelector('img')).toBeNull();
     expect(onReady).toHaveBeenCalledTimes(1);
   });
 
