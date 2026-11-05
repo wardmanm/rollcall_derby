@@ -1,0 +1,591 @@
+<h2>A group at a time</h2>
+<p class="subtitle">
+  Set to <strong>4 at once</strong>, on a team of 6. Each "next" adds a card. The fifth clears the row and starts a new
+  one, so the last group is 5 and 6. Watch what the cards already on screen do when a new one arrives.
+</p>
+
+<style>
+  .stream {
+    container-type: inline-size;
+    position: relative;
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 6px;
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.1), transparent 60%),
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0 2px, transparent 2px 9%),
+      linear-gradient(180deg, #23303d 0%, #121a22 70%, #0b1015 100%);
+  }
+  .stream::after {
+    content: 'stream picture';
+    position: absolute;
+    top: 4%;
+    left: 3%;
+    font:
+      600 2.2cqw/1 system-ui,
+      sans-serif;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.25);
+  }
+  .track {
+    position: absolute;
+    left: 18%;
+    right: 18%;
+    top: 22%;
+    height: 30%;
+    border: 0.4cqw solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+  }
+  .row {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 5%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+  }
+  .place {
+    display: flex;
+    justify-content: center;
+    width: 15.5cqw;
+    margin: 0 0.6cqw;
+  }
+  .row-a .place {
+    width: 0;
+    margin: 0;
+  }
+
+  .photo {
+    background: linear-gradient(160deg, #3d4b58, #26313b);
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+  }
+  .photo::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 22%;
+    width: 38%;
+    aspect-ratio: 1;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: #8796a4;
+  }
+  .photo::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -18%;
+    width: 78%;
+    aspect-ratio: 1;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: #8796a4;
+  }
+  .skater {
+    flex: none;
+    width: 15.5cqw;
+    font-family: system-ui, sans-serif;
+    color: #fff;
+    background: #111;
+    border-radius: 0.9cqw;
+    overflow: hidden;
+    box-shadow: 0 0.8cqw 1.8cqw rgba(0, 0, 0, 0.6);
+    border: 0.3cqw solid #b3123f;
+    opacity: 0;
+  }
+  .skater .top {
+    position: relative;
+  }
+  .skater .number {
+    position: absolute;
+    right: 0.8cqw;
+    top: 0.8cqw;
+    padding: 0.25cqw 0.8cqw;
+    border-radius: 0.6cqw;
+    background: #b3123f;
+    font:
+      900 2.2cqw/1 system-ui,
+      sans-serif;
+    z-index: 1;
+  }
+  .skater .text {
+    padding: 0.8cqw 0.8cqw 1cqw;
+    text-align: center;
+  }
+  .skater .name {
+    font:
+      800 1.3cqw/1.1 system-ui,
+      sans-serif;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .skater .role {
+    font:
+      600 0.85cqw/1.5 system-ui,
+      sans-serif;
+    color: #f5c518;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  /* 12 s loop. Cards 1-4 arrive at 0, 12, 24, 36%; the row clears at 52%;
+     cards 5-6 arrive at 60 and 72%; the row clears at 90%. */
+  .s1 .skater {
+    animation: p1 12s ease-out infinite;
+  }
+  .s2 .skater {
+    animation: p2 12s ease-out infinite;
+  }
+  .s3 .skater {
+    animation: p3 12s ease-out infinite;
+  }
+  .s4 .skater {
+    animation: p4 12s ease-out infinite;
+  }
+  .s5 .skater {
+    animation: p5 12s ease-out infinite;
+  }
+  .s6 .skater {
+    animation: p6 12s ease-out infinite;
+  }
+  .row-a .s1 {
+    animation: w1 12s ease-in-out infinite;
+  }
+  .row-a .s2 {
+    animation: w2 12s ease-in-out infinite;
+  }
+  .row-a .s3 {
+    animation: w3 12s ease-in-out infinite;
+  }
+  .row-a .s4 {
+    animation: w4 12s ease-in-out infinite;
+  }
+  .row-a .s5 {
+    animation: w5 12s ease-in-out infinite;
+  }
+  .row-a .s6 {
+    animation: w6 12s ease-in-out infinite;
+  }
+
+  @keyframes p1 {
+    0%,
+    3% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    6% {
+      opacity: 1;
+      transform: scale(1.06);
+    }
+    8%,
+    52% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    55%,
+    100% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+  }
+  @keyframes p2 {
+    0%,
+    15% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    18% {
+      opacity: 1;
+      transform: scale(1.06);
+    }
+    20%,
+    52% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    55%,
+    100% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+  }
+  @keyframes p3 {
+    0%,
+    27% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    30% {
+      opacity: 1;
+      transform: scale(1.06);
+    }
+    32%,
+    52% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    55%,
+    100% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+  }
+  @keyframes p4 {
+    0%,
+    39% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    42% {
+      opacity: 1;
+      transform: scale(1.06);
+    }
+    44%,
+    52% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    55%,
+    100% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+  }
+  @keyframes p5 {
+    0%,
+    63% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    66% {
+      opacity: 1;
+      transform: scale(1.06);
+    }
+    68%,
+    90% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    93%,
+    100% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+  }
+  @keyframes p6 {
+    0%,
+    75% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    78% {
+      opacity: 1;
+      transform: scale(1.06);
+    }
+    80%,
+    90% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    93%,
+    100% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+  }
+
+  /* Row A: a card's place opens up in the middle before it pops in, sliding the others aside. */
+  @keyframes w1 {
+    0% {
+      width: 0;
+      margin: 0;
+    }
+    3%,
+    55% {
+      width: 15.5cqw;
+      margin: 0 0.6cqw;
+    }
+    56%,
+    100% {
+      width: 0;
+      margin: 0;
+    }
+  }
+  @keyframes w2 {
+    0%,
+    12% {
+      width: 0;
+      margin: 0;
+    }
+    15%,
+    55% {
+      width: 15.5cqw;
+      margin: 0 0.6cqw;
+    }
+    56%,
+    100% {
+      width: 0;
+      margin: 0;
+    }
+  }
+  @keyframes w3 {
+    0%,
+    24% {
+      width: 0;
+      margin: 0;
+    }
+    27%,
+    55% {
+      width: 15.5cqw;
+      margin: 0 0.6cqw;
+    }
+    56%,
+    100% {
+      width: 0;
+      margin: 0;
+    }
+  }
+  @keyframes w4 {
+    0%,
+    36% {
+      width: 0;
+      margin: 0;
+    }
+    39%,
+    55% {
+      width: 15.5cqw;
+      margin: 0 0.6cqw;
+    }
+    56%,
+    100% {
+      width: 0;
+      margin: 0;
+    }
+  }
+  @keyframes w5 {
+    0%,
+    60% {
+      width: 0;
+      margin: 0;
+    }
+    63%,
+    93% {
+      width: 15.5cqw;
+      margin: 0 0.6cqw;
+    }
+    94%,
+    100% {
+      width: 0;
+      margin: 0;
+    }
+  }
+  @keyframes w6 {
+    0%,
+    72% {
+      width: 0;
+      margin: 0;
+    }
+    75%,
+    93% {
+      width: 15.5cqw;
+      margin: 0 0.6cqw;
+    }
+    94%,
+    100% {
+      width: 0;
+      margin: 0;
+    }
+  }
+</style>
+
+<div class="cards">
+  <div class="card" data-choice="centred" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="stream">
+        <div class="track"></div>
+        <div class="row row-a">
+          <div class="place s1">
+            <div class="skater">
+              <div class="top">
+                <div class="number">07</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Jammy Dodger</div>
+                <div class="role">Captain · she/her</div>
+              </div>
+            </div>
+          </div>
+          <div class="place s2">
+            <div class="skater">
+              <div class="top">
+                <div class="number">12</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Block Party</div>
+                <div class="role">Skater · they/them</div>
+              </div>
+            </div>
+          </div>
+          <div class="place s3">
+            <div class="skater">
+              <div class="top">
+                <div class="number">3</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Pivot Table</div>
+                <div class="role">Skater · he/him</div>
+              </div>
+            </div>
+          </div>
+          <div class="place s4">
+            <div class="skater">
+              <div class="top">
+                <div class="number">00</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Rolla Coaster</div>
+                <div class="role">Skater · she/her</div>
+              </div>
+            </div>
+          </div>
+          <div class="place s5">
+            <div class="skater">
+              <div class="top">
+                <div class="number">88</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Penny Dreadful</div>
+                <div class="role">Skater · she/her</div>
+              </div>
+            </div>
+          </div>
+          <div class="place s6">
+            <div class="skater">
+              <div class="top">
+                <div class="number">404</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Lady Lockdown</div>
+                <div class="role">Skater · she/her</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. The row stays centred</h3>
+      <p>
+        Each new card opens a place for itself, so the cards already up slide aside to make room. The row is centred at
+        every moment.
+      </p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="set-places" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="stream">
+        <div class="track"></div>
+        <div class="row">
+          <div class="place s1">
+            <div class="skater">
+              <div class="top">
+                <div class="number">07</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Jammy Dodger</div>
+                <div class="role">Captain · she/her</div>
+              </div>
+            </div>
+          </div>
+          <div class="place s2">
+            <div class="skater">
+              <div class="top">
+                <div class="number">12</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Block Party</div>
+                <div class="role">Skater · they/them</div>
+              </div>
+            </div>
+          </div>
+          <div class="place s3">
+            <div class="skater">
+              <div class="top">
+                <div class="number">3</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Pivot Table</div>
+                <div class="role">Skater · he/him</div>
+              </div>
+            </div>
+          </div>
+          <div class="place s4">
+            <div class="skater">
+              <div class="top">
+                <div class="number">00</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Rolla Coaster</div>
+                <div class="role">Skater · she/her</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="place s5">
+            <div class="skater">
+              <div class="top">
+                <div class="number">88</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Penny Dreadful</div>
+                <div class="role">Skater · she/her</div>
+              </div>
+            </div>
+          </div>
+          <div class="place s6">
+            <div class="skater">
+              <div class="top">
+                <div class="number">404</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Lady Lockdown</div>
+                <div class="role">Skater · she/her</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Places are set</h3>
+      <p>
+        The group's places are laid out before the first card arrives, so a card never moves once it lands. The row
+        fills from the left and is centred once it's full. A short last group gets places of its own, centred.
+      </p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle">
+  Either way, the row clears together with the exit animation before the next group's first card comes in.
+</p>

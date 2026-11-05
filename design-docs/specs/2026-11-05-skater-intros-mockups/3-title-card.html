@@ -1,0 +1,605 @@
+<h2>Team title card</h2>
+<p class="subtitle">
+  Starting a team brings in its title card first, in the roster's spot. The first Next takes it away and brings in the
+  first person. Shown at bottom centre, 4 at once. Click the closest one, or tell me what to change.
+</p>
+
+<style>
+  .stream {
+    container-type: inline-size;
+    position: relative;
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 6px;
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.1), transparent 60%),
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0 2px, transparent 2px 9%),
+      linear-gradient(180deg, #23303d 0%, #121a22 70%, #0b1015 100%);
+  }
+  .stream::after {
+    content: 'stream picture';
+    position: absolute;
+    top: 4%;
+    left: 3%;
+    font:
+      600 2.2cqw/1 system-ui,
+      sans-serif;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.25);
+  }
+  .track {
+    position: absolute;
+    left: 18%;
+    right: 18%;
+    top: 16%;
+    height: 30%;
+    border: 0.4cqw solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+  }
+  .row {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 5%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+  }
+  .place {
+    display: flex;
+    justify-content: center;
+    width: 0;
+    margin: 0;
+  }
+
+  .photo {
+    background: linear-gradient(160deg, #3d4b58, #26313b);
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+  }
+  .photo::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 22%;
+    width: 38%;
+    aspect-ratio: 1;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: #8796a4;
+  }
+  .photo::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -18%;
+    width: 78%;
+    aspect-ratio: 1;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: #8796a4;
+  }
+  .skater,
+  .title {
+    font-family: system-ui, sans-serif;
+    color: #fff;
+    opacity: 0;
+    flex: none;
+  }
+  .skater {
+    width: 15.5cqw;
+    background: #111;
+    border-radius: 0.9cqw;
+    overflow: hidden;
+    box-shadow: 0 0.8cqw 1.8cqw rgba(0, 0, 0, 0.6);
+    border: 0.3cqw solid #b3123f;
+  }
+  .skater .top {
+    position: relative;
+  }
+  .skater .number {
+    position: absolute;
+    right: 0.8cqw;
+    top: 0.8cqw;
+    padding: 0.25cqw 0.8cqw;
+    border-radius: 0.6cqw;
+    background: #b3123f;
+    font:
+      900 2.2cqw/1 system-ui,
+      sans-serif;
+    z-index: 1;
+  }
+  .skater .text {
+    padding: 0.8cqw 0.8cqw 1cqw;
+    text-align: center;
+  }
+  .skater .name {
+    font:
+      800 1.3cqw/1.1 system-ui,
+      sans-serif;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .skater .role {
+    font:
+      600 0.85cqw/1.5 system-ui,
+      sans-serif;
+    color: #f5c518;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  /* A placeholder team logo: a gold disc with the team's initials. */
+  .logo {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: #f5c518;
+    border: 0.35cqw solid #fff;
+    color: #b3123f;
+    font-weight: 900;
+    font-family: system-ui, sans-serif;
+    box-shadow: 0 0.4cqw 1cqw rgba(0, 0, 0, 0.35);
+  }
+
+  /* A: card zero, the same shape as a person's card */
+  .title-a {
+    width: 15.5cqw;
+    background: #111;
+    border-radius: 0.9cqw;
+    overflow: hidden;
+    box-shadow: 0 0.8cqw 1.8cqw rgba(0, 0, 0, 0.6);
+    border: 0.3cqw solid #b3123f;
+  }
+  .title-a .crest {
+    aspect-ratio: 4 / 3;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(160deg, #b3123f, #6e0b27);
+  }
+  .title-a .logo {
+    width: 52%;
+    font-size: 2.6cqw;
+  }
+  .title-a .text {
+    padding: 0.8cqw 0.8cqw 1cqw;
+    text-align: center;
+  }
+  .title-a .name {
+    font:
+      800 1.3cqw/1.1 system-ui,
+      sans-serif;
+    text-transform: uppercase;
+  }
+  .title-a .league {
+    font:
+      600 0.85cqw/1.5 system-ui,
+      sans-serif;
+    color: #f5c518;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* B: a wide banner in the team colour */
+  .title-b {
+    display: flex;
+    align-items: center;
+    gap: 1.6cqw;
+    padding: 1.2cqw 3cqw 1.2cqw 1.2cqw;
+    border-radius: 1cqw;
+    background: linear-gradient(90deg, #b3123f, #6e0b27);
+    border-bottom: 0.45cqw solid #f5c518;
+    box-shadow: 0 0.8cqw 1.8cqw rgba(0, 0, 0, 0.6);
+  }
+  .title-b .logo {
+    width: 7.5cqw;
+    font-size: 2.6cqw;
+  }
+  .title-b .name {
+    font:
+      800 2.6cqw/1.05 system-ui,
+      sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+  }
+  .title-b .league {
+    font:
+      600 1.15cqw/1.6 system-ui,
+      sans-serif;
+    color: #f5c518;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+
+  /* C: a taller "Introducing" card */
+  .title-c {
+    width: 22cqw;
+    padding: 1.4cqw 1.6cqw 1.6cqw;
+    text-align: center;
+    background: #111;
+    border-radius: 1.1cqw;
+    border: 0.3cqw solid #b3123f;
+    box-shadow: 0 0.8cqw 1.8cqw rgba(0, 0, 0, 0.6);
+  }
+  .title-c .kicker {
+    font:
+      700 1cqw/1 system-ui,
+      sans-serif;
+    color: #f5c518;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+  }
+  .title-c .logo {
+    width: 9cqw;
+    margin: 1.2cqw auto;
+    font-size: 3cqw;
+  }
+  .title-c .name {
+    font:
+      800 2cqw/1.1 system-ui,
+      sans-serif;
+    text-transform: uppercase;
+  }
+  .title-c .league {
+    font:
+      600 0.95cqw/1.6 system-ui,
+      sans-serif;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  /* 11 s loop: the title card comes in and holds; Next takes it away and
+     brings in person 1, then persons 2 and 3; then the row clears. */
+  .title {
+    animation: t 11s ease-out infinite;
+  }
+  .s1 {
+    animation: w1 11s ease-in-out infinite;
+  }
+  .s2 {
+    animation: w2 11s ease-in-out infinite;
+  }
+  .s3 {
+    animation: w3 11s ease-in-out infinite;
+  }
+  .s1 .skater {
+    animation: p1 11s ease-out infinite;
+  }
+  .s2 .skater {
+    animation: p2 11s ease-out infinite;
+  }
+  .s3 .skater {
+    animation: p3 11s ease-out infinite;
+  }
+
+  @keyframes t {
+    0%,
+    2% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    5% {
+      opacity: 1;
+      transform: scale(1.06);
+    }
+    7%,
+    30% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    34%,
+    100% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+  }
+  @keyframes w1 {
+    0%,
+    34% {
+      width: 0;
+      margin: 0;
+    }
+    36%,
+    92% {
+      width: 15.5cqw;
+      margin: 0 0.6cqw;
+    }
+    93%,
+    100% {
+      width: 0;
+      margin: 0;
+    }
+  }
+  @keyframes w2 {
+    0%,
+    50% {
+      width: 0;
+      margin: 0;
+    }
+    53%,
+    92% {
+      width: 15.5cqw;
+      margin: 0 0.6cqw;
+    }
+    93%,
+    100% {
+      width: 0;
+      margin: 0;
+    }
+  }
+  @keyframes w3 {
+    0%,
+    66% {
+      width: 0;
+      margin: 0;
+    }
+    69%,
+    92% {
+      width: 15.5cqw;
+      margin: 0 0.6cqw;
+    }
+    93%,
+    100% {
+      width: 0;
+      margin: 0;
+    }
+  }
+  @keyframes p1 {
+    0%,
+    36% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    39% {
+      opacity: 1;
+      transform: scale(1.06);
+    }
+    41%,
+    87% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    91%,
+    100% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+  }
+  @keyframes p2 {
+    0%,
+    53% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    56% {
+      opacity: 1;
+      transform: scale(1.06);
+    }
+    58%,
+    87% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    91%,
+    100% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+  }
+  @keyframes p3 {
+    0%,
+    69% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    72% {
+      opacity: 1;
+      transform: scale(1.06);
+    }
+    74%,
+    87% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    91%,
+    100% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+  }
+</style>
+
+<div class="cards">
+  <div class="card" data-choice="card-zero" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="stream">
+        <div class="track"></div>
+        <div class="row">
+          <div class="title title-a">
+            <div class="crest"><div class="logo">HC</div></div>
+            <div class="text">
+              <div class="name">Harbour City Wreckers</div>
+              <div class="league">Harbour City Roller Derby</div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="place s1">
+            <div class="skater">
+              <div class="top">
+                <div class="number">07</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Jammy Dodger</div>
+                <div class="role">Captain · she/her</div>
+              </div>
+            </div>
+          </div>
+          <div class="place s2">
+            <div class="skater">
+              <div class="top">
+                <div class="number">12</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Block Party</div>
+                <div class="role">Skater · they/them</div>
+              </div>
+            </div>
+          </div>
+          <div class="place s3">
+            <div class="skater">
+              <div class="top">
+                <div class="number">3</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Pivot Table</div>
+                <div class="role">Skater · he/him</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Card zero</h3>
+      <p>
+        The same size and shape as a person's card, with the logo on the team colour where the photo goes. It reads as
+        the row's first card.
+      </p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="banner" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="stream">
+        <div class="track"></div>
+        <div class="row">
+          <div class="title title-b">
+            <div class="logo">HC</div>
+            <div class="text">
+              <div class="name">Harbour City Wreckers</div>
+              <div class="league">Harbour City Roller Derby</div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="place s1">
+            <div class="skater">
+              <div class="top">
+                <div class="number">07</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Jammy Dodger</div>
+                <div class="role">Captain · she/her</div>
+              </div>
+            </div>
+          </div>
+          <div class="place s2">
+            <div class="skater">
+              <div class="top">
+                <div class="number">12</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Block Party</div>
+                <div class="role">Skater · they/them</div>
+              </div>
+            </div>
+          </div>
+          <div class="place s3">
+            <div class="skater">
+              <div class="top">
+                <div class="number">3</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Pivot Table</div>
+                <div class="role">Skater · he/him</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Banner</h3>
+      <p>
+        A wide bar in the team colour with the logo, team name and league. It stands apart from the person cards that
+        follow.
+      </p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="introducing" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="stream">
+        <div class="track"></div>
+        <div class="row">
+          <div class="title title-c">
+            <div class="kicker">Introducing</div>
+            <div class="logo">HC</div>
+            <div class="name">Harbour City Wreckers</div>
+            <div class="league">Harbour City Roller Derby</div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="place s1">
+            <div class="skater">
+              <div class="top">
+                <div class="number">07</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Jammy Dodger</div>
+                <div class="role">Captain · she/her</div>
+              </div>
+            </div>
+          </div>
+          <div class="place s2">
+            <div class="skater">
+              <div class="top">
+                <div class="number">12</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Block Party</div>
+                <div class="role">Skater · they/them</div>
+              </div>
+            </div>
+          </div>
+          <div class="place s3">
+            <div class="skater">
+              <div class="top">
+                <div class="number">3</div>
+                <div class="photo"></div>
+              </div>
+              <div class="text">
+                <div class="name">Pivot Table</div>
+                <div class="role">Skater · he/him</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. Introducing</h3>
+      <p>A taller card that says "Introducing" above the logo, team name and league, like an announcer's lead-in.</p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle">
+  The title card uses the same entrance as the person cards and always sits in the roster's spot: move the roster to
+  bottom left and the title card goes there too.
+</p>

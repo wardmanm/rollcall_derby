@@ -1,0 +1,337 @@
+<h2>One skater, during the intros</h2>
+<p class="subtitle">
+  Each card plays its entrance on a loop, the way it would come in when the announcer calls the skater. Team colours
+  come from the theme. Click the one closest to what you picture, or tell me what to change.
+</p>
+
+<style>
+  .stream {
+    container-type: inline-size;
+    position: relative;
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 6px;
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.1), transparent 60%),
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0 2px, transparent 2px 9%),
+      linear-gradient(180deg, #23303d 0%, #121a22 70%, #0b1015 100%);
+  }
+  .stream::after {
+    content: 'stream picture';
+    position: absolute;
+    top: 4%;
+    left: 3%;
+    font:
+      600 2.2cqw/1 system-ui,
+      sans-serif;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.25);
+  }
+  .track {
+    position: absolute;
+    left: 18%;
+    right: 18%;
+    top: 34%;
+    height: 30%;
+    border: 0.4cqw solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+  }
+  .slot {
+    position: absolute;
+    left: 50%;
+    bottom: 6%;
+    transform: translateX(-50%);
+  }
+  .photo {
+    background: linear-gradient(160deg, #3d4b58, #26313b);
+    position: relative;
+    overflow: hidden;
+  }
+  .photo::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 22%;
+    width: 38%;
+    aspect-ratio: 1;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: #8796a4;
+  }
+  .photo::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -18%;
+    width: 78%;
+    aspect-ratio: 1;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: #8796a4;
+  }
+  .card-a,
+  .card-b,
+  .card-c {
+    font-family: system-ui, sans-serif;
+    color: #fff;
+  }
+
+  /* A: lower-third bar */
+  .card-a {
+    display: flex;
+    align-items: stretch;
+    height: 9cqw;
+    background: #111;
+    border-bottom: 0.6cqw solid #f5c518;
+    box-shadow: 0 1cqw 2cqw rgba(0, 0, 0, 0.5);
+    animation: slide-up 4.5s ease-out infinite;
+  }
+  .card-a .photo {
+    width: 9cqw;
+  }
+  .card-a .number {
+    display: grid;
+    place-items: center;
+    width: 9cqw;
+    background: #b3123f;
+    font:
+      800 4.6cqw/1 system-ui,
+      sans-serif;
+  }
+  .card-a .text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 2.4cqw;
+    min-width: 26cqw;
+  }
+  .card-a .name {
+    font:
+      800 3.2cqw/1.05 system-ui,
+      sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .card-a .role {
+    font:
+      600 1.6cqw/1.4 system-ui,
+      sans-serif;
+    color: #f5c518;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  /* B: number first */
+  .card-b {
+    display: flex;
+    align-items: center;
+    gap: 1.6cqw;
+    padding: 1.2cqw 2.6cqw 1.2cqw 1.2cqw;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #b3123f, #6e0b27);
+    box-shadow: 0 1cqw 2cqw rgba(0, 0, 0, 0.5);
+    animation: wipe-in 4.5s ease-out infinite;
+  }
+  .card-b .photo {
+    width: 8cqw;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 0.5cqw solid #f5c518;
+  }
+  .card-b .number {
+    font:
+      900 7cqw/0.9 system-ui,
+      sans-serif;
+    color: #f5c518;
+  }
+  .card-b .name {
+    font:
+      800 3cqw/1.05 system-ui,
+      sans-serif;
+  }
+  .card-b .role {
+    font:
+      600 1.5cqw/1.4 system-ui,
+      sans-serif;
+    opacity: 0.85;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  /* C: photo card */
+  .card-c {
+    width: 22cqw;
+    background: #111;
+    border-radius: 1.2cqw;
+    overflow: hidden;
+    box-shadow: 0 1cqw 2.4cqw rgba(0, 0, 0, 0.6);
+    border: 0.4cqw solid #b3123f;
+    animation: pop-in 4.5s ease-out infinite;
+  }
+  .card-c .photo {
+    aspect-ratio: 4 / 3;
+  }
+  .card-c .number {
+    position: absolute;
+    right: 1.2cqw;
+    top: 1.2cqw;
+    padding: 0.4cqw 1.2cqw;
+    border-radius: 0.8cqw;
+    background: #b3123f;
+    font:
+      900 3.4cqw/1 system-ui,
+      sans-serif;
+    z-index: 1;
+  }
+  .card-c .text {
+    padding: 1.2cqw 1.6cqw 1.6cqw;
+    text-align: center;
+  }
+  .card-c .name {
+    font:
+      800 2.6cqw/1.1 system-ui,
+      sans-serif;
+    text-transform: uppercase;
+  }
+  .card-c .role {
+    font:
+      600 1.4cqw/1.5 system-ui,
+      sans-serif;
+    color: #f5c518;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+  .card-c .top {
+    position: relative;
+  }
+
+  @keyframes slide-up {
+    0%,
+    4% {
+      opacity: 0;
+      transform: translateY(120%);
+    }
+    14%,
+    86% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    96%,
+    100% {
+      opacity: 0;
+      transform: translateY(120%);
+    }
+  }
+  @keyframes wipe-in {
+    0%,
+    4% {
+      clip-path: inset(0 100% 0 0 round 999px);
+    }
+    16%,
+    86% {
+      clip-path: inset(0 0 0 0 round 999px);
+    }
+    96%,
+    100% {
+      clip-path: inset(0 100% 0 0 round 999px);
+    }
+  }
+  @keyframes pop-in {
+    0%,
+    4% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    13% {
+      opacity: 1;
+      transform: scale(1.06);
+    }
+    17%,
+    86% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    96%,
+    100% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+  }
+</style>
+
+<div class="cards">
+  <div class="card" data-choice="lower-third" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="stream">
+        <div class="track"></div>
+        <div class="slot">
+          <div class="card-a">
+            <div class="photo"></div>
+            <div class="number">07</div>
+            <div class="text">
+              <div class="name">Jammy Dodger</div>
+              <div class="role">Captain · she/her</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Lower-third bar</h3>
+      <p>Photo, number and name in one flat bar, like a TV caption. Slides up from below.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="number-first" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="stream">
+        <div class="track"></div>
+        <div class="slot">
+          <div class="card-b">
+            <div class="photo"></div>
+            <div class="number">07</div>
+            <div class="text">
+              <div class="name">Jammy Dodger</div>
+              <div class="role">Captain · she/her</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Number first</h3>
+      <p>A big jersey number beside a round photo, on a pill in the team colour. Wipes in from the left.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="photo-card" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="stream">
+        <div class="track"></div>
+        <div class="slot">
+          <div class="card-c">
+            <div class="top">
+              <div class="number">07</div>
+              <div class="photo"></div>
+            </div>
+            <div class="text">
+              <div class="name">Jammy Dodger</div>
+              <div class="role">Captain · she/her</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. Photo card</h3>
+      <p>A taller card led by the photo, like a trading card, with the number as a badge. Pops in.</p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle">
+  The entrance and the spot on screen would both be settings: these three entrances are only examples of what you could
+  pick from.
+</p>
