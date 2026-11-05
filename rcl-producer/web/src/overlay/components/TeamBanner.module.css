@@ -1,0 +1,54 @@
+/* Mockup banner B (3-title-card.html), in canvas pixels (1cqw there = 19.2px). */
+.banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 31px;
+  padding: 23px 58px 23px 23px;
+  box-sizing: border-box;
+  max-width: 100%;
+  font-family: var(--theme-font-body);
+  color: var(--team-on-primary);
+  background: linear-gradient(
+    90deg,
+    var(--team-primary),
+    color-mix(in srgb, var(--team-primary) 60%, var(--theme-color-surface))
+  );
+  border-radius: var(--theme-radius);
+  border-bottom: 9px solid var(--team-secondary);
+  box-shadow: 0 15px 35px var(--theme-color-surface);
+}
+
+.logo {
+  flex: none;
+  width: 144px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 7px solid var(--team-on-primary);
+  background: var(--theme-color-surface);
+  box-sizing: border-box;
+}
+
+.logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.name {
+  font-family: var(--theme-font-heading);
+  font-weight: var(--theme-font-heading-weight);
+  text-transform: var(--theme-heading-transform);
+  font-size: 50px;
+  line-height: 1.05;
+}
+
+.league {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.6;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}

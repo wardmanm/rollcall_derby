@@ -1,0 +1,81 @@
+/* Mockup card C (1-person-card.html): 22cqw wide there, so each size below is the mockup's cqw value times 100/22,
+   as a share of the card's own width. The card is its own size container, so it scales to any width. */
+.card {
+  container-type: inline-size;
+  box-sizing: border-box;
+  overflow: hidden;
+  flex: none;
+  font-family: var(--theme-font-body);
+  font-weight: var(--theme-font-body-weight);
+  color: var(--theme-color-text);
+  background: var(--theme-color-surface);
+  border: 1.8cqw solid var(--team-primary);
+  border-radius: var(--theme-radius);
+  box-shadow: 0 0.8em 1.6em var(--theme-color-surface);
+}
+
+.top {
+  position: relative;
+}
+
+.photo {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--team-primary);
+}
+
+.cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.logo {
+  width: 60%;
+  height: 60%;
+  object-fit: contain;
+}
+
+.number {
+  position: absolute;
+  z-index: 1;
+  right: 5.5cqw;
+  top: 5.5cqw;
+  padding: 1.8cqw 5.5cqw;
+  border-radius: calc(var(--theme-radius) * 0.7);
+  background: var(--team-primary);
+  color: var(--team-on-primary);
+  font-family: var(--theme-font-heading);
+  font-weight: 900;
+  font-size: 15.5cqw;
+  line-height: 1;
+}
+
+.text {
+  padding: 5.5cqw 7.3cqw 7.3cqw;
+  text-align: center;
+}
+
+/* Fits one line down to 60% of the base size (11.8cqw), then wraps to two. An uppercase heading is about 0.7em wide
+   per character, so the size that fits is the text width divided by that. */
+.name {
+  --base: 11.8cqw;
+  font-family: var(--theme-font-heading);
+  font-weight: var(--theme-font-heading-weight);
+  text-transform: var(--theme-heading-transform);
+  font-size: clamp(calc(var(--base) * 0.6), calc((100cqw - 14.6cqw) / (var(--name-length) * 0.7)), var(--base));
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.role {
+  min-height: 1.5em;
+  font-size: 6.4cqw;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--team-secondary);
+}

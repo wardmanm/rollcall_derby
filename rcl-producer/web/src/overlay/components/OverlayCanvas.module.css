@@ -1,0 +1,15 @@
+.window {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+/* Scaled from its top left. The negative margins put the scaled box's center at the window's center. */
+.canvas {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-origin: top left;
+  background: transparent;
+}
