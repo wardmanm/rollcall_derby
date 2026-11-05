@@ -142,4 +142,17 @@ describe('the producer:theme kind', () => {
     kind.afterImport?.();
     expect(announceThemes).toHaveBeenCalledOnce();
   });
+
+  it('forgets what a failed import saved, so the next import tells only what it saved', () => {
+    const { db, kind, checked, announce, announceThemes } = setup();
+    const plain = createTheme(db, { name: 'Plain' });
+    kind.save(checked({ ...ITEM, name: 'Plain' }), { as: 'replace', id: plain.id }, noMedia, { makeDefault: true });
+    // The import fails and its rows roll back, so core tells the kind that instead of running afterImport.
+    kind.afterFailedImport?.();
+    kind.save(checked({ ...ITEM, default: false }), { as: 'new' }, noMedia, { makeDefault: false });
+    kind.afterImport?.();
+    const added = listThemes(db).find((theme) => theme.name === 'Derby Night');
+    expect(announceThemes).toHaveBeenCalledExactlyOnceWith([added?.id]);
+    expect(announce).not.toHaveBeenCalled();
+  });
 });
