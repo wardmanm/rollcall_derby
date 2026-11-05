@@ -4,8 +4,11 @@ import { io } from 'socket.io-client';
 import {
   SERVER_HELLO_EVENT,
   ServerHelloSchema,
+  INTRO_STATE_EVENT,
+  IntroOverlayStateSchema,
   THEME_CHANGED_EVENT,
   ThemeChangedSchema,
+  type IntroOverlayState,
   type ServerHello,
   type ThemeChanged,
 } from '@rollcall/producer-contract';
@@ -19,6 +22,8 @@ export interface LiveState {
   server: ServerHello | null;
   /** The default theme, or null for the built-in look. */
   theme: ThemeChanged;
+  /** An intro's page only: what is on air. Null until the server sends it. */
+  intro: IntroOverlayState | null;
 }
 
 /** The part of a Socket.IO client the overlay uses; tests pass a fake. */
@@ -37,13 +42,19 @@ export const liveApi = createApi({
   baseQuery: fakeBaseQuery(),
   endpoints: (build) => ({
     getLiveState: build.query<LiveState, void>({
-      queryFn: () => ({ data: { connected: false, server: null, theme: null } }),
+      queryFn: () => ({ data: { connected: false, server: null, theme: null, intro: null } }),
       keepUnusedDataFor: 0,
       async onCacheEntryAdded(_arg, lifecycle) {
         await lifecycle.cacheDataLoaded;
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- makeOverlayStore always sets this
         const socket = (lifecycle.extra as LiveExtra).connect();
-        socket.on('connect', () => lifecycle.updateCachedData((draft) => void (draft.connected = true)));
+        // The first intro state after each (re)connect is taken as it comes: a server restart, or an intro deleted
+        // while disconnected, can legitimately start again from a lower revision.
+        let firstAfterConnect = true;
+        socket.on('connect', () => {
+          firstAfterConnect = true;
+          lifecycle.updateCachedData((draft) => void (draft.connected = true));
+        });
         socket.on('disconnect', () => lifecycle.updateCachedData((draft) => void (draft.connected = false)));
         socket.on(SERVER_HELLO_EVENT, (payload) => {
           const hello = ServerHelloSchema.safeParse(payload);
@@ -52,6 +63,15 @@ export const liveApi = createApi({
         socket.on(THEME_CHANGED_EVENT, (payload) => {
           const theme = ThemeChangedSchema.safeParse(payload);
           if (theme.success) lifecycle.updateCachedData((draft) => void (draft.theme = theme.data));
+        });
+        socket.on(INTRO_STATE_EVENT, (payload) => {
+          const intro = IntroOverlayStateSchema.safeParse(payload);
+          if (!intro.success) return;
+          const accept = firstAfterConnect;
+          firstAfterConnect = false;
+          lifecycle.updateCachedData((draft) => {
+            if (accept || !draft.intro || intro.data.revision >= draft.intro.revision) draft.intro = intro.data;
+          });
         });
         await lifecycle.cacheEntryRemoved;
         socket.close();

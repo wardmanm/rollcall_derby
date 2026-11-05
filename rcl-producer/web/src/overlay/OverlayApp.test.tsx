@@ -1,18 +1,20 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { DEFAULT_TOKENS } from '@rollcall/producer-contract';
+import { DEFAULT_TOKENS, type RosterOnAir } from '@rollcall/producer-contract';
 import { makeOverlayStore } from './live.ts';
 import { OverlayApp } from './OverlayApp.tsx';
 import { FakeSocket } from './test-socket.ts';
 
 const GOLD = { ...DEFAULT_TOKENS, colors: { ...DEFAULT_TOKENS.colors, accent: '#ffd700' } };
 
-function overlay() {
+const intro = (revision: number, state: RosterOnAir | null) => ({ revision, onAir: state });
+
+function overlay(introId: string | null = null) {
   const socket = new FakeSocket();
   const { container } = render(
     <Provider store={makeOverlayStore(() => socket)}>
-      <OverlayApp />
+      <OverlayApp introId={introId} />
     </Provider>,
   );
   const accent = () =>
@@ -36,5 +38,60 @@ describe('OverlayApp', () => {
     await vi.waitFor(() => expect(accent()).toBe('#ffd700'));
     socket.emit('theme:changed', null);
     await vi.waitFor(() => expect(accent()).toBe(''));
+  });
+
+  describe("at an intro's address", () => {
+    const team = {
+      name: 'Harbour City Wreckers',
+      leagueName: 'Harbour City Roller Derby',
+      logoUrl: null,
+      primaryColor: '#b3123f',
+      secondaryColor: '#f5c518',
+    };
+    const onAir = (fields: Partial<RosterOnAir> = {}): RosterOnAir => ({
+      team,
+      title: false,
+      cards: [],
+      upNext: null,
+      slots: 4,
+      entrance: 'pop',
+      placement: { spot: 'bottom-center', edge: 48 },
+      ...fields,
+    });
+
+    it('shows the roster the server sends, and nothing before', async () => {
+      const { socket, container } = overlay('abc');
+      await vi.waitFor(() => expect(socket.listening).toBe(true));
+      expect(container.innerHTML).toBe('');
+      socket.emit('server:hello', { name: 'Rollcall', version: '0.2.0' });
+      socket.emit('theme:changed', null);
+      socket.emit('intro:state', intro(1, onAir({ title: true })));
+      expect(await screen.findByText(team.name)).toBeTruthy();
+    });
+
+    it('does not mount the roster until the intro state arrives, then mounts it as a reload', async () => {
+      const { socket, container } = overlay('abc');
+      await vi.waitFor(() => expect(socket.listening).toBe(true));
+      socket.emit('server:hello', { name: 'Rollcall', version: '0.2.0' });
+      socket.emit('theme:changed', { tokens: GOLD, families: [] });
+      // Let the store settle: hello and theme are in, so the placeholder would show by now.
+      await act(() => new Promise((done) => setTimeout(done, 50)));
+      expect(container.innerHTML).toBe('');
+      socket.emit('intro:state', intro(1, onAir({ title: true })));
+      const banner = (await screen.findByText(team.name)).closest<HTMLElement>('[data-state]')!;
+      expect(banner.hasAttribute('data-entrance')).toBe(false);
+    });
+
+    it('ignores an intro state older than the one shown', async () => {
+      const { socket } = overlay('abc');
+      await vi.waitFor(() => expect(socket.listening).toBe(true));
+      socket.emit('server:hello', { name: 'Rollcall', version: '0.2.0' });
+      socket.emit('theme:changed', null);
+      socket.emit('intro:state', intro(5, onAir({ title: true })));
+      expect(await screen.findByText(team.name)).toBeTruthy();
+      socket.emit('intro:state', intro(4, null));
+      await act(() => new Promise((done) => setTimeout(done, 50)));
+      expect(screen.getByText(team.name)).toBeTruthy();
+    });
   });
 });

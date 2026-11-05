@@ -13,14 +13,16 @@ async function subscribe(socket: FakeSocket) {
   return { state, subscription };
 }
 
+const introState = (revision: number) => ({ revision, onAir: null });
+
 describe('overlay live state', () => {
   it('starts empty and fills in from the server hello', async () => {
     const socket = new FakeSocket();
     const { state } = await subscribe(socket);
-    expect(state()).toEqual({ connected: false, server: null, theme: null });
+    expect(state()).toEqual({ connected: false, server: null, theme: null, intro: null });
     socket.emit('connect');
     socket.emit('server:hello', hello);
-    expect(state()).toEqual({ connected: true, server: hello, theme: null });
+    expect(state()).toEqual({ connected: true, server: hello, theme: null, intro: null });
   });
 
   it('keeps the last known state when the connection drops', async () => {
@@ -29,7 +31,7 @@ describe('overlay live state', () => {
     socket.emit('connect');
     socket.emit('server:hello', hello);
     socket.emit('disconnect');
-    expect(state()).toEqual({ connected: false, server: hello, theme: null });
+    expect(state()).toEqual({ connected: false, server: hello, theme: null, intro: null });
   });
 
   it('keeps the default theme the server sends, and goes back to the built-in look on null', async () => {
@@ -68,5 +70,39 @@ describe('overlay live state', () => {
     const { subscription } = await subscribe(socket);
     subscription.unsubscribe();
     await vi.waitFor(() => expect(socket.close).toHaveBeenCalled());
+  });
+
+  describe('intro state', () => {
+    it('keeps the newest intro state and ignores an older one', async () => {
+      const socket = new FakeSocket();
+      const { state: current } = await subscribe(socket);
+      socket.emit('connect');
+      socket.emit('intro:state', introState(3));
+      socket.emit('intro:state', introState(2));
+      expect(current()?.intro).toEqual(introState(3));
+      socket.emit('intro:state', introState(3));
+      socket.emit('intro:state', introState(4));
+      expect(current()?.intro).toEqual(introState(4));
+    });
+
+    it('accepts an older revision as the first state after a reconnect', async () => {
+      const socket = new FakeSocket();
+      const { state: current } = await subscribe(socket);
+      socket.emit('connect');
+      socket.emit('intro:state', introState(7));
+      socket.emit('disconnect');
+      socket.emit('connect');
+      socket.emit('intro:state', introState(1));
+      expect(current()?.intro).toEqual(introState(1));
+      socket.emit('intro:state', introState(0));
+      expect(current()?.intro).toEqual(introState(1));
+    });
+
+    it('ignores an intro state that breaks the shared contract', async () => {
+      const socket = new FakeSocket();
+      const { state: current } = await subscribe(socket);
+      socket.emit('intro:state', { revision: 'one', onAir: null });
+      expect(current()?.intro).toBeNull();
+    });
   });
 });
