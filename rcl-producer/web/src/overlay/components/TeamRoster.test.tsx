@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { RosterCard, RosterOnAir, RosterTeam } from '@rollcall/producer-contract';
 import { TeamRoster } from './TeamRoster.tsx';
+import classes from './TeamRoster.module.css';
 
 const team: RosterTeam = {
   name: 'Harbour City Wreckers',
@@ -40,6 +41,17 @@ const card = (name: string) => screen.getByRole('figure', { name }).closest<HTML
 const banner = () => screen.getByText(team.name).closest<HTMLElement>('[data-state]')!;
 const img = (piece: HTMLElement) => piece.querySelector('img')!;
 const leaving = (piece: HTMLElement) => piece.hasAttribute('data-leaving');
+/**
+ * An animation called `name` ends on `target`: by default the piece's own motion layer, which plays its entrance and
+ * exit. jsdom has no AnimationEvent, so the name is set on a plain event.
+ */
+function endAnimation(piece: HTMLElement, name: string, target: Element = piece.firstElementChild!) {
+  const event = new Event('animationend', { bubbles: true });
+  Object.defineProperty(event, 'animationName', { value: name });
+  act(() => void target.dispatchEvent(event));
+}
+const entered = (piece: HTMLElement) => endAnimation(piece, classes['pop-in']!);
+const exited = (piece: HTMLElement) => endAnimation(piece, classes['pop-out']!);
 // React puts the preload link in the document's head.
 const preload = () => document.querySelector('link[rel="preload"][as="image"]');
 
@@ -60,14 +72,14 @@ describe('TeamRoster', () => {
     fireEvent.load(img(banner()));
     expect(banner().dataset.state).toBe('entering');
     expect(banner().dataset.entrance).toBe('pop');
-    fireEvent.animationEnd(banner());
+    entered(banner());
     expect(banner().dataset.state).toBe('shown');
 
     rerender(<TeamRoster onAir={row(1)} />);
     expect(leaving(banner())).toBe(true);
     expect(banner().dataset.entrance).toBe('pop');
     expect(screen.queryByRole('figure')).toBeNull();
-    fireEvent.animationEnd(banner());
+    exited(banner());
     expect(screen.queryByText(team.name)).toBeNull();
     expect(card('Skater 1').dataset.state).toBe('waiting');
     fireEvent.load(img(card('Skater 1')));
@@ -91,7 +103,7 @@ describe('TeamRoster', () => {
     expect(card('Skater 2').dataset.state).toBe('opening');
     fireEvent.transitionEnd(card('Skater 2'));
     expect(card('Skater 2').dataset.state).toBe('entering');
-    fireEvent.animationEnd(card('Skater 2'));
+    entered(card('Skater 2'));
     expect(card('Skater 2').dataset.state).toBe('shown');
     expect(card('Skater 2').hasAttribute('data-entrance')).toBe(false);
   });
@@ -103,9 +115,9 @@ describe('TeamRoster', () => {
     expect(full.every(leaving)).toBe(true);
     expect(full.map((piece) => piece.dataset.entrance)).toEqual(['pop', 'pop', 'pop', 'pop']);
     expect(screen.queryByRole('figure', { name: 'Skater 5' })).toBeNull();
-    for (const piece of full.slice(0, 3)) fireEvent.animationEnd(piece);
+    for (const piece of full.slice(0, 3)) exited(piece);
     expect(screen.queryByRole('figure', { name: 'Skater 5' })).toBeNull();
-    fireEvent.animationEnd(full[3]!);
+    exited(full[3]!);
     expect(screen.queryByRole('figure', { name: 'Skater 1' })).toBeNull();
     expect(card('Skater 5').dataset.state).toBe('waiting');
   });
@@ -171,9 +183,9 @@ describe('TeamRoster', () => {
     rerender(<TeamRoster onAir={null} />);
     const up = [card('Skater 1'), card('Skater 2')];
     expect(up.every(leaving)).toBe(true);
-    fireEvent.animationEnd(up[0]!);
+    exited(up[0]!);
     expect(screen.getAllByRole('figure')).toHaveLength(2);
-    fireEvent.animationEnd(up[1]!);
+    exited(up[1]!);
     expect(screen.queryByRole('figure')).toBeNull();
   });
 
@@ -190,7 +202,7 @@ describe('TeamRoster', () => {
     rerender(<TeamRoster onAir={null} />);
     expect(leaving(card('Skater 1'))).toBe(true);
     expect(leaving(card('Skater 2'))).toBe(false);
-    fireEvent.animationEnd(card('Skater 1'));
+    exited(card('Skater 1'));
     expect(screen.queryByRole('figure')).toBeNull();
   });
 
@@ -206,7 +218,7 @@ describe('TeamRoster', () => {
     // Its place finishing opening doesn't bring it in now.
     fireEvent.transitionEnd(card('Skater 2'));
     expect(card('Skater 2').dataset.state).toBe('opening');
-    fireEvent.animationEnd(card('Skater 1'));
+    exited(card('Skater 1'));
     expect(screen.queryByRole('figure')).toBeNull();
   });
 
@@ -235,5 +247,43 @@ describe('TeamRoster', () => {
     rerender(<TeamRoster onAir={{ ...title, team: { ...team } }} />);
     expect(leaving(banner())).toBe(false);
     expect(banner().dataset.state).toBe('shown');
+  });
+
+  it('ignores an animation that ends inside a piece', () => {
+    const { rerender } = reload(row(1));
+    rerender(<TeamRoster onAir={row(1, 2)} />);
+    fireEvent.load(img(card('Skater 2')));
+    fireEvent.transitionEnd(card('Skater 2'));
+    endAnimation(card('Skater 2'), classes['pop-in']!, img(card('Skater 2')));
+    expect(card('Skater 2').dataset.state).toBe('entering');
+
+    rerender(<TeamRoster onAir={null} />);
+    exited(card('Skater 2'));
+    endAnimation(card('Skater 1'), classes['pop-out']!, img(card('Skater 1')));
+    expect(screen.getAllByRole('figure')).toHaveLength(2);
+    exited(card('Skater 1'));
+    expect(screen.queryByRole('figure')).toBeNull();
+  });
+
+  it("an entrance that ends after the row starts leaving doesn't count as leaving", () => {
+    const { rerender } = reload(row(1));
+    rerender(<TeamRoster onAir={row(1, 2)} />);
+    fireEvent.load(img(card('Skater 2')));
+    fireEvent.transitionEnd(card('Skater 2'));
+    expect(card('Skater 2').dataset.state).toBe('entering');
+    rerender(<TeamRoster onAir={null} />);
+    entered(card('Skater 2'));
+    exited(card('Skater 1'));
+    expect(screen.getByRole('figure', { name: 'Skater 2' })).toBeTruthy();
+    exited(card('Skater 2'));
+    expect(screen.queryByRole('figure')).toBeNull();
+  });
+
+  it("a transition inside a card's place doesn't open it", () => {
+    const { rerender } = reload(row(1));
+    rerender(<TeamRoster onAir={row(1, 2)} />);
+    fireEvent.load(img(card('Skater 2')));
+    fireEvent.transitionEnd(img(card('Skater 2')));
+    expect(card('Skater 2').dataset.state).toBe('opening');
   });
 });

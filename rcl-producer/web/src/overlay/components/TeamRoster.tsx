@@ -2,6 +2,7 @@ import { useEffect, useReducer, useRef } from 'react';
 import type { RosterOnAir } from '@rollcall/producer-contract';
 import { PersonCard } from './PersonCard.tsx';
 import { TeamBanner } from './TeamBanner.tsx';
+import { EXIT_ANIMATIONS } from './roster/animations.ts';
 import { cssVars } from './roster/css-vars.ts';
 import { anchor, CANVAS_HEIGHT, CANVAS_WIDTH, CARD_GAP, cardWidth } from './roster/layout.ts';
 import { FALLBACK_MS, isUp, keysOf, reduceRoster, startRoster, TITLE } from './roster/roster-state.ts';
@@ -48,16 +49,23 @@ export function TeamRoster({ onAir }: TeamRosterProps) {
 
   // Every piece's animationend, and each place's own transitionend as it opens, bubble up to the root. This listens
   // natively: React's onAnimationEnd listens for a vendor-prefixed name where AnimationEvent is missing (as in jsdom).
+  // Only a piece's own motion layer (its first child) plays its entrance and exit, and only the place itself opens, so
+  // an animation or transition inside a card says nothing about the piece.
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const element = root.current;
     if (!element) return undefined;
     const onEnd = (event: Event) => {
-      const piece = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-piece]') : null;
+      const target = event.target instanceof Element ? event.target : null;
+      const piece = target?.closest<HTMLElement>('[data-piece]');
       const key = piece?.dataset.piece;
-      if (key === undefined) return;
-      if (event.type === 'animationend') dispatch({ type: 'animationEnd', key });
-      else if (event.target === piece) dispatch({ type: 'placeEnd', key });
+      if (!piece || key === undefined) return;
+      if (event.type === 'transitionend') {
+        if (target === piece) dispatch({ type: 'placeEnd', key });
+      } else if (target === piece.firstElementChild) {
+        const { animationName = '' } = event as Partial<AnimationEvent>;
+        dispatch({ type: 'animationEnd', key, exit: EXIT_ANIMATIONS.has(animationName) });
+      }
     };
     element.addEventListener('animationend', onEnd);
     element.addEventListener('transitionend', onEnd);

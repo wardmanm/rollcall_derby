@@ -42,7 +42,8 @@ export type RosterAction =
   | { type: 'ready'; key: string; screen: number }
   /** A card's place has finished its own transition. */
   | { type: 'placeEnd'; key: string }
-  | { type: 'animationEnd'; key: string }
+  /** A piece's own entrance or exit has ended; `exit` says which. */
+  | { type: 'animationEnd'; key: string; exit: boolean }
   /** No place opening has ended within FALLBACK_MS. */
   | { type: 'stuckTimeout'; screen: number }
   | { type: 'leaveTimeout'; screen: number };
@@ -120,10 +121,12 @@ export function reduceRoster(state: RosterState, action: RosterAction): RosterSt
       return withPhase(state, [action.key], 'entering');
     case 'animationEnd': {
       if (state.leaving) {
+        // An entrance that ends as the row starts leaving isn't the piece leaving: its exit is still to play.
+        if (!action.exit) return state;
         const left = state.left.includes(action.key) ? state.left : [...state.left, action.key];
         return upNow(state).every((key) => left.includes(key)) ? show(state, state.latest) : { ...state, left };
       }
-      if (state.phases[action.key] !== 'entering') return state;
+      if (action.exit || state.phases[action.key] !== 'entering') return state;
       return withPhase(state, [action.key], 'shown');
     }
     case 'stuckTimeout': {
