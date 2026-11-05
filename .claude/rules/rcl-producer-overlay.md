@@ -11,6 +11,7 @@ paths:
   - Styling uses CSS modules and theme custom properties (`--theme-*`) only, never hard-coded colors or fonts. The variables are the token table in `docs/features/theme-builder.md`; `theme-defaults.css` sets the built-in look (`DEFAULT_TOKENS`, kept in step by `theme-defaults.test.ts`).
   - Fonts are local only (hard rule 4).
   - Get a story next to them, in the overlay Storybook, which never loads Mantine (ADR-0015).
+- **Intros** (`src/overlay/IntroOverlay.tsx`, `intro-path.ts`) are the OBS page at `/producer/overlay/intros/<id>`, built from `OverlayCanvas` (1920×1080, scaled to fit) and `TeamRoster` with `PersonCard` and `TeamBanner` (layout and row logic in `components/roster/`). A plain overlay joins the `overlay:default` room; an intro's overlay names its intro in the handshake and joins its intro room (`intro:<id>`), so each is sent only its own theme and state, never the whole team (`docs/features/skater-intros.md`).
 - **Live state** comes only from Socket.IO, the `/producer/overlay` namespace, into the RTK Query cache in `live.ts` (hard rule 6), and is validated with schemas from `@rollcall/producer-contract`.
   - A reload rebuilds state from the server.
   - A disconnect keeps the last state.

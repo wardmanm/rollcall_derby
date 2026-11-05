@@ -58,8 +58,9 @@ A theme is a name and a fixed set of **tokens**. Each becomes a CSS custom prope
 | Border width | `--theme-border-width` | 0–16 pixels |
 | Extra colors | `--theme-extra-<name>` | up to 10, each with its own lowercase name. Overlay components rely only on the tokens above |
 
+- **Team colors** reach overlay components as `--team-primary`, `--team-secondary` and `--team-on-primary`, set on each team's cards by the component from the team's own colors, not by the theme. A team without colors uses the theme's accent, text-on-accent and border ([skater intros](skater-intros.md#on-the-obs-page)).
 - **The built-in look** is what a new theme starts from, and what the overlay shows with no default theme.
-- **The [default theme](../product/glossary.md#default-theme)** styles the OBS overlay. At most one theme is the default. When it's saved, changed, cleared or deleted, every open overlay changes at once, with no reload. A new overlay gets it when it connects. Until the [Screen Builder](screen-builder.md) lets each screen choose a theme, this is the only way a theme reaches the overlay.
+- **The [default theme](../product/glossary.md#default-theme)** styles the OBS overlay. At most one theme is the default. When it's saved, changed, cleared or deleted, every open overlay changes at once, with no reload, and so does an [intro](skater-intros.md) overlay on a theme that is edited, imported or chosen for it. A new overlay gets it when it connects. Until the [Screen Builder](screen-builder.md) lets each screen choose a theme, this is the only way a theme reaches the overlay.
 - **The Themes page** (`/producer/themes`) lists themes by name, with the default marked and their surface and accent colors. Admins create a theme by name, and from each row's menu duplicate it ("Derby Night copy", then "copy 2"), make it the default or stop using it, and delete it.
 - **The theme editor** (`/producer/themes/<id>`) has the name and tokens on the left and a live preview on the right, which follows every change before it's saved, over a dark, light or checkerboard background. The preview uses the overlay's own components and the same CSS as the overlay, so they match. Changes are checked when you save; **Discard changes** goes back to the saved theme.
 - **Two people editing the same theme:** **Save theme** puts your changes on the theme as it is then, so a colleague's change to a token you didn't touch isn't overwritten, and shows up in your form. When you both change the same token, the last save wins. The extra colors count as one token.
@@ -76,5 +77,4 @@ Themes travel in [export files](import-export.md), with the uploaded fonts they 
 ## Open questions
 
 - Should a component be able to override its screen's theme, once screens choose their own?
-- Should overlays be able to use team colors dynamically, e.g. `--team-home-primary` taken from the game's teams, alongside theme tokens?
 - Are show/hide animations and transitions part of a theme or part of each component?

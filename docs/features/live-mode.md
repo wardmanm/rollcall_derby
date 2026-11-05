@@ -33,6 +33,8 @@ From Live Mode, producers open a dashboard for each screen.
 
 Not built yet.
 
+**Active rosters** (planned): when an event starts, the producer picks who from each team is actually playing, bench staff included. That subset is the **active roster**, and [skater intros](skater-intros.md) will use it in place of the whole team they show for now.
+
 ## Related
 
 - [Data model](../architecture/data-model.md): Event, Track, Game, Output
@@ -46,5 +48,4 @@ Not built yet.
 - Are tracks set up per event, or once for the venue and reused?
 - Which game fields do we need beyond teams, date and location? CRG's `EventInfo` has venue, city, state, tournament, host league, game number, date and start time. Should we mirror those, or read them from CRG?
 - Should a track follow CRG's current game automatically, or does a producer switch games by hand?
-- Are game rosters (the subset of a team playing a given game) set here? See [Team Builder](team-builder.md).
 - Which dashboards and controls do Announcers get? See [users and access](users-and-access.md).

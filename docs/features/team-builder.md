@@ -55,10 +55,10 @@ R1–R7 are built. Teams travel in [export files](import-export.md) (R6).
 
 - CRG's own saved teams (`PreparedTeam`) and its skater flags: [CRG integration: teams and rosters](../architecture/integrations/crg-scoreboard.md#teams-and-rosters)
 - [Data model](../architecture/data-model.md)
+- Which members play a given game is an **active roster**, picked in [Live Mode](live-mode.md#behavior) when an event starts; a team keeps its full list here.
 
 ## Open questions
 
-- Game rosters: does each game pick a subset of the team's members, or use the whole team? Where is that done: here or in [Live Mode](live-mode.md)?
 - Should we offer a read-only import of a team from a CRG `PreparedTeam` (via `GET /SaveJSON/`) so rosters don't have to be retyped? Importing from a spreadsheet is a candidate too.
 - How do we match our members to CRG's skaters during a game so overlays can show photos? By roster number?
 - Should team colors feed theme tokens? See [Theme Builder](theme-builder.md).

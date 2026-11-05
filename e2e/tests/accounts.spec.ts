@@ -285,3 +285,39 @@ test('an Admin exports teams and themes with an uploaded font, deletes them, and
   await page.goto('/producer/themes');
   await expect(page.getByRole('row', { name: /Derby Night/ })).toContainText('Default');
 });
+
+// Skater intros (skater-intros R2–R4), on the OBS page and the control page in one browser.
+test('an Admin sets up a skater intro and runs it on the OBS page', async ({ page }) => {
+  await page.goto('/producer/intros');
+  await signIn(page, ADMIN);
+  await expect(page.getByRole('button', { name: 'New intro' })).toBeVisible();
+  const created = await page.request.post('/api/core/teams', { data: { name: 'Night Owls' } });
+  expect(created.status()).toBe(201);
+  const team = (await created.json()) as { id: string };
+  const member = await page.request.post(`/api/core/teams/${team.id}/members`, {
+    data: { kind: 'skater', name: 'Penny Lane', number: '7' },
+  });
+  expect(member.ok()).toBe(true);
+  await page.reload(); // the page fetched the teams before this one existed
+
+  await page.getByLabel('Intro name').fill('Opening');
+  await page.getByRole('button', { name: 'New intro' }).click();
+  await expect(page).toHaveURL(/\/producer\/intros\/[^/]+$/);
+  const id = new URL(page.url()).pathname.split('/').pop()!;
+  await page.getByLabel('Team A').selectOption({ label: 'Night Owls' });
+  const saved = page.waitForResponse(
+    (r) => r.request().method() === 'PATCH' && r.url().endsWith(`/api/producer/intros/${id}`),
+  );
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  expect((await saved).status()).toBe(200);
+
+  const obs = await page.context().newPage();
+  await obs.goto(`/producer/overlay/intros/${id}`);
+
+  await page.goto(`/producer/intros/${id}/run`);
+  await page.getByRole('button', { name: 'Start Night Owls' }).click();
+  await expect(obs.getByText('Night Owls')).toBeVisible();
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(obs.getByText('Penny Lane')).toBeVisible();
+  await expect(page.getByText('On screen')).toBeVisible();
+});

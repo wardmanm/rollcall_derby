@@ -6,6 +6,10 @@ rcl-producer runs on rcl-core, Rollcall's server, which has [its own changelog](
 
 ## [Unreleased]
 
+### Added
+
+- Skater intros: before a game, put each team's people on stream as the announcer calls them. A title banner for the team comes first, then a card per person with their photo, number, name, roles and pronouns, in one row along the bottom. Set up the two teams, a theme, how many cards show at once, the entrance and where the row sits, add the intro's address to OBS as a browser source, and run it from the control page on a laptop or phone: Start each team when you're ready, then Next for each person, or let a timer move it on. Admins and Producers set up and run intros. It shows the whole team for now (#25)
+
 ### Fixed
 
 - If an Admin changes your role or signs you out while the Producer app is open, it catches up when you come back to its tab or when the server refuses something you try: it shows only what your new role allows, or asks you to sign in (#14)

@@ -25,7 +25,9 @@ Admins create and edit screens, including layout and component options. Producer
 
 ## Behavior
 
-Not built yet.
+Not built yet. Until it is, [skater intros](skater-intros.md) have a small setup page that stands in for it, with the team roster's options schema ([overlay components](overlay-components.md#team-roster)), which will carry over to a screen.
+
+The canvas an overlay is drawn on is 1920×1080, scaled to fit the OBS browser source and centred, so the same layout looks the same at any source size. Screens will make the size editable (R2).
 
 ## Related
 
@@ -35,7 +37,6 @@ Not built yet.
 
 ## Open questions
 
-- What is the default canvas size? How does a screen scale when its canvas doesn't match the size of the OBS browser source?
 - Alignment aids: a grid, snapping, smart guides?
 - Layers: a z-order panel, grouping, locking?
 - Undo/redo: is a history of the editor slice (e.g. `redux-undo`) enough?
