@@ -3,7 +3,6 @@ import type { TeamsService } from '@rollcall/app-sdk';
 import type { Team, TeamMember } from '@rollcall/core-contract';
 import {
   rosterCard,
-  RosterOptionsSchema,
   rosterTeam,
   type Intro,
   type IntroOverlayState,
@@ -208,8 +207,7 @@ export function introRuns({
         team: slot,
         teamId: team.id,
         people: team.members.map((member) => member.id),
-        // Parsed, so an intro saved before a setting existed gets that setting's default.
-        options: RosterOptionsSchema.parse(intro.options),
+        options: intro.options,
         placement: intro.placement,
       });
       return controlView(intro.id, keep(intro.id, { run: started, team, members: membersOf(team) }));

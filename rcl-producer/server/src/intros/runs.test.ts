@@ -19,12 +19,12 @@ afterEach(async () => {
   vi.useRealTimers();
 });
 
-const skater = (id: string): TeamMember => ({
+const skater = (id: string, pronouns: string | null = null): TeamMember => ({
   id,
   kind: 'skater',
   name: `Skater ${id}`,
   number: id.slice(1),
-  pronouns: null,
+  pronouns,
   roles: [],
   customRoles: [],
   photoUrl: null,
@@ -39,7 +39,7 @@ const team: Team = {
   logoUrl: null,
   updatedAt: '2026-01-01T00:00:00.000Z',
   createdAt: '2026-01-01T00:00:00.000Z',
-  members: ['m1', 'm2', 'm3'].map(skater),
+  members: ['m1', 'm2', 'm3'].map((id) => skater(id)),
 };
 
 // An intro of All Stars as team A, saved through the routes, and what a runs service needs, without the app's own.
@@ -84,21 +84,13 @@ describe('the intro runs service', () => {
   });
 
   it('shows pronouns for an intro saved before the switch existed', async () => {
-    const { intro, db, teams, logger } = await anIntro();
-    const { showPronouns: _on, ...saved } = intro.options;
-    const old = { ...intro, options: saved } as unknown as typeof intro;
-    const member = teams.get('t1')!.members[0]!;
-    const before = member.pronouns;
-    member.pronouns = 'she/her';
-    try {
-      const runs = introRuns({ db, teams, onChange: () => {}, log: logger });
-      runs.start(old, 'a');
-      runs.next(old);
-      expect(runs.overlay(old).onAir?.cards[0]?.roleLine).toBe('she/her');
-      runs.close();
-    } finally {
-      member.pronouns = before;
-    }
+    const { intro, db, logger } = await anIntro();
+    const withPronouns: Team = { ...team, members: ['m1', 'm2', 'm3'].map((id) => skater(id, 'she/her')) };
+    const runs = introRuns({ db, teams: { list: () => [], get: () => withPronouns }, onChange: () => {}, log: logger });
+    runs.start(intro, 'a');
+    runs.next(intro);
+    expect(runs.overlay(intro).onAir?.cards[0]?.roleLine).toBe('she/her');
+    runs.close();
   });
 
   it('logs a timer step that throws, never throwing from the timer, and the next Next still works', async () => {

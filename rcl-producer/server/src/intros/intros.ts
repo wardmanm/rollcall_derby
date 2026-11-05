@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import {
   DEFAULT_PLACEMENT,
   DEFAULT_ROSTER_OPTIONS,
+  RosterOptionsSchema,
   type Intro,
   type RosterOptions,
   type UpdateIntroRequest,
@@ -16,16 +17,23 @@ import type { ProducerDatabase } from '../themes/themes.ts';
 const NAMES = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
 const now = () => new Date().toISOString();
 
+// A stored row, with its options parsed so a setting added since it was saved has its default.
+type IntroRow = typeof producerIntros.$inferSelect;
+const fromRow = (row: IntroRow): Intro => ({ ...row, options: RosterOptionsSchema.parse(row.options) });
+
 /** Every intro, by name. */
 export const listIntros = (db: ProducerDatabase): Intro[] =>
   db
     .select()
     .from(producerIntros)
     .all()
+    .map(fromRow)
     .toSorted((a, b) => NAMES.compare(a.name, b.name));
 
+const orUndefined = (row: IntroRow | undefined): Intro | undefined => (row ? fromRow(row) : undefined);
+
 export const findIntro = (db: ProducerDatabase, id: string): Intro | undefined =>
-  db.select().from(producerIntros).where(eq(producerIntros.id, id)).get();
+  orUndefined(db.select().from(producerIntros).where(eq(producerIntros.id, id)).get());
 
 /** Whether an intro other than `exceptId` has exactly this name. */
 export const introNameTaken = (db: ProducerDatabase, name: string, exceptId?: string): boolean =>
@@ -38,7 +46,7 @@ export const introNameTaken = (db: ProducerDatabase, name: string, exceptId?: st
 
 export function createIntro(db: ProducerDatabase, { name }: { name: string }): Intro {
   const at = now();
-  return db
+  const row = db
     .insert(producerIntros)
     .values({
       id: randomUUID(),
@@ -53,6 +61,7 @@ export function createIntro(db: ProducerDatabase, { name }: { name: string }): I
     })
     .returning()
     .get();
+  return fromRow(row);
 }
 
 /** Changes what's given. Undefined when there's no such intro. */
@@ -62,13 +71,15 @@ export const updateIntro = (
   // The route's body is parsed, so its options have every setting.
   changes: Omit<UpdateIntroRequest, 'options'> & { options?: RosterOptions },
 ): Intro | undefined =>
-  db
-    .update(producerIntros)
-    .set({ ...changes, updatedAt: now() })
-    .where(eq(producerIntros.id, id))
-    .returning()
-    .get();
+  orUndefined(
+    db
+      .update(producerIntros)
+      .set({ ...changes, updatedAt: now() })
+      .where(eq(producerIntros.id, id))
+      .returning()
+      .get(),
+  );
 
 /** Deletes the intro, and returns it. Undefined when there's no such intro. */
 export const deleteIntro = (db: ProducerDatabase, id: string): Intro | undefined =>
-  db.delete(producerIntros).where(eq(producerIntros.id, id)).returning().get();
+  orUndefined(db.delete(producerIntros).where(eq(producerIntros.id, id)).returning().get());

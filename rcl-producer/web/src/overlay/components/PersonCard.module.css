@@ -65,7 +65,7 @@
 }
 
 /* Every card in a row is the same height, so the text area is fixed: the name gets a two-line block and the role line
-   one line, whatever they say. The name fits one line down to 60% of the base size (11.8cqw), then wraps to two and
+   another, whatever they say. The name fits one line down to 60% of the base size (11.8cqw), then wraps to two and
    ends in an ellipsis. This is an approximation, not a measurement: an uppercase heading is taken to be about 0.7em
    wide per character, so a condensed or wide heading font may shrink or wrap a little early or late. The name sits in
    the card's width less the frame's border (2 x 1.8cqw) and the text padding (2 x 7.3cqw), 81.8cqw. */

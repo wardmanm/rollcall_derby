@@ -57,7 +57,7 @@ const allStars = (): Team => ({
 
 // The Producer app with an intro whose team A is All Stars, four at once, and ways to run it.
 async function running(options: Partial<RosterOptions> = {}) {
-  const { api, ctx, teams } = testProducer({ teams: [allStars()] });
+  const { api, ctx, client, teams } = testProducer({ teams: [allStars()] });
   opened.push(api);
   const call = async (method: 'GET' | 'POST' | 'PATCH' | 'DELETE', url: string, payload?: object) =>
     api.inject({ method, url: `/api/producer${url}`, ...(payload ? { payload } : {}) });
@@ -72,6 +72,7 @@ async function running(options: Partial<RosterOptions> = {}) {
   return {
     api,
     ctx,
+    client,
     teams,
     intro,
     call,
@@ -251,6 +252,25 @@ describe('running an intro', () => {
     await next();
     await next();
     expect(lastState(overlay).onAir?.cards.map((card) => card.roleLine)).toEqual(['she/her', 'they/them']);
+  });
+
+  it('reads an intro saved before the pronouns switch as on, in the routes and on air', async () => {
+    const { client, call, teams, ctx, start, next } = await running();
+    // A legacy row: its options JSON has no showPronouns.
+    const legacy = JSON.stringify({ atOnce: 4, advance: { mode: 'next' }, entrance: 'pop' });
+    client.prepare('UPDATE producer_intros SET options = ?').run(legacy);
+    const list = await call('GET', '/intros');
+    expect(list.statusCode).toBe(200);
+    expect(list.json()[0].options.showPronouns).toBe(true);
+    const intros = list.json() as { id: string }[];
+    const one = await call('GET', `/intros/${intros[0]!.id}`);
+    expect(one.statusCode).toBe(200);
+    expect(one.json().options.showPronouns).toBe(true);
+    teams[0]!.members[0]!.pronouns = 'she/her';
+    const overlay = testRealtime(ctx).connect('/producer/overlay', { intro: intros[0]!.id });
+    await start('a');
+    await next();
+    expect(lastState(overlay).onAir?.cards[0]?.roleLine).toBe('she/her');
   });
 
   it('deleting an intro forgets its run', async () => {
