@@ -7,46 +7,50 @@ import {
   type RosterOptions,
 } from '@rollcall/producer-contract';
 
-/** One intro's progress through a team. Pure data: the service holds it, the functions below change it. */
+/**
+ * One intro's progress through a team. Pure data, never changed in place: the service holds it, and the functions
+ * below return a new one for each change.
+ */
 export interface Run {
   /** Bumps on every change, never on a no-op. */
-  revision: number;
+  readonly revision: number;
   /** The slot started last; null before any Start or after the run ends. */
-  team: IntroTeamSlot | null;
+  readonly team: IntroTeamSlot | null;
   /** The team that slot held at Start. */
-  teamId: string | null;
+  readonly teamId: string | null;
   /** Member ids in team page order, fixed at Start. */
-  people: readonly string[];
+  readonly people: readonly string[];
   /** Cards per row, fixed at Start. */
-  slots: number;
+  readonly slots: number;
   /** 0 is the title card; k >= 1 means people[k-1] is the latest shown. */
-  step: number;
+  readonly step: number;
   /** Index in `people` of the row's first card. */
-  rowStart: number;
+  readonly rowStart: number;
   /** False after Clear. */
-  onAir: boolean;
-  entrance: RosterEntrance;
+  readonly onAir: boolean;
+  readonly entrance: RosterEntrance;
   /** Whether cards show pronouns, fixed at Start. */
-  showPronouns: boolean;
-  placement: IntroPlacement;
+  readonly showPronouns: boolean;
+  readonly placement: Readonly<IntroPlacement>;
   /** Timer seconds fixed at Start, or null for Next. */
-  seconds: number | null;
+  readonly seconds: number | null;
 }
 
-export const NO_RUN: Run = {
+/** The run before any Start, and after one ends. Frozen, since every intro shares it. */
+export const NO_RUN: Run = Object.freeze({
   revision: 0,
   team: null,
   teamId: null,
-  people: [],
+  people: Object.freeze([]),
   slots: DEFAULT_ROSTER_OPTIONS.atOnce === 'team' ? 1 : DEFAULT_ROSTER_OPTIONS.atOnce,
   step: 0,
   rowStart: 0,
   onAir: false,
   entrance: DEFAULT_ROSTER_OPTIONS.entrance,
   showPronouns: DEFAULT_ROSTER_OPTIONS.showPronouns,
-  placement: DEFAULT_PLACEMENT,
+  placement: Object.freeze({ ...DEFAULT_PLACEMENT }),
   seconds: null,
-};
+});
 
 export function startRun(
   run: Run,
@@ -83,10 +87,15 @@ function nextIndex(run: Run, isPresent: (id: string) => boolean): number {
   return -1;
 }
 
+// The row's people, from its first card to the latest shown, who are still present. Each is asked about by id alone.
+const presentInRow = (run: Run, isPresent: (id: string) => boolean): string[] =>
+  run.people.slice(run.rowStart, run.step).filter((id) => isPresent(id));
+
 export function nextStep(run: Run, isPresent: (id: string) => boolean): Run {
   const index = nextIndex(run, isPresent);
   if (run.team === null || index < 0) return run;
-  const rowCards = run.people.slice(run.rowStart, run.step).filter(isPresent).length;
+  // The row is full by the cards in it still present, so one whose person left has room again.
+  const rowCards = presentInRow(run, isPresent).length;
   const fresh = run.step === 0 || !run.onAir || rowCards >= run.slots;
   return {
     ...run,
@@ -101,13 +110,14 @@ export function clearRun(run: Run): Run {
   return run.onAir ? { ...run, revision: run.revision + 1, onAir: false } : run;
 }
 
+/** Takes everything off air and forgets the team. A run that has ended, or never started, stays as it is. */
 export function endRun(run: Run): Run {
-  return { ...NO_RUN, revision: run.revision + 1 };
+  return run.team === null ? run : { ...NO_RUN, revision: run.revision + 1 };
 }
 
 export function shown(run: Run, isPresent: (id: string) => boolean): { title: boolean; people: string[] } {
   if (!run.onAir) return { title: false, people: [] };
-  return { title: run.step === 0, people: run.people.slice(run.rowStart, run.step).filter(isPresent) };
+  return { title: run.step === 0, people: presentInRow(run, isPresent) };
 }
 
 export function upNext(run: Run, isPresent: (id: string) => boolean): string | null {

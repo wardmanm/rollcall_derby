@@ -28,6 +28,26 @@ function nexts(run: Run, count: number, isPresent: (id: string) => boolean = all
   return r;
 }
 
+// Two at once: rows of p1 p2, p3 p4, p5 p6 when everyone is there.
+const pairs = () => start(P, 2);
+const without =
+  (...gone: string[]) =>
+  (id: string) =>
+    !gone.includes(id);
+
+// What's on screen after each Next, until Next changes nothing.
+function rows(run: Run, isPresent: (id: string) => boolean): string[][] {
+  const seen: string[][] = [];
+  let r = run;
+  let moved = nextStep(r, isPresent);
+  while (moved !== r) {
+    r = moved;
+    seen.push(shown(r, isPresent).people);
+    moved = nextStep(r, isPresent);
+  }
+  return seen;
+}
+
 describe('the intro run', () => {
   it('Start fixes whether pronouns show from the options', () => {
     expect(NO_RUN.showPronouns).toBe(true);
@@ -115,12 +135,75 @@ describe('the intro run', () => {
     expect(isDone(ended, all)).toBe(false);
   });
 
-  it('never mutates its input', () => {
+  it('endRun on a run that has ended, or never started, changes nothing', () => {
+    const ended = endRun(start());
+    expect(endRun(ended)).toBe(ended);
+    expect(endRun(NO_RUN)).toBe(NO_RUN);
+  });
+
+  it('never mutates its input, and the run before any Start is frozen', () => {
     const r = start();
     const copy = structuredClone(r);
     nextStep(r, all);
     clearRun(r);
     endRun(r);
     expect(r).toEqual(copy);
+    expect(Object.isFrozen(NO_RUN)).toBe(true);
+    expect(Object.isFrozen(NO_RUN.people)).toBe(true);
+    expect(Object.isFrozen(NO_RUN.placement)).toBe(true);
+  });
+
+  it('asks whether someone is present by their id alone', () => {
+    const asked: unknown[][] = [];
+    const present = (...args: unknown[]) => {
+      asked.push(args);
+      return args[0] !== 'p2';
+    };
+    const r = nexts(start(), 3, present);
+    shown(r, present);
+    upNext(r, present);
+    isDone(r, present);
+    expect(asked.length).toBeGreaterThan(0);
+    for (const args of asked) expect(args).toHaveLength(1);
+  });
+});
+
+describe('the intro run, with people missing', () => {
+  it('a row counts as full by the cards in it that are still present', () => {
+    const isPresent = without('p1');
+    const full = nexts(pairs(), 2);
+    expect(shown(full, all).people).toEqual(['p1', 'p2']);
+    // p1 left the team while the row was up: the row has room, so p3 joins it.
+    expect(shown(nextStep(full, isPresent), isPresent).people).toEqual(['p2', 'p3']);
+    // With everyone there, p3 starts a new row.
+    expect(shown(nextStep(full, all), all).people).toEqual(['p3']);
+  });
+
+  it('skips a whole row of people who are gone', () => {
+    expect(rows(pairs(), without('p3', 'p4'))).toEqual([['p1'], ['p1', 'p2'], ['p5'], ['p5', 'p6']]);
+  });
+
+  it('skips someone gone at a row boundary', () => {
+    // The first of a row: the next present person starts it.
+    expect(rows(pairs(), without('p3'))).toEqual([['p1'], ['p1', 'p2'], ['p4'], ['p4', 'p5'], ['p6']]);
+    // The last of a row: the next present person fills the place.
+    expect(rows(pairs(), without('p2'))).toEqual([['p1'], ['p1', 'p3'], ['p4'], ['p4', 'p5'], ['p6']]);
+  });
+
+  it('is done after the last present person when the people at the end are gone', () => {
+    const isPresent = without('p5', 'p6');
+    const r = nexts(pairs(), 4, isPresent);
+    expect(shown(r, isPresent).people).toEqual(['p3', 'p4']);
+    expect(upNext(r, isPresent)).toBeNull();
+    expect(isDone(r, isPresent)).toBe(true);
+    expect(nextStep(r, isPresent)).toBe(r);
+  });
+
+  it('a team with no people is done at its title card', () => {
+    const r = start([], 2);
+    expect(shown(r, all)).toEqual({ title: true, people: [] });
+    expect(upNext(r, all)).toBeNull();
+    expect(isDone(r, all)).toBe(true);
+    expect(nextStep(r, all)).toBe(r);
   });
 });
