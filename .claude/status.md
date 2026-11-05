@@ -1,10 +1,11 @@
 # Status: Rollcall
-Updated: 2026-11-05 · Branch: feat/skater-intros
+Updated: 2026-11-05 · Branch: main
 
 ## Current focus
-Phase 2 (Screens): skater intros (#25) are built on `feat/skater-intros` (not pushed), reviewed task by task and as a whole branch, with `yarn check`, `yarn test:stories` and `yarn test:e2e` passing. Waiting on Mike: how to integrate the branch, and the open questions below. Screen Builder gets its own design after.
+Phase 2 (Screens): skater intros (#25) are merged into main and pushed. Next: Mike's answers to the open questions below, then the sign-off and releases (rcl-core first, then rcl-producer). Screen Builder gets its own design after.
 
 ## Recent changes
+- 2026-11-05: Merged skater intros into main and pushed (Mike).
 - 2026-11-05: Built skater intros (#25) with subagents, 11 tasks plus a final review and fix wave: rcl-core gives apps read-only teams (`ctx.teams`); the Producer app has intros (setup page with preview, OBS page at `/producer/overlay/intros/<id>`, phone-first control page), run live from the server with a timer, and docs, changelog line and an end-to-end test. Checked in a real browser: banner, row, long names, equal card heights, reload mid-intro.
 - 2026-11-05: Mike approved the skater intros design and plan, chose subagent-driven building, and OK'd filing #25 (Skater intros, rcl-producer).
 - 2026-11-05: Decided the skater intros with Mike, using browser mockups. Person cards are photo cards (photo, number badge, name, roles and pronouns), in one centred row that never overlaps. "How many at once" is a setting: each Next (or timer step) adds a card, and a full row clears for the next group. Each team starts by hand with a banner title card in the roster's spot. Four entrances and nine positions. Bench staff are included. The whole team shows for now; active rosters (who's playing, picked when an event starts) come with Live Mode. Admins and Producers set up and run intros, the server keeps the place across reloads, and Stream Deck control is out of this work.
@@ -14,7 +15,6 @@ Phase 2 (Screens): skater intros (#25) are built on `feat/skater-intros` (not pu
 - 2026-11-04: Decided: start Phase 2 with the overlay renderer and the team roster, and fix #12–#16 and #24 in parallel with agents.
 - 2026-11-04: Merged the release sign-off into main and pushed (Mike).
 - 2026-11-04: Built the release sign-off (ADR-0025). `/release` now has Mike sign off each new feature by hand before preparing, with answers in `<app>/sign-off/<version>.md` and failures filed as `bug`/`sign-off` issues with a Priority; `release.mjs check` refuses until the record is signed off.
-- 2026-11-04: Decided: sign off every release by hand with a walk-through, as in ProjectMythos. Checks are written at release time, failures are P0 (blocks), P1 (high, doesn't block) or P2 (deferred), and Claude may set Priority on the boards for these bugs.
 
 ## Pending decisions
 - **Intro cards: the role line cuts off pronouns when it's long** (raised 2026-11-05 in the browser check: "Alt captain · Jammer · Blocker · he/they" shows as "ALT CAPTAIN · JAMMER · BLOCKE…"). Options: pronouns first / a two-line role block (cards stay equal height) / keep. Blocks: nothing; it's a small change either way.
