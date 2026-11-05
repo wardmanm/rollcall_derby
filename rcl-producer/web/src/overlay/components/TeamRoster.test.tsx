@@ -82,11 +82,9 @@ describe('TeamRoster', () => {
     exited(banner());
     expect(screen.queryByText(team.name)).toBeNull();
     expect(card('Skater 1').dataset.state).toBe('waiting');
-    fireEvent.load(img(card('Skater 1')));
-    // Its place opens first; the card plays its entrance once the place is open.
-    expect(card('Skater 1').dataset.state).toBe('opening');
     expect(card('Skater 1').hasAttribute('data-entrance')).toBe(false);
-    fireEvent.transitionEnd(card('Skater 1'));
+    // The row's first card has nothing to slide aside, so it enters as soon as its photo is on show.
+    fireEvent.load(img(card('Skater 1')));
     expect(card('Skater 1').dataset.state).toBe('entering');
     expect(card('Skater 1').dataset.entrance).toBe('pop');
   });
@@ -127,7 +125,7 @@ describe('TeamRoster', () => {
     rerender(<TeamRoster onAir={row(1)} />);
     expect(card('Skater 1').dataset.state).toBe('waiting');
     fireEvent.load(img(card('Skater 1')));
-    expect(card('Skater 1').dataset.state).toBe('opening');
+    expect(card('Skater 1').dataset.state).toBe('entering');
 
     // A photo that fails shows the team logo instead, and the card enters once that is on show.
     rerender(<TeamRoster onAir={row(1, 2)} />);
@@ -285,5 +283,29 @@ describe('TeamRoster', () => {
     fireEvent.load(img(card('Skater 2')));
     fireEvent.transitionEnd(img(card('Skater 2')));
     expect(card('Skater 2').dataset.state).toBe('opening');
+  });
+
+  it('the first card of a new screen enters without waiting for its place', () => {
+    const { rerender } = reload(title);
+    rerender(<TeamRoster onAir={row(1)} />);
+    exited(banner());
+    expect(card('Skater 1').hasAttribute('data-open')).toBe(true);
+    fireEvent.load(img(card('Skater 1')));
+    expect(card('Skater 1').dataset.state).toBe('entering');
+  });
+
+  it('a card whose photo loads first waits for the cards before it', () => {
+    const { rerender } = reload(row(1));
+    rerender(<TeamRoster onAir={row(1, 2)} />);
+    rerender(<TeamRoster onAir={row(1, 2, 3)} />);
+    expect(card('Skater 2').hasAttribute('data-open')).toBe(false);
+    fireEvent.load(img(card('Skater 3')));
+    expect(card('Skater 3').dataset.state).toBe('ready');
+    fireEvent.load(img(card('Skater 2')));
+    expect(card('Skater 2').dataset.state).toBe('opening');
+    expect(card('Skater 3').dataset.state).toBe('ready');
+    fireEvent.transitionEnd(card('Skater 2'));
+    expect(card('Skater 2').dataset.state).toBe('entering');
+    expect(card('Skater 3').dataset.state).toBe('opening');
   });
 });

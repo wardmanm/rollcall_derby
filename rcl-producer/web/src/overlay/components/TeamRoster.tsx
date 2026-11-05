@@ -31,7 +31,7 @@ export function TeamRoster({ onAir }: TeamRosterProps) {
   // A new state from the server (React's pattern for state that follows a prop).
   if (state.latest !== onAir) dispatch({ type: 'onAir', onAir });
 
-  const { shown, phases, quiet, leaving, screen } = state;
+  const { shown, phases, quiet, opener, leaving, screen } = state;
 
   useEffect(() => {
     if (!leaving) return undefined;
@@ -88,6 +88,7 @@ export function TeamRoster({ onAir }: TeamRosterProps) {
         'data-piece': key,
         'data-state': phase,
         'data-quiet': quiet.includes(key) ? '' : undefined,
+        'data-open': key === opener ? '' : undefined,
         'data-entrance': goes || phase === 'entering' ? shown.entrance : undefined,
         'data-leaving': goes ? '' : undefined,
       };

@@ -5,10 +5,14 @@ import { continuesRow } from './continues-row.ts';
 // entrance or exit. Pure, so the roster's timing rules can be read and tested in one place.
 
 /**
- * A piece (the banner, or one card) waits, hidden, for its picture. A card's place then opens, with the card still
- * hidden; the banner skips that. Then the piece plays its entrance, and is shown.
+ * A piece (the banner, or one card) waits, hidden, for its picture. A card then waits its turn (ready) until every card
+ * before it has come in, and its place opens, with the card still hidden. The banner, and a screen's first card, have
+ * nothing to slide aside and skip both. Then the piece plays its entrance, and is shown.
  */
-export type Phase = 'waiting' | 'opening' | 'entering' | 'shown';
+export type Phase = 'waiting' | 'ready' | 'opening' | 'entering' | 'shown';
+
+/** The phases of a card that has come in, so the cards after it may follow. */
+const ENTERED: ReadonlySet<Phase> = new Set<Phase>(['entering', 'shown']);
 
 /** The banner's key among the pieces. Cards go by their ids; a title screen has no cards, so the two never meet. */
 export const TITLE = 'title';
@@ -32,6 +36,8 @@ export interface RosterState {
    * with no entrance once its picture is on show.
    */
   quiet: string[];
+  /** The first card of a screen that isn't a reload: its place is open from the start, so it comes straight in. */
+  opener: string | null;
   /** Whether what is on screen is leaving, and the pieces that have finished. */
   leaving: boolean;
   left: string[];
@@ -81,6 +87,7 @@ function show(state: RosterState, onAir: RosterOnAir | null): RosterState {
     screen: state.screen + 1,
     phases: waiting(keysOf(onAir)),
     quiet: [],
+    opener: onAir && !onAir.title ? (onAir.cards[0]?.id ?? null) : null,
     leaving: false,
     left: [],
   };
@@ -89,11 +96,41 @@ function show(state: RosterState, onAir: RosterOnAir | null): RosterState {
 /** The first state at mount is a reload (or the first thing the server sent): its pieces come in quietly. */
 export function startRoster(onAir: RosterOnAir | null): RosterState {
   const keys = keysOf(onAir);
-  return { latest: onAir, shown: onAir, screen: 0, phases: waiting(keys), quiet: keys, leaving: false, left: [] };
+  return {
+    latest: onAir,
+    shown: onAir,
+    screen: 0,
+    phases: waiting(keys),
+    quiet: keys,
+    opener: null,
+    leaving: false,
+    left: [],
+  };
 }
 
 function withPhase(state: RosterState, keys: string[], phase: Phase): RosterState {
   return { ...state, phases: { ...state.phases, ...Object.fromEntries(keys.map((key) => [key, phase])) } };
+}
+
+/**
+ * Lets ready cards in, in row order: each waits until every card before it has come in. The opener comes straight in;
+ * any other card's place opens first.
+ */
+function advance(state: RosterState): RosterState {
+  if (state.leaving || !state.shown || state.shown.title) return state;
+  const phases = { ...state.phases };
+  let changed = false;
+  let clear = true;
+  for (const { id } of state.shown.cards) {
+    let phase = phases[id];
+    if (phase === 'ready' && clear) {
+      phase = id === state.opener ? 'entering' : 'opening';
+      phases[id] = phase;
+      changed = true;
+    }
+    clear &&= phase !== undefined && ENTERED.has(phase);
+  }
+  return changed ? { ...state, phases } : state;
 }
 
 export function reduceRoster(state: RosterState, action: RosterAction): RosterState {
@@ -104,7 +141,7 @@ export function reduceRoster(state: RosterState, action: RosterAction): RosterSt
       if (carriesOn(state.shown, next)) {
         const phases = { ...state.phases };
         for (const key of keysOf(next)) phases[key] ??= 'waiting';
-        return { ...state, latest: next, shown: next, phases };
+        return advance({ ...state, latest: next, shown: next, phases });
       }
       if (upNow(state).length === 0) return show(state, next);
       return { ...state, latest: next, leaving: true, left: [] };
@@ -113,12 +150,13 @@ export function reduceRoster(state: RosterState, action: RosterAction): RosterSt
       const { key } = action;
       if (action.screen !== state.screen || state.leaving || state.phases[key] !== 'waiting') return state;
       if (state.quiet.includes(key)) return withPhase(state, [key], 'shown');
-      return withPhase(state, [key], key === TITLE ? 'entering' : 'opening');
+      if (key === TITLE) return withPhase(state, [key], 'entering');
+      return advance(withPhase(state, [key], 'ready'));
     }
     case 'placeEnd':
       // While the row leaves, a card whose place has only just opened stays hidden.
       if (state.leaving || state.phases[action.key] !== 'opening') return state;
-      return withPhase(state, [action.key], 'entering');
+      return advance(withPhase(state, [action.key], 'entering'));
     case 'animationEnd': {
       if (state.leaving) {
         // An entrance that ends as the row starts leaving isn't the piece leaving: its exit is still to play.
@@ -132,7 +170,7 @@ export function reduceRoster(state: RosterState, action: RosterAction): RosterSt
     case 'stuckTimeout': {
       if (state.leaving || action.screen !== state.screen) return state;
       const opening = keysOf(state.shown).filter((key) => state.phases[key] === 'opening');
-      return withPhase(state, opening, 'entering');
+      return advance(withPhase(state, opening, 'entering'));
     }
     case 'leaveTimeout':
       return state.leaving && action.screen === state.screen ? show(state, state.latest) : state;

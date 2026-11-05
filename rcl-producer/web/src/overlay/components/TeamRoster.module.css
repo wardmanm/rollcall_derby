@@ -43,9 +43,10 @@
 }
 
 /* A card's place opens to the card's width, sliding the cards already up aside, before the card comes in. A card
-   waiting to join the row has its place closed, so it takes no room; one on screen at a reload (data-quiet) waits in
-   its place, so the row doesn't move when it appears. The card stays hidden until its place has opened, since the open
-   card overhangs a part-open place. */
+   waiting to join the row, or waiting its turn (ready), has its place closed, so it takes no room. One on screen at a
+   reload (data-quiet) waits in its place, so the row doesn't move when it appears, and a screen's first card
+   (data-open) has nothing to slide aside, so its place is open from the start. The card stays hidden until its place
+   has opened, since the open card overhangs a part-open place. */
 .place {
   width: var(--card-width);
   transition:
@@ -57,7 +58,7 @@
   margin-inline-start: var(--card-gap);
 }
 
-.place[data-state='waiting']:not([data-quiet]) {
+.place:is([data-state='waiting'], [data-state='ready']):not([data-quiet], [data-open]) {
   width: 0;
   margin-inline-start: 0;
 }
