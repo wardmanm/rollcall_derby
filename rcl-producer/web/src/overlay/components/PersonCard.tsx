@@ -38,10 +38,7 @@ export function PersonCard({ card, width, logoUrl, onReady }: PersonCardProps) {
       className={classes.card}
       style={{
         width,
-        ...cssVars({
-          '--name-length': Math.max(card.name.length, 1),
-          '--role-length': Math.max(card.roleLine.length, 1),
-        }),
+        ...cssVars({ '--name-length': Math.max(card.name.length, 1) }),
       }}
     >
       <div className={classes.frame}>
@@ -62,7 +59,9 @@ export function PersonCard({ card, width, logoUrl, onReady }: PersonCardProps) {
         </div>
         <div className={classes.text}>
           <div className={classes.name}>{card.name}</div>
-          <div className={classes.role}>{card.roleLine}</div>
+          <div className={classes.role}>
+            <span className={classes.roleText}>{card.roleLine}</span>
+          </div>
         </div>
       </div>
     </figure>

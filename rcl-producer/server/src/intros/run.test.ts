@@ -29,6 +29,20 @@ function nexts(run: Run, count: number, isPresent: (id: string) => boolean = all
 }
 
 describe('the intro run', () => {
+  it('Start fixes whether pronouns show from the options', () => {
+    expect(NO_RUN.showPronouns).toBe(true);
+    expect(start().showPronouns).toBe(true);
+    const off = startRun(NO_RUN, {
+      team: 'a',
+      teamId: 'team-a',
+      people: P,
+      options: { ...DEFAULT_ROSTER_OPTIONS, showPronouns: false },
+      placement: DEFAULT_PLACEMENT,
+    });
+    expect(off.showPronouns).toBe(false);
+    expect(endRun(off).showPronouns).toBe(true);
+  });
+
   it('Start shows the title card and bumps the revision', () => {
     const r = start();
     expect(shown(r, all)).toEqual({ title: true, people: [] });

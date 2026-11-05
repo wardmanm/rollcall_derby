@@ -33,7 +33,7 @@ Admins place and configure components in the Screen Builder. Producers, and Anno
 The first component, built for [skater intros](skater-intros.md). Its Behavior is there.
 
 - **R5.** It shows one team's people as a row of person cards, opened by a **title card** (a banner with the logo, team name and league) that is part of the roster, not a component of its own. The title card takes the roster's entrance and sits in the roster's spot. Cards show photo, number, name, roles and pronouns, in the team page's order.
-- **R6.** Its **options schema** (`RosterOptionsSchema`, in `@rollcall/producer-contract`) holds how many people show at once (1 to 20, or the whole team), how it moves on (when Next is pressed, or every 2 to 60 seconds) and the entrance (pop, slide up, fade or wipe). Where it sits (a spot and a distance from the edge) is placement, not an option: an intro stores it beside the options, and a screen will take it from the component's placed box.
+- **R6.** Its **options schema** (`RosterOptionsSchema`, in `@rollcall/producer-contract`) holds how many people show at once (1 to 20, or the whole team), how it moves on (when Next is pressed, or every 2 to 60 seconds), whether cards show pronouns (on by default) and the entrance (pop, slide up, fade or wipe). Where it sits (a spot and a distance from the edge) is placement, not an option: an intro stores it beside the options, and a screen will take it from the component's placed box.
 - **R7.** Its **data need** is a team, read fresh from core.
 - **R8.** Its **live controls** are **Start** (for a team), **Next** and **Clear**. They are not options.
 

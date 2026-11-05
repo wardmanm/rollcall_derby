@@ -234,6 +234,25 @@ describe('running an intro', () => {
     expect((await next()).onScreen).toEqual([m3]);
   });
 
+  it('with pronouns off, nothing sent to the overlay has them, and a change mid-run waits for the next Start', async () => {
+    const { call, ctx, intro, teams, start, next } = await running({ showPronouns: false });
+    teams[0]!.members[0]!.pronouns = 'she/her';
+    teams[0]!.members[1]!.pronouns = 'they/them';
+    const overlay = testRealtime(ctx).connect('/producer/overlay', { intro: intro.id });
+    await start('a');
+    await next();
+    expect(JSON.stringify(overlay)).not.toMatch(/she\/her|they\/them/);
+    expect(lastState(overlay).onAir?.upNext?.roleLine).toBe('');
+    // Saving it on mid-run changes nothing until the next Start.
+    await call('PATCH', `/intros/${intro.id}`, { options: { ...DEFAULT_ROSTER_OPTIONS, atOnce: 4 } });
+    await next();
+    expect(JSON.stringify(overlay)).not.toMatch(/she\/her|they\/them/);
+    await start('a');
+    await next();
+    await next();
+    expect(lastState(overlay).onAir?.cards.map((card) => card.roleLine)).toEqual(['she/her', 'they/them']);
+  });
+
   it('deleting an intro forgets its run', async () => {
     const { call, intro, start } = await running({ advance: { mode: 'timer', seconds: 5 } });
     await start('a');

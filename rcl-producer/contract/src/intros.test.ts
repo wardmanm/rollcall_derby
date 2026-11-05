@@ -45,6 +45,13 @@ describe('roster options and placement', () => {
     ).toBe(true);
   });
 
+  it('reads options saved before the pronouns switch as on, and accepts off', () => {
+    const { showPronouns: _on, ...saved } = DEFAULT_ROSTER_OPTIONS;
+    expect(RosterOptionsSchema.parse(saved).showPronouns).toBe(true);
+    expect(RosterOptionsSchema.parse({ ...saved, showPronouns: false }).showPronouns).toBe(false);
+    expect(DEFAULT_ROSTER_OPTIONS.showPronouns).toBe(true);
+  });
+
   it('refuses out-of-range settings', () => {
     expect(options({ atOnce: 0 })).toBe(false);
     expect(options({ atOnce: 21 })).toBe(false);
@@ -82,7 +89,18 @@ describe('roster data', () => {
       'Captain · Jammer · she/her',
     );
     expect(roleLine(member({ roles: [], customRoles: [], pronouns: null }))).toBe('');
+    const she = member({ roles: ['captain'], customRoles: ['Jammer'], pronouns: 'she/her' });
+    expect(roleLine(she, { showPronouns: true })).toBe('Captain · Jammer · she/her');
+    expect(roleLine(she, { showPronouns: false })).toBe('Captain · Jammer');
+    expect(roleLine(member({ roles: [], customRoles: [], pronouns: 'she/her' }), { showPronouns: false })).toBe('');
     expect(roleLine(member({ kind: 'bench', roles: ['bench-coach'], pronouns: null }))).toBe('Bench coach');
+  });
+
+  it('passes the pronouns option through to the card', () => {
+    const she = member({ roles: ['captain'], pronouns: 'she/her' });
+    expect(rosterCard(she).roleLine).toBe('Captain · she/her');
+    expect(rosterCard(she, { showPronouns: true }).roleLine).toBe('Captain · she/her');
+    expect(rosterCard(she, { showPronouns: false }).roleLine).toBe('Captain');
   });
 
   it('makes roster data from a team and its members', () => {

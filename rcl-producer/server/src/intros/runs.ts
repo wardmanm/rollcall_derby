@@ -3,6 +3,7 @@ import type { TeamsService } from '@rollcall/app-sdk';
 import type { Team, TeamMember } from '@rollcall/core-contract';
 import {
   rosterCard,
+  RosterOptionsSchema,
   rosterTeam,
   type Intro,
   type IntroOverlayState,
@@ -73,7 +74,7 @@ function overlayView(now: Current): IntroOverlayState {
   const { run, team, members } = now;
   if (!run.onAir || !team) return { revision: run.revision, onAir: null };
   const isPresent = presentIn(now);
-  const card = (id: string) => rosterCard(members.get(id)!);
+  const card = (id: string) => rosterCard(members.get(id)!, { showPronouns: run.showPronouns });
   const { title, people } = shown(run, isPresent);
   const coming = upNext(run, isPresent);
   return {
@@ -207,7 +208,8 @@ export function introRuns({
         team: slot,
         teamId: team.id,
         people: team.members.map((member) => member.id),
-        options: intro.options,
+        // Parsed, so an intro saved before a setting existed gets that setting's default.
+        options: RosterOptionsSchema.parse(intro.options),
         placement: intro.placement,
       });
       return controlView(intro.id, keep(intro.id, { run: started, team, members: membersOf(team) }));

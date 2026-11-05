@@ -61,7 +61,7 @@ describe('the intro setup page', () => {
         teamBId: 'tm2',
         themeId: 't1',
         placement: { spot: 'top-left', edge: 20 },
-        options: { atOnce: 'team', advance: { mode: 'timer', seconds: 5 }, entrance: 'wipe' },
+        options: { atOnce: 'team', advance: { mode: 'timer', seconds: 5 }, entrance: 'wipe', showPronouns: false },
       }),
     );
     await screen.findAllByRole('option', { name: 'Wreckers' });
@@ -72,6 +72,7 @@ describe('the intro setup page', () => {
     expect(screen.getByLabelText<HTMLSelectElement>('Moves on').value).toBe('timer');
     expect(screen.getByLabelText<HTMLInputElement>('Seconds per step').value).toBe('5');
     expect(screen.getByLabelText<HTMLSelectElement>('Entrance').value).toBe('wipe');
+    expect(screen.getByLabelText<HTMLInputElement>('Show pronouns').checked).toBe(false);
     expect(screen.getByRole<HTMLInputElement>('radio', { name: 'Top left' }).checked).toBe(true);
     expect(screen.getByLabelText<HTMLInputElement>('Distance from the edge (px)').value).toBe('20');
     expect(screen.getAllByRole('option', { name: /^Default theme$/ })).toHaveLength(1);
@@ -99,7 +100,37 @@ describe('the intro setup page', () => {
     expect(patches(requests)[0]).toEqual({
       method: 'PATCH',
       path: '/api/producer/intros/i1',
-      body: { name: 'Sunday bout', options: { atOnce: 3, advance: { mode: 'next' }, entrance: 'pop' } },
+      body: {
+        name: 'Sunday bout',
+        options: { atOnce: 3, advance: { mode: 'next' }, entrance: 'pop', showPronouns: true },
+      },
+    });
+  });
+
+  it('saves the pronouns switch, and the preview follows it before saving', async () => {
+    const withPronouns = {
+      ...team('tm1', 'Wreckers'),
+      members: [{ ...team('tm1', 'Wreckers').members[0]!, roles: ['captain' as const], pronouns: 'she/her' }],
+    };
+    const { requests } = await openSetup(SAVED, {
+      'GET /api/core/teams/tm1': json(withPronouns),
+      'PATCH /api/producer/intros/i1': json({ ...SAVED, options: { ...SAVED.options, showPronouns: false } }),
+    });
+    const preview = screen.getByTestId('intro-preview');
+    const toggle = screen.getByLabelText<HTMLInputElement>('Show pronouns');
+    expect(toggle.checked).toBe(true);
+    // The preview loops through its title card and then the cards, so wait for a card to be showing.
+    const slow = { timeout: 4000 };
+    await vi.waitFor(() => expect(preview.textContent).toContain('Captain · she/her'), slow);
+    fireEvent.click(toggle);
+    await vi.waitFor(() => {
+      expect(preview.textContent).toContain('Captain');
+      expect(preview.textContent).not.toContain('she/her');
+    }, slow);
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await vi.waitFor(() => expect(patches(requests)).toHaveLength(1));
+    expect(patches(requests)[0]).toMatchObject({
+      body: { options: { atOnce: 1, advance: { mode: 'next' }, entrance: 'pop', showPronouns: false } },
     });
   });
 

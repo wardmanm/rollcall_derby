@@ -23,11 +23,20 @@ describe('PersonCard', () => {
     expect(screen.getByRole('figure', { name: 'Jammy Dodger' }).textContent).not.toContain('07');
   });
 
-  it('hands the name and role line lengths to the CSS that fits them', () => {
+  it('hands the name length to the CSS that fits it, and lets the role line wrap instead of shrinking', () => {
     render(<PersonCard card={skater} width={420} logoUrl={LOGO} />);
-    const style = screen.getByRole('figure', { name: 'Jammy Dodger' }).style;
-    expect(style.getPropertyValue('--name-length')).toBe('12');
-    expect(style.getPropertyValue('--role-length')).toBe('17');
+    const card = screen.getByRole('figure', { name: 'Jammy Dodger' });
+    expect(card.style.getPropertyValue('--name-length')).toBe('12');
+    expect(card.style.getPropertyValue('--role-length')).toBe('');
+    const role = screen.getByText('Captain · she/her');
+    expect(role.className).toContain('role');
+  });
+
+  it('keeps the role area on a card with no role line', () => {
+    render(<PersonCard card={{ ...skater, roleLine: '' }} width={420} logoUrl={LOGO} />);
+    const role = screen.getByRole('figure', { name: 'Jammy Dodger' }).querySelector('[class*="role"]');
+    expect(role).not.toBeNull();
+    expect(role!.textContent).toBe('');
   });
 
   it('is ready when its photo loads', () => {

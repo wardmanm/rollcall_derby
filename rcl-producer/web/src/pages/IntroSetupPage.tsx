@@ -12,6 +12,7 @@ import {
   Radio,
   SimpleGrid,
   Stack,
+  Switch,
   Text,
   TextInput,
   Title,
@@ -274,6 +275,11 @@ function IntroForm({ intro, canReadThemes }: { intro: Intro; canReadThemes: bool
                 const entrance = event.currentTarget.value;
                 if (isEntrance(entrance)) setOptions({ entrance });
               }}
+            />
+            <Switch
+              label="Show pronouns"
+              checked={options.showPronouns}
+              onChange={(event) => setOptions({ showPronouns: event.currentTarget.checked })}
             />
 
             <Title order={3}>Where it sits</Title>

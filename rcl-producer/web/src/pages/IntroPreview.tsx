@@ -28,7 +28,10 @@ export interface IntroPreviewProps {
 // A small, looping demo of the overlay (docs/features/skater-intros.md): team A's title, then its first people one
 // after another, then over again, using the overlay's own components so it looks as the OBS page will.
 export function IntroPreview({ team, options, placement, theme }: IntroPreviewProps) {
-  const people = useMemo(() => team?.members.map(rosterCard) ?? [], [team]);
+  const people = useMemo(
+    () => team?.members.map((member) => rosterCard(member, { showPronouns: options.showPronouns })) ?? [],
+    [team, options.showPronouns],
+  );
   const slots = options.atOnce === 'team' ? Math.max(people.length, 1) : options.atOnce;
   const demo = Math.min(slots, DEMO_CARDS, people.length);
 

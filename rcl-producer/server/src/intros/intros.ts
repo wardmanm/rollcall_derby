@@ -4,6 +4,7 @@ import {
   DEFAULT_PLACEMENT,
   DEFAULT_ROSTER_OPTIONS,
   type Intro,
+  type RosterOptions,
   type UpdateIntroRequest,
 } from '@rollcall/producer-contract';
 import { producerIntros } from '../db/schema.ts';
@@ -55,7 +56,12 @@ export function createIntro(db: ProducerDatabase, { name }: { name: string }): I
 }
 
 /** Changes what's given. Undefined when there's no such intro. */
-export const updateIntro = (db: ProducerDatabase, id: string, changes: UpdateIntroRequest): Intro | undefined =>
+export const updateIntro = (
+  db: ProducerDatabase,
+  id: string,
+  // The route's body is parsed, so its options have every setting.
+  changes: Omit<UpdateIntroRequest, 'options'> & { options?: RosterOptions },
+): Intro | undefined =>
   db
     .update(producerIntros)
     .set({ ...changes, updatedAt: now() })

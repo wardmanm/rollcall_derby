@@ -83,6 +83,24 @@ describe('the intro runs service', () => {
     after.close();
   });
 
+  it('shows pronouns for an intro saved before the switch existed', async () => {
+    const { intro, db, teams, logger } = await anIntro();
+    const { showPronouns: _on, ...saved } = intro.options;
+    const old = { ...intro, options: saved } as unknown as typeof intro;
+    const member = teams.get('t1')!.members[0]!;
+    const before = member.pronouns;
+    member.pronouns = 'she/her';
+    try {
+      const runs = introRuns({ db, teams, onChange: () => {}, log: logger });
+      runs.start(old, 'a');
+      runs.next(old);
+      expect(runs.overlay(old).onAir?.cards[0]?.roleLine).toBe('she/her');
+      runs.close();
+    } finally {
+      member.pronouns = before;
+    }
+  });
+
   it('logs a timer step that throws, never throwing from the timer, and the next Next still works', async () => {
     const { intro, db, teams, log, logger } = await anIntro({
       ...DEFAULT_ROSTER_OPTIONS,

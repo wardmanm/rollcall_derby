@@ -26,6 +26,8 @@ export interface Run {
   /** False after Clear. */
   onAir: boolean;
   entrance: RosterEntrance;
+  /** Whether cards show pronouns, fixed at Start. */
+  showPronouns: boolean;
   placement: IntroPlacement;
   /** Timer seconds fixed at Start, or null for Next. */
   seconds: number | null;
@@ -41,6 +43,7 @@ export const NO_RUN: Run = {
   rowStart: 0,
   onAir: false,
   entrance: DEFAULT_ROSTER_OPTIONS.entrance,
+  showPronouns: DEFAULT_ROSTER_OPTIONS.showPronouns,
   placement: DEFAULT_PLACEMENT,
   seconds: null,
 };
@@ -66,6 +69,7 @@ export function startRun(
     rowStart: 0,
     onAir: true,
     entrance: options.entrance,
+    showPronouns: options.showPronouns,
     placement: start.placement,
     seconds: options.advance.mode === 'timer' ? options.advance.seconds : null,
   };

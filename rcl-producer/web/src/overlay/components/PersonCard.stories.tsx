@@ -44,6 +44,17 @@ export const BenchStaff: Story = {
   args: { card: { ...skater, id: 'b1', kind: 'bench', name: 'Ref Erence', number: null, roleLine: 'Head coach' } },
 };
 
+// A role line too long for one line, so it takes two; the card is the same height as any other.
+export const TwoLineRoleLine: Story = {
+  args: { card: { ...skater, roleLine: 'Captain · Lead Jammer · Penalty Box Timekeeper · she/her' } },
+};
+
+export const PronounsOff: Story = {
+  args: { card: { ...skater, roleLine: 'Captain · Lead Jammer · Penalty Box Timekeeper' } },
+};
+
+export const NoRoleLine: Story = { args: { card: { ...skater, roleLine: '' } } };
+
 export const NoPhoto: Story = { args: { card: { ...skater, photoUrl: null } } };
 
 export const NoPhotoNoLogo: Story = { args: { card: { ...skater, photoUrl: null }, logoUrl: null } };

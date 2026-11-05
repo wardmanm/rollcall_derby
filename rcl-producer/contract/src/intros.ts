@@ -34,10 +34,19 @@ export const RosterOptionsSchema = z.strictObject({
     z.strictObject({ mode: z.literal('timer'), seconds: z.number().int().min(2).max(60) }),
   ]),
   entrance: RosterEntranceSchema,
+  /** Whether the role line ends with the person's pronouns. Intros saved before this existed read as on. */
+  showPronouns: z.boolean().default(true),
 });
 export type RosterOptions = z.infer<typeof RosterOptionsSchema>;
+/** What a card's text is made from; the pronouns show unless this says not to. */
+export type RoleLineOptions = Pick<RosterOptions, 'showPronouns'>;
 
-export const DEFAULT_ROSTER_OPTIONS: RosterOptions = { atOnce: 1, advance: { mode: 'next' }, entrance: 'pop' };
+export const DEFAULT_ROSTER_OPTIONS: RosterOptions = {
+  atOnce: 1,
+  advance: { mode: 'next' },
+  entrance: 'pop',
+  showPronouns: true,
+};
 
 /** Where the cards sit on the screen: a spot, and how far in from the nearest edge, in pixels. */
 export const IntroPlacementSchema = z.strictObject({
@@ -144,20 +153,21 @@ export type IntroRun = z.infer<typeof IntroRunSchema>;
 
 // Helpers
 
-/** A member's fixed roles, custom roles and pronouns on one line. */
-export function roleLine(member: TeamMember): string {
-  return [...member.roles.map((role) => MEMBER_ROLE_NAMES[role]), ...member.customRoles, member.pronouns ?? '']
+/** A member's fixed roles, custom roles and (unless `showPronouns` is false) pronouns on one line. */
+export function roleLine(member: TeamMember, { showPronouns = true }: Partial<RoleLineOptions> = {}): string {
+  const pronouns = showPronouns ? (member.pronouns ?? '') : '';
+  return [...member.roles.map((role) => MEMBER_ROLE_NAMES[role]), ...member.customRoles, pronouns]
     .filter((part) => part !== '')
     .join(' · ');
 }
 
-export function rosterCard(member: TeamMember): RosterCard {
+export function rosterCard(member: TeamMember, options: Partial<RoleLineOptions> = {}): RosterCard {
   return {
     id: member.id,
     kind: member.kind,
     name: member.name,
     number: member.number,
-    roleLine: roleLine(member),
+    roleLine: roleLine(member, options),
     photoUrl: member.photoUrl,
   };
 }
