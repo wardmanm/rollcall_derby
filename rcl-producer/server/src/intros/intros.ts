@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 import { eq } from 'drizzle-orm';
 import {
   DEFAULT_PLACEMENT,
   DEFAULT_ROSTER_OPTIONS,
+  IntroPlacementSchema,
   RosterOptionsSchema,
   type Intro,
   type RosterOptions,
@@ -17,9 +19,14 @@ import type { ProducerDatabase } from '../themes/themes.ts';
 const NAMES = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
 const now = () => new Date().toISOString();
 
-// A stored row, with its options parsed so a setting added since it was saved has its default.
+// A stored row, with its options parsed so a setting added since it was saved has its default. Options or a placement
+// that can't be read are the defaults, so one bad row can't make the whole list fail.
 type IntroRow = typeof producerIntros.$inferSelect;
-const fromRow = (row: IntroRow): Intro => ({ ...row, options: RosterOptionsSchema.parse(row.options) });
+const fromRow = (row: IntroRow): Intro => ({
+  ...row,
+  placement: IntroPlacementSchema.safeParse(row.placement).data ?? DEFAULT_PLACEMENT,
+  options: RosterOptionsSchema.safeParse(row.options).data ?? DEFAULT_ROSTER_OPTIONS,
+});
 
 /** Every intro, by name. */
 export const listIntros = (db: ProducerDatabase): Intro[] =>
@@ -64,13 +71,17 @@ export function createIntro(db: ProducerDatabase, { name }: { name: string }): I
   return fromRow(row);
 }
 
+// The route's body is parsed, so its options have every setting.
+type IntroChanges = Omit<UpdateIntroRequest, 'options'> & { options?: RosterOptions };
+
+/** Whether every field given is already what the intro has. Placement and options are compared by what they hold. */
+export function changesNothing(intro: Intro, changes: IntroChanges): boolean {
+  const stored: Record<string, unknown> = intro;
+  return Object.entries(changes).every(([key, value]) => value === undefined || isDeepStrictEqual(value, stored[key]));
+}
+
 /** Changes what's given. Undefined when there's no such intro. */
-export const updateIntro = (
-  db: ProducerDatabase,
-  id: string,
-  // The route's body is parsed, so its options have every setting.
-  changes: Omit<UpdateIntroRequest, 'options'> & { options?: RosterOptions },
-): Intro | undefined =>
+export const updateIntro = (db: ProducerDatabase, id: string, changes: IntroChanges): Intro | undefined =>
   orUndefined(
     db
       .update(producerIntros)

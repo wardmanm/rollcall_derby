@@ -1,21 +1,20 @@
-import Fastify from 'fastify';
-import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Team } from '@rollcall/core-contract';
 import {
   DEFAULT_PLACEMENT,
   DEFAULT_ROSTER_OPTIONS,
+  INTRO_RUN_EVENT,
+  INTRO_STATE_EVENT,
+  IntroOverlayStateSchema,
   IntroSchema,
   ThemeSchema,
-  type Intro,
 } from '@rollcall/producer-contract';
-import * as schema from '../db/schema.ts';
-import { testProducer } from '../testing.ts';
-import { registerIntroRoutes } from './intros.ts';
+import { testProducer, testRealtime, type Sent } from '../testing.ts';
 
 const opened: ReturnType<typeof testProducer>['api'][] = [];
 afterEach(async () => {
   await Promise.all(opened.splice(0).map((api) => api.close()));
+  vi.useRealTimers();
 });
 
 const team = (id: string, name: string): Team => ({
@@ -33,15 +32,25 @@ const team = (id: string, name: string): Team => ({
 const ALL_STARS = team('t1', 'All Stars');
 const WRECKERS = team('t2', 'Wreckers');
 
-// The Producer app with ways to call its intro routes.
+// The Producer app with ways to call its intro routes, and its namespaces open on a stand-in for Socket.IO, to see
+// what each intro's rooms are sent.
 function intros() {
-  const { api } = testProducer({ teams: [ALL_STARS, WRECKERS] });
+  const { api, ctx, client } = testProducer({ teams: [ALL_STARS, WRECKERS] });
   opened.push(api);
+  const realtime = testRealtime(ctx);
   const call = (method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE', url: string, payload?: object) =>
     api.inject({ method, url: `/api/producer${url}`, ...(payload ? { payload } : {}) });
   const create = async (name: string) => IntroSchema.parse((await call('POST', '/intros', { name })).json());
-  return { call, create };
+  return {
+    client,
+    call,
+    create,
+    controlRoom: (id: string) => realtime.sentTo('/producer/intros', `intro:${id}`),
+    overlayRoom: (id: string) => realtime.sentTo('/producer/overlay', `intro:${id}`),
+  };
 }
+
+const sentOf = (event: string, sent: Sent[]) => sent.filter(([name]) => name === event).map(([, payload]) => payload);
 
 describe('intros', () => {
   it('creates an intro with the defaults, no teams and the default theme', async () => {
@@ -147,26 +156,97 @@ describe('intros', () => {
     expect((await call('GET', `/intros/${intro.id}`)).statusCode).toBe(404);
   });
 
-  it('tells the server after each save and delete', async () => {
-    const { ctx, api: host } = testProducer({ teams: [ALL_STARS, WRECKERS] });
-    opened.push(host);
-    const onSaved = vi.fn<(before: Intro | undefined, after: Intro) => void>();
-    const onDeleted = vi.fn<(id: string) => void>();
-    const api = Fastify();
-    opened.push(api);
-    api.setValidatorCompiler(validatorCompiler);
-    api.setSerializerCompiler(serializerCompiler);
-    registerIntroRoutes(api, { db: ctx.db(schema), teams: ctx.teams, onSaved, onDeleted });
-    const created = IntroSchema.parse(
-      (await api.inject({ method: 'POST', url: '/intros', payload: { name: 'A' } })).json(),
-    );
-    expect(onSaved).toHaveBeenLastCalledWith(undefined, created);
-    const res = await api.inject({ method: 'PATCH', url: `/intros/${created.id}`, payload: { teamAId: 't1' } });
-    const changed = IntroSchema.parse(res.json());
-    expect(onSaved).toHaveBeenLastCalledWith(created, changed);
-    await api.inject({ method: 'PATCH', url: `/intros/${created.id}`, payload: { teamBId: 't1' } });
-    expect(onSaved).toHaveBeenCalledTimes(2);
-    await api.inject({ method: 'DELETE', url: `/intros/${created.id}` });
-    expect(onDeleted).toHaveBeenCalledExactlyOnceWith(created.id);
+  it("tells the intro's rooms after each save and delete, and not after a refused save", async () => {
+    const { call, create, controlRoom, overlayRoom } = intros();
+    const intro = await create('A');
+    const [control, overlay] = [controlRoom(intro.id), overlayRoom(intro.id)];
+    expect(sentOf(INTRO_RUN_EVENT, control)).toHaveLength(1);
+    expect((await call('PATCH', `/intros/${intro.id}`, { teamAId: 't1' })).statusCode).toBe(200);
+    expect(sentOf(INTRO_RUN_EVENT, control)).toHaveLength(2);
+    expect((await call('PATCH', `/intros/${intro.id}`, { teamBId: 't1' })).statusCode).toBe(400);
+    expect(sentOf(INTRO_RUN_EVENT, control)).toHaveLength(2);
+    expect((await call('DELETE', `/intros/${intro.id}`)).statusCode).toBe(204);
+    expect(IntroOverlayStateSchema.parse(sentOf(INTRO_STATE_EVENT, overlay).at(-1)).onAir).toBeNull();
+  });
+
+  it('answers a save that changes nothing with the intro as it is, writing and telling nothing', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-05T19:00:00.000Z'));
+    const { call, create, controlRoom } = intros();
+    const intro = await create('Bout 1');
+    const theme = ThemeSchema.parse((await call('POST', '/themes', { name: 'Gold' })).json());
+    const setUp = {
+      teamAId: 't1',
+      teamBId: 't2',
+      themeId: theme.id,
+      placement: { spot: 'top-left', edge: 10 },
+      options: { atOnce: 3, advance: { mode: 'timer', seconds: 5 }, entrance: 'fade', showPronouns: true },
+    };
+    const saved = IntroSchema.parse((await call('PATCH', `/intros/${intro.id}`, setUp)).json());
+    const control = controlRoom(intro.id);
+    const told = control.length;
+    vi.setSystemTime(new Date('2026-11-05T19:05:00.000Z'));
+
+    for (const same of [
+      {},
+      { name: 'Bout 1' },
+      setUp,
+      // Placement and settings are compared by what they hold, not how they're written.
+      {
+        placement: { edge: 10, spot: 'top-left' },
+        options: { entrance: 'fade', showPronouns: true, advance: { seconds: 5, mode: 'timer' }, atOnce: 3 },
+      },
+      // Pronouns show unless the request says otherwise.
+      { options: { atOnce: 3, advance: { mode: 'timer', seconds: 5 }, entrance: 'fade' } },
+    ]) {
+      const res = await call('PATCH', `/intros/${intro.id}`, same);
+      expect(res.statusCode, JSON.stringify(same)).toBe(200);
+      expect(IntroSchema.parse(res.json()), JSON.stringify(same)).toEqual(saved);
+    }
+    expect(IntroSchema.parse((await call('GET', `/intros/${intro.id}`)).json())).toEqual(saved);
+    expect(control).toHaveLength(told);
+
+    // One real change among the same values saves, and tells the rooms.
+    const renamed = IntroSchema.parse((await call('PATCH', `/intros/${intro.id}`, { ...setUp, name: 'B1' })).json());
+    expect(renamed).toEqual({ ...saved, name: 'B1', updatedAt: '2026-11-05T19:05:00.000Z' });
+    expect(control).toHaveLength(told + 1);
+  });
+
+  it('clears a team or the theme with null, never counting two empty slots as the same team', async () => {
+    const { call, create } = intros();
+    const intro = await create('Bout 1');
+    const theme = ThemeSchema.parse((await call('POST', '/themes', { name: 'Gold' })).json());
+    await call('PATCH', `/intros/${intro.id}`, { teamAId: 't1', teamBId: 't2', themeId: theme.id });
+    const oneGone = await call('PATCH', `/intros/${intro.id}`, { teamAId: null });
+    expect(oneGone.statusCode).toBe(200);
+    expect(IntroSchema.parse(oneGone.json())).toMatchObject({ teamAId: null, teamBId: 't2', themeId: theme.id });
+    const allGone = await call('PATCH', `/intros/${intro.id}`, { teamBId: null, themeId: null });
+    expect(allGone.statusCode).toBe(200);
+    expect(IntroSchema.parse(allGone.json())).toMatchObject({ teamAId: null, teamBId: null, themeId: null });
+    const setBoth = await call('PATCH', `/intros/${intro.id}`, { teamAId: 't1', teamBId: 't2' });
+    expect(setBoth.statusCode).toBe(200);
+    const clearBoth = await call('PATCH', `/intros/${intro.id}`, { teamAId: null, teamBId: null });
+    expect(clearBoth.statusCode).toBe(200);
+    expect(IntroSchema.parse(clearBoth.json())).toMatchObject({ teamAId: null, teamBId: null });
+  });
+
+  it('reads a stored intro with unreadable settings or placement as the defaults, so the others still list', async () => {
+    const { client, call, create } = intros();
+    const good = await create('Bout 1');
+    const bad = await create('Bout 2');
+    await call('PATCH', `/intros/${good.id}`, { placement: { spot: 'top-left', edge: 10 } });
+    const corrupt = client.prepare('UPDATE producer_intros SET options = ?, placement = ? WHERE id = ?');
+    corrupt.run(JSON.stringify({ atOnce: 'lots' }), JSON.stringify({ spot: 'nowhere' }), bad.id);
+    const list = await call('GET', '/intros');
+    expect(list.statusCode).toBe(200);
+    const [first, second] = IntroSchema.array().parse(list.json());
+    expect(first).toMatchObject({ id: good.id, placement: { spot: 'top-left', edge: 10 } });
+    expect(second).toMatchObject({ id: bad.id, options: DEFAULT_ROSTER_OPTIONS, placement: DEFAULT_PLACEMENT });
+    const one = await call('GET', `/intros/${bad.id}`);
+    expect(one.statusCode).toBe(200);
+    expect(IntroSchema.parse(one.json())).toMatchObject({
+      options: DEFAULT_ROSTER_OPTIONS,
+      placement: DEFAULT_PLACEMENT,
+    });
   });
 });
