@@ -1,10 +1,12 @@
 # Status: Rollcall
-Updated: 2026-11-05 · Branch: main
+Updated: 2026-11-05 · Branch: feat/intro-pronouns-switch
 
 ## Current focus
-Phase 2 (Screens): skater intros (#25) are merged into main and pushed. Next: Mike's answers to the open questions below, then the sign-off and releases (rcl-core first, then rcl-producer). Screen Builder gets its own design after.
+Skater intros (#25, merged, unreleased): adding a per-intro "Show pronouns" switch and a two-line role line on the cards (Mike's choice), on `feat/intro-pronouns-switch`. Then the follow-ups in #26, before the next release. Screen Builder gets its own design after.
 
 ## Recent changes
+- 2026-11-05: Built the intro "Show pronouns" switch (on by default; when off the OBS page isn't sent pronouns) and a two-line role line on the cards, with cards kept equal height; intros saved before the switch read as on. Checked in a real browser.
+- 2026-11-05: Decided (Mike): pronouns on intro cards are a per-intro "Show pronouns" setting, on by default, and the role line takes two lines when needed; the live-state ADR is written when Live Mode starts, not now; the review follow-ups are filed as #26, to tackle where possible before the next release.
 - 2026-11-05: Merged skater intros into main and pushed (Mike).
 - 2026-11-05: Built skater intros (#25) with subagents, 11 tasks plus a final review and fix wave: rcl-core gives apps read-only teams (`ctx.teams`); the Producer app has intros (setup page with preview, OBS page at `/producer/overlay/intros/<id>`, phone-first control page), run live from the server with a timer, and docs, changelog line and an end-to-end test. Checked in a real browser: banner, row, long names, equal card heights, reload mid-intro.
 - 2026-11-05: Mike approved the skater intros design and plan, chose subagent-driven building, and OK'd filing #25 (Skater intros, rcl-producer).
@@ -13,16 +15,12 @@ Phase 2 (Screens): skater intros (#25) are merged into main and pushed. Next: Mi
 - 2026-11-04: Fixed #12–#16 (built by parallel agents, each on its own branch, then merged into main and pushed). #12: a missing file below an app is a 404, apps may route at `/api/<id>`, `api` and `docs` are reserved ids, and a public route outside the `/api` plugin stops the server. #13: an access declaration is exactly one kind; the API explorer keeps route descriptions, offers keys only where they're accepted, and shows each app's sections. #14: the web apps catch up when your role changes or you return to the tab, and sign-in errors say what went wrong. #15: comments, tests and docs tidied, and the dev front door's `/producer` match fixed. #16: one app list for the docs lint and the release script, and the release workflow and guide reworded.
 - 2026-11-04: Decided: build #24 now. Each export or import runs our own zip code in a worker thread of its own (fflate's async API still blocks), the import doesn't reuse the preview's read, and one export or import runs at a time.
 - 2026-11-04: Decided: start Phase 2 with the overlay renderer and the team roster, and fix #12–#16 and #24 in parallel with agents.
-- 2026-11-04: Merged the release sign-off into main and pushed (Mike).
-- 2026-11-04: Built the release sign-off (ADR-0025). `/release` now has Mike sign off each new feature by hand before preparing, with answers in `<app>/sign-off/<version>.md` and failures filed as `bug`/`sign-off` issues with a Priority; `release.mjs check` refuses until the record is signed off.
 
 ## Pending decisions
-- **Intro cards: the role line cuts off pronouns when it's long** (raised 2026-11-05 in the browser check: "Alt captain · Jammer · Blocker · he/they" shows as "ALT CAPTAIN · JAMMER · BLOCKE…"). Options: pronouns first / a two-line role block (cards stay equal height) / keep. Blocks: nothing; it's a small change either way.
-- **Record the live-state pattern as an ADR now?** (raised 2026-11-05 by the final review: server-held state, actions as routes, a revision carried by Next, full state pushed on connect, first state after a reconnect accepted). Options: write it now / when Live Mode starts. Blocks: nothing.
-- **File the deferred review notes from the skater intros build as one issue?** (raised 2026-11-05: about 40 minor items, mostly test coverage and polish, e.g. no timeout on a hung photo or font request). Options: file one issue / leave them.
 - **File the other server tests that never close their test app as an issue?** (raised 2026-11-04, found while fixing #15: about eight, in `http.test.ts`, `openapi.test.ts`, `setup.test.ts`, `routes/auth.test.ts` and `access.test.ts`). Options: file it / leave it.
 
 ## Loose ends
+- #26: follow-ups from the skater intros review (about 40 items, on-air ones first), to tackle where possible before the next release.
 - Release order: rcl-producer uses `ctx.teams`, so before rcl-producer's next release, rcl-core with `teams` (0.4.0) must be released, and rcl-producer's `requiresCore` raised to `^0.4.0`.
 - Flaky test, not filed: `rcl-core/server/src/routes/transfer.test.ts` "builds a big file without holding up the server" failed once in a full `yarn check` (2026-11-05: 48 ms stall against its 40 ms bar) and passed alone five times and in the next full run. It failed once more the same way during the skater intros build. The bar leaves little room under load, and CI could hit it too.
 - Calls the agents made on #12–#14 that Mike may want changed: the sign-in gate keeps a page up if a re-check fails when you return to the tab; rcl-producer's changelog has two #14 lines; logging out of a password change you chose still returns to that page; any path below an app that looks like a file is a 404; app tag descriptions were done now.
