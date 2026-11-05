@@ -148,6 +148,23 @@ describe('the intro setup page', () => {
     expect(await screen.findByText('This team was deleted. Pick another.')).toBeTruthy();
   });
 
+  it('says "Teams unavailable" in the team fields when the teams can’t be loaded, and keeps the saved teams', async () => {
+    const { requests } = await openSetup(SAVED, {
+      'GET /api/core/teams': json({ error: 'internal', message: 'Boom' }, 500),
+      'PATCH /api/producer/intros/i1': json({ ...SAVED, name: 'Sunday bout' }),
+    });
+    const teamA = screen.getByLabelText<HTMLSelectElement>('Team A');
+    await vi.waitFor(() => expect(teamA.selectedOptions[0]?.textContent).toBe('Teams unavailable'));
+    expect(teamA.value).toBe('tm1');
+    expect(screen.getByLabelText<HTMLSelectElement>('Team B').selectedOptions[0]?.textContent).toBe(
+      'Teams unavailable',
+    );
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Sunday bout' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await vi.waitFor(() => expect(patches(requests)).toHaveLength(1));
+    expect(patches(requests)).toEqual([expect.objectContaining({ body: { name: 'Sunday bout' } })]);
+  });
+
   it('shows the OBS address to copy', async () => {
     const writeText = vi.fn<(text: string) => Promise<void>>(() => Promise.resolve());
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });

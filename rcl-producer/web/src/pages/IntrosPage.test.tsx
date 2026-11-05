@@ -36,6 +36,22 @@ describe('the Intros page', () => {
     expect(screen.getByRole('link', { name: 'Intros' })).toBeTruthy();
   });
 
+  it('shows that the intros are loading', async () => {
+    signedIn(MANAGER, {
+      'GET /api/producer/intros': () => new Promise<Response>(() => {}), // never answers
+      'GET /api/core/teams': json([WRECKERS, BRAWLERS]),
+    });
+    openProducer('/producer/intros');
+    expect(await screen.findByRole('status', { name: 'Loading intros' })).toBeTruthy();
+  });
+
+  it('says "Teams unavailable" when the teams can’t be loaded', async () => {
+    await openIntros(MANAGER, { 'GET /api/core/teams': json({ error: 'internal', message: 'Boom' }, 500) });
+    await vi.waitFor(() => expect(within(rowOf('Saturday bout')).getByText('Teams unavailable')).toBeTruthy());
+    expect(within(rowOf('Practice')).getByText('No teams yet')).toBeTruthy();
+    expect(screen.queryByRole('status', { name: 'Loading intros' })).toBeNull();
+  });
+
   it('creates an intro by name and opens its setup page', async () => {
     const created = intro('i3', 'Finals');
     const { requests, router } = await openIntros(MANAGER, {

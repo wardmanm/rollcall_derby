@@ -172,7 +172,9 @@ function IntroForm({ intro, canReadThemes }: { intro: Intro; canReadThemes: bool
       { value: '', label: 'No team' },
       ...(teams.data ?? []).map((t) => ({ value: t.id, label: t.name })),
     ];
-    if (value !== null && teams.data === undefined) options.push({ value, label: '…' });
+    if (value !== null && teams.data === undefined) {
+      options.push({ value, label: teams.isError ? 'Teams unavailable' : '…' });
+    }
     if (deleted) options.push({ value, label: 'Deleted team' });
     return (
       <NativeSelect
