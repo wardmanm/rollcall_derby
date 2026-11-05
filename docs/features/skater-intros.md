@@ -40,6 +40,7 @@ Admins and Producers set up and run intros. Announcers get controls in Phase 5. 
 - **The preview** plays the chosen entrance and position with team A's first few people, using the overlay's own components and theme scope, so it matches OBS.
 - **A team deleted from core** leaves its slot empty. The setup page asks for a new team, and the control page disables that slot's Start.
 - **If core's teams can't be loaded,** the Intros page and the setup page's team fields say "Teams unavailable", and the saved teams are kept.
+- **A saved theme the Theme field can't list** stays as saved until someone picks another. It shows as "Deleted theme", with a request to pick another; "Themes unavailable" if the themes couldn't be loaded; or "Saved theme" for someone who can't view themes.
 - A theme change reaches the intro's overlay at once: editing the theme in use, a new default for an intro on "Default theme", picking another theme on the setup page, or an [import](import-export.md) that saves a theme. Every other setting takes effect at the next Start, so the row on air never jumps.
 
 ### Running it

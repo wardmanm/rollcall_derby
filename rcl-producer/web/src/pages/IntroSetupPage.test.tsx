@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { Team, TeamSummary } from '@rollcall/core-contract';
 import { DEFAULT_TOKENS } from '@rollcall/producer-contract';
 import { json, signedIn } from '@rollcall/web-sdk/testing';
@@ -35,8 +35,8 @@ const THEME = {
   updatedAt: '2026-10-24T10:00:00.000Z',
 };
 
-async function openSetup(saved = SAVED, more = {}) {
-  const server = signedIn(MANAGER, {
+async function openSetup(saved = SAVED, more = {}, user = MANAGER) {
+  const server = signedIn(user, {
     'GET /api/producer/intros/i1': json(saved),
     'GET /api/core/teams': json([summary('tm1', 'Wreckers'), summary('tm2', 'Brawlers')]),
     'GET /api/core/teams/tm1': json(team('tm1', 'Wreckers')),
@@ -163,6 +163,41 @@ describe('the intro setup page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await vi.waitFor(() => expect(patches(requests)).toHaveLength(1));
     expect(patches(requests)).toEqual([expect.objectContaining({ body: { name: 'Sunday bout' } })]);
+  });
+
+  it('keeps a deleted theme, and asks for another', async () => {
+    const { requests } = await openSetup(intro('i1', 'Saturday bout', { teamAId: 'tm1', themeId: 'gone' }), {
+      'PATCH /api/producer/intros/i1': json({ ...SAVED, name: 'Sunday bout' }),
+    });
+    const theme = screen.getByLabelText<HTMLSelectElement>('Theme');
+    await vi.waitFor(() => expect(theme.selectedOptions[0]?.textContent).toBe('Deleted theme'));
+    expect(theme.value).toBe('gone');
+    expect(screen.getByText('This theme was deleted. Pick another.')).toBeTruthy();
+    // Saving something else leaves the theme alone.
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Sunday bout' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await vi.waitFor(() => expect(patches(requests)).toHaveLength(1));
+    expect(patches(requests)).toEqual([expect.objectContaining({ body: { name: 'Sunday bout' } })]);
+  });
+
+  it('names a saved theme it can’t list by why, and keeps it', async () => {
+    const saved = intro('i1', 'Saturday bout', { teamAId: 'tm1', themeId: 't1' });
+    const cases = [
+      { label: 'Themes unavailable', more: { 'GET /api/producer/themes': json({ error: 'internal' }, 500) } },
+      { label: '…', more: { 'GET /api/producer/themes': () => new Promise<Response>(() => {}) } },
+      {
+        label: 'Saved theme',
+        user: { ...MANAGER, permissions: MANAGER.permissions.filter((p) => p !== 'producer:themes.read') },
+      },
+    ];
+    for (const { label, more, user } of cases) {
+      cleanup();
+      await openSetup(saved, more, user);
+      const theme = screen.getByLabelText<HTMLSelectElement>('Theme');
+      await vi.waitFor(() => expect(theme.selectedOptions[0]?.textContent).toBe(label));
+      expect(theme.value).toBe('t1');
+      expect(screen.queryByText('This theme was deleted. Pick another.')).toBeNull();
+    }
   });
 
   it('shows the OBS address to copy', async () => {

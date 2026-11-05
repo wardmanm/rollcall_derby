@@ -68,6 +68,7 @@ const ADVANCE = [
 ];
 const DEFAULT_SECONDS = 5;
 const DELETED_TEAM = 'This team was deleted. Pick another.';
+const DELETED_THEME = 'This theme was deleted. Pick another.';
 
 // A number field's value: a cleared field is NaN, which the contract refuses in plain words.
 const numberOf = (value: string | number) => (typeof value === 'number' ? value : Number.NaN);
@@ -187,6 +188,34 @@ function IntroForm({ intro, canReadThemes }: { intro: Intro; canReadThemes: bool
     );
   };
 
+  // The theme stays as saved until you pick another. One the list can't show is named by why.
+  const unlistedTheme = (value: string | null) => {
+    if (value === null || themes.data?.some((t) => t.id === value)) return undefined;
+    if (!canReadThemes) return 'Saved theme';
+    if (themes.data) return 'Deleted theme';
+    return themes.isError ? 'Themes unavailable' : '…';
+  };
+  const themeField = () => {
+    const value = current.themeId;
+    const unlisted = unlistedTheme(value);
+    const choices = [
+      { value: '', label: 'Default theme' },
+      ...(themes.data ?? [])
+        .toSorted((a, b) => a.name.localeCompare(b.name))
+        .map((t) => ({ value: t.id, label: t.name })),
+    ];
+    if (value !== null && unlisted) choices.push({ value, label: unlisted });
+    return (
+      <NativeSelect
+        label="Theme"
+        data={choices}
+        value={value ?? ''}
+        onChange={(event) => change({ themeId: orNull(event.currentTarget.value) })}
+        error={errors.themeId ?? (unlisted === 'Deleted theme' ? DELETED_THEME : undefined)}
+      />
+    );
+  };
+
   const { options, placement } = current;
   const setOptions = (fields: Partial<RosterOptions>) => change({ options: { ...options, ...fields } });
   const setAdvance = (mode: string) =>
@@ -226,18 +255,7 @@ function IntroForm({ intro, canReadThemes }: { intro: Intro; canReadThemes: bool
               {teamField('Team A', 'teamAId')}
               {teamField('Team B', 'teamBId')}
             </SimpleGrid>
-            <NativeSelect
-              label="Theme"
-              data={[
-                { value: '', label: 'Default theme' },
-                ...(themes.data ?? [])
-                  .toSorted((a, b) => a.name.localeCompare(b.name))
-                  .map((t) => ({ value: t.id, label: t.name })),
-              ]}
-              value={current.themeId ?? ''}
-              onChange={(event) => change({ themeId: orNull(event.currentTarget.value) })}
-              error={errors.themeId}
-            />
+            {themeField()}
 
             <Title order={3}>Steps</Title>
             <NativeSelect
