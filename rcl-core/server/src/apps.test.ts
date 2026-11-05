@@ -7,6 +7,7 @@ import type { AppModule, TransferKind } from '@rollcall/app-sdk';
 import coreJournal from '../drizzle/meta/_journal.json' with { type: 'json' };
 import { hostApps, migrationsTableFor } from './apps.ts';
 import { openMemoryDatabase } from './db.ts';
+import { addMember, createTeam, findTeam, listTeams } from './teams/teams.ts';
 import { tableNames, tablesCreatedBy } from './testing.ts';
 
 const dirs: string[] = [];
@@ -121,6 +122,38 @@ describe("an app's context", () => {
     const { hosted } = host([demo]);
     expect(hosted.contextFor(demo)).toBe(hosted.contextFor(demo));
     expect(hosted.contextFor(demo)).not.toBe(hosted.contextFor(core));
+  });
+
+  it("gives each app core's teams, read-only, as the teams routes return them", () => {
+    const demo = app();
+    const { db, hosted } = host([demo]);
+    const team = createTeam(db, {
+      name: 'Rose City Rollers',
+      leagueName: null,
+      shortName: 'RCR',
+      primaryColor: null,
+      secondaryColor: null,
+    });
+    addMember(db, team.id, {
+      kind: 'skater',
+      number: '7',
+      name: 'Ada Slam',
+      roles: [],
+      customRoles: [],
+      pronouns: null,
+    });
+    addMember(db, team.id, {
+      kind: 'skater',
+      number: '9',
+      name: 'Bea Bruise',
+      roles: [],
+      customRoles: [],
+      pronouns: null,
+    });
+    const { teams } = hosted.contextFor(demo);
+    expect(teams.list()).toEqual(listTeams(db));
+    expect(teams.get(team.id)).toEqual(findTeam(db, team.id));
+    expect(teams.get('nope')).toBeUndefined();
   });
 });
 

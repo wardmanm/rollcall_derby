@@ -26,6 +26,7 @@ The groundwork every feature depends on. Done in milestone `obs-producer v0.1.0`
 ## Phase 2 — Screens
 
 - The overlay renderer described in [ADR-0006](../decisions/0006-one-overlay-renderer-css-variable-theming.md)
+- [Skater intros](../features/skater-intros.md): the first overlay, before the Screen Builder
 - [Screen Builder](../features/screen-builder.md)
 - The first [overlay components](../features/overlay-components.md), starting with a team roster
 

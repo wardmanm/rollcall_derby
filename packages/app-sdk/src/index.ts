@@ -1,7 +1,15 @@
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import type { Namespace } from 'socket.io';
-import type { ConflictTarget, FontFamily, KindName, Role, TransferFact } from '@rollcall/core-contract';
+import type {
+  ConflictTarget,
+  FontFamily,
+  KindName,
+  Role,
+  Team,
+  TeamSummary,
+  TransferFact,
+} from '@rollcall/core-contract';
 
 // What an rcl app gives rcl-core to be hosted, and what core gives it back (ADR-0019). Types only: core does the
 // hosting. Apps' servers depend on this package and on contracts, never on rcl-core's server.
@@ -62,10 +70,18 @@ export interface FontsService {
   list(): FontFamily[];
 }
 
+/** The teams (docs/features/team-builder.md). Read-only: teams change through core's own routes. */
+export interface TeamsService {
+  /** Every team by name with its member counts: the same list as `GET /api/core/teams`. */
+  list(): TeamSummary[];
+  /** A team with its members in order, or undefined when there's no such team: the same as `GET /api/core/teams/:id`. */
+  get(id: string): Team | undefined;
+}
+
 /**
  * What core gives each app while hosting it: one object per app, passed to both `register()` and `realtime()`, so an
- * app can share state between them through it. Core's data comes through read-only services, fonts first (ADR-0023).
- * Teams, CRG and OBS come later.
+ * app can share state between them through it. Core's data comes through read-only services, fonts and teams so far (ADR-0023).
+ * CRG and OBS come later.
  */
 export interface AppContext {
   /** Core's logger, labelled with the app's id. */
@@ -75,6 +91,7 @@ export interface AppContext {
   /** The shared SQLite connection, typed with the app's own schema. Its tables are named `<id>_…`. */
   db<S extends Record<string, unknown>>(schema: S): BetterSQLite3Database<S>;
   fonts: FontsService;
+  teams: TeamsService;
 }
 
 /** The type a media file of an export must be: core checks its bytes, as it does an upload's (ADR-0022). */

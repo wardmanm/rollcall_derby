@@ -16,6 +16,7 @@ The build order is on the [roadmap](../product/roadmap.md). To add a feature, st
 | [OBS Control](obs-control.md) | rcl-producer | planned | Switch scenes, trigger hotkeys and toggle sources in OBS from producer dashboards. |
 | [Overlay Components](overlay-components.md) | rcl-producer | planned | Pre-made, configurable building blocks placed on screens, such as rosters, game info and skater spotlights. |
 | [Screen Builder](screen-builder.md) | rcl-producer | planned | Design overlay screens by dragging pre-made components onto a canvas of any size; each screen goes into OBS as a browser source. |
+| [Skater intros](skater-intros.md) | rcl-producer | in-progress | Introduce each team and its people on stream before a game, with a title card then a card per person, run live from a laptop or phone. |
 | [Team Builder](team-builder.md) | rcl-core | shipped | Create teams with skaters and bench staff, including names, numbers, roles and photos. |
 | [Theme Builder](theme-builder.md) | both | shipped | Define reusable visual styles (colors, fonts, borders, corner radius) that restyle every overlay. |
 | [Users and Access](users-and-access.md) | rcl-core | shipped | Username and password login with Admin, Producer and Announcer roles, enforced on the server. |

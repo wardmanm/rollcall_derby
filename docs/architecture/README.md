@@ -59,6 +59,7 @@ rcl-core's server hosts each rcl app as an [app module](../product/glossary.md#a
 
 - **Routes.** An app's routes are at or below `/api/<id>`, such as `/api/producer` and `/api/producer/themes`. Each one declares who may call it ([ADR-0018](../decisions/0018-declared-access-and-permissions.md)), and the server won't start with a route that no hosted app owns. Every `/api` route is registered inside one plugin, which does the cross-site check and finds the caller. A route registered outside it fails closed: the server won't start with a public one, and any other refuses everyone.
 - **Web builds.** An app's build is served at `/<id>/`. Its real files are served as they are. Every other path below `/<id>/` gets one of the app's pages, such as `/producer/overlay`, or its `index.html`, so client-side routes load. A path that looks like a file, under `assets/` or with an extension, never gets a page: a missing one is a 404. A page left open across an upgrade that asks for an old hashed asset gets an error, not HTML.
+- **Core's data.** Apps read core's data only through read-only services on `AppContext`, never core's tables ([ADR-0023](../decisions/0023-core-data-services-for-apps.md)). `ctx.fonts.list()` gives the font library and `ctx.teams` gives the teams: `list()` the summaries, `get(id)` a team with its members, in the shapes core's teams routes return.
 - **Reserved ids.** An app can't take an id that the server's own paths use: `api`, `docs` (the API explorer), `media` ([ADR-0022](../decisions/0022-public-media.md)) and `fonts` (bundled fonts). `socket.io` can't be an id anyway, since ids are lowercase letters, digits and dashes. An app with a reserved id is skipped at startup with an error in the log, like any app that fails its startup checks.
 
 ## How data flows
@@ -92,7 +93,7 @@ Summaries only. The ADRs are canonical.
 - [ADR-0019](../decisions/0019-rcl-apps-as-modules.md): rcl-core's server hosts every rcl app as a module, owns live state and all external connections, and works offline. Each app has its own Zod contract, and import/export files are versioned.
 - [ADR-0020](../decisions/0020-api-keys.md): API keys for devices and scripts, with their own permissions and never people-only ones; the `Authorization` header beats the cookie.
 - [ADR-0022](../decisions/0022-public-media.md): Uploaded images are files in the data folder, served to anyone at unguessable `/media/<id>` addresses, so OBS overlays can show them.
-- [ADR-0023](../decisions/0023-core-data-services-for-apps.md): rcl-core shares its data with apps through read-only services on `AppContext`, fonts first; apps never read core's tables.
+- [ADR-0023](../decisions/0023-core-data-services-for-apps.md): rcl-core shares its data with apps through read-only services on `AppContext`, fonts and teams so far; apps never read core's tables.
 - [ADR-0024](../decisions/0024-import-export-kinds.md): rcl-core reads and writes export files at `/api/core/transfer/…`; each app owns its kinds of item, and one import is one transaction.
 
 ## More

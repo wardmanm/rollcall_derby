@@ -6,6 +6,7 @@ import type { AppContext, AppModule, TransferKind } from '@rollcall/app-sdk';
 import { createPermissions, type Permissions } from './auth/access.ts';
 import type { AppDatabase } from './db.ts';
 import { listFonts } from './fonts/fonts.ts';
+import { findTeam, listTeams } from './teams/teams.ts';
 import type { WebApp } from './web-apps.ts';
 
 /** The rcl apps this server hosts, after their startup checks (ADR-0019). */
@@ -92,6 +93,7 @@ export function hostApps({
     coreVersion,
     db: (schema) => drizzle(db.$client, { schema }),
     fonts: { list: () => listFonts(db) },
+    teams: { list: () => listTeams(db), get: (id) => findTeam(db, id) },
   });
   const contextFor = (module: AppModule) => {
     const ctx = contexts.get(module.id) ?? newContext(module);
