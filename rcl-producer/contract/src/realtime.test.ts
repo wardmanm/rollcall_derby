@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { ServerHelloSchema, SERVER_HELLO_EVENT, THEME_CHANGED_EVENT, ThemeChangedSchema } from './realtime.ts';
+import {
+  INTRO_RUN_EVENT,
+  INTRO_STATE_EVENT,
+  IntroHandshakeSchema,
+  ServerHelloSchema,
+  SERVER_HELLO_EVENT,
+  THEME_CHANGED_EVENT,
+  ThemeChangedSchema,
+} from './realtime.ts';
 import { DEFAULT_TOKENS } from './themes.ts';
 
 describe('ServerHelloSchema', () => {
@@ -29,5 +37,18 @@ describe('ThemeChangedSchema', () => {
 
   it('rejects a theme without its tokens', () => {
     expect(ThemeChangedSchema.safeParse({ families: [] }).success).toBe(false);
+  });
+});
+
+describe('intro events and handshake', () => {
+  it('names the events', () => {
+    expect(INTRO_STATE_EVENT).toBe('intro:state');
+    expect(INTRO_RUN_EVENT).toBe('intro:run');
+  });
+
+  it('needs an intro id in the handshake', () => {
+    expect(IntroHandshakeSchema.parse({ intro: 'i1' })).toEqual({ intro: 'i1' });
+    expect(IntroHandshakeSchema.safeParse({ intro: '' }).success).toBe(false);
+    expect(IntroHandshakeSchema.safeParse({}).success).toBe(false);
   });
 });

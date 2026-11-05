@@ -14,3 +14,13 @@ export type ServerHello = z.infer<typeof ServerHelloSchema>;
 export const THEME_CHANGED_EVENT = 'theme:changed';
 export const ThemeChangedSchema = OverlayThemeSchema.nullable();
 export type ThemeChanged = z.infer<typeof ThemeChangedSchema>;
+
+// The intro overlay (/producer/overlay) is sent its state as soon as it connects, and again on every change.
+export const INTRO_STATE_EVENT = 'intro:state';
+
+// The control page is sent the run's state the same way.
+export const INTRO_RUN_EVENT = 'intro:run';
+
+/** What an intro's browser sends in `socket.handshake.auth`: the id of the intro it shows or runs. */
+export const IntroHandshakeSchema = z.object({ intro: z.string().min(1) });
+export type IntroHandshake = z.infer<typeof IntroHandshakeSchema>;
