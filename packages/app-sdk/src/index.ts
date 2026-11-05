@@ -189,6 +189,11 @@ export interface TransferKind<Data = unknown> {
   ): { name: string; unusedMedia?: readonly (string | null)[] };
   /** Runs once an import that saved items of this kind is committed, such as telling overlays about a new default. */
   afterImport?(): void;
+  /**
+   * Runs instead of `afterImport` when an import that saved, or tried to save, items of this kind fails and its rows
+   * roll back, so the kind can forget what it noted for `afterImport`.
+   */
+  afterFailedImport?(): void;
 }
 
 /** An rcl app, as rcl-core hosts it (split spec). */
