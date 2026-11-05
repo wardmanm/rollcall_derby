@@ -3,14 +3,13 @@ import { Link, useParams } from 'react-router';
 import { Alert, Anchor, Badge, Button, Group, Stack, Text, Title } from '@mantine/core';
 import type { IntroTeamSlot } from '@rollcall/producer-contract';
 import { apiError, problemWith, useGetMeQuery } from '@rollcall/web-sdk';
+import { useGetIntroQuery, useGetTeamsQuery } from '../api.ts';
 import {
   useClearIntroMutation,
-  useGetIntroQuery,
   useGetIntroRunQuery,
-  useGetTeamsQuery,
   useNextIntroMutation,
   useStartIntroMutation,
-} from '../api.ts';
+} from '../intro-run-api.ts';
 
 // The control page for one intro (docs/features/skater-intros.md), made for a phone: start a team, press Next as each
 // person is called, Clear when done. The server decides what happens; this page shows the state it last sent.
