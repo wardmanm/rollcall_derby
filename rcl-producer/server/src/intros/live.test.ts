@@ -223,6 +223,23 @@ describe('live intros', () => {
     expect(sentOf(THEME_CHANGED_EVENT, overlay)).toEqual([WITH_OSWALD, DEFAULT_LOOK]);
   });
 
+  it('deleting the default theme sends every overlay on the default its new look once', async () => {
+    const { realtime, call, theme, intro, overlayFor } = live();
+    const night = await theme('Night', OSWALD_HEADINGS);
+    await call('PUT', '/default-theme', { themeId: night.id });
+    const onDefault = overlayFor((await intro('Bout 1')).id);
+    // Picked by name, so deleting it moves this intro to the default too.
+    const onNight = overlayFor((await intro('Bout 2', { themeId: night.id })).id);
+    const plain = realtime.connect('/producer/overlay');
+    for (const sent of [onDefault, onNight, plain]) sent.length = 0;
+
+    expect((await call('DELETE', `/themes/${night.id}`)).statusCode).toBe(204);
+    // No default is left, so each gets the built-in look.
+    expect(sentOf(THEME_CHANGED_EVENT, onDefault)).toEqual([null]);
+    expect(sentOf(THEME_CHANGED_EVENT, onNight)).toEqual([null]);
+    expect(sentOf(THEME_CHANGED_EVENT, plain)).toEqual([null]);
+  });
+
   it('an import over a theme an intro uses sends that intro its new look', async () => {
     const { ctx, theme, intro, overlayFor } = live();
     const gold = await theme('Gold');

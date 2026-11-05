@@ -32,8 +32,8 @@ const TAGS = ['producer/themes'];
 
 // Themes (docs/features/theme-builder.md): anyone holding producer:themes.read may look, and producer:themes.manage
 // may change them and choose the default. `onDefaultChanged` runs after each change to what the default theme is or
-// looks like, so the OBS overlay can follow it, and `onThemeChanged` after each edit or delete of a theme, so the
-// intros using it can.
+// looks like, so the OBS overlay can follow it, and `onThemeChanged` after each edit of a theme, or delete of one that
+// isn't the default, so the intros using it can.
 export function registerThemeRoutes(
   fastify: FastifyInstance,
   {
@@ -144,8 +144,10 @@ export function registerThemeRoutes(
     async (request, reply) => {
       const theme = deleteTheme(db, request.params.id);
       if (!theme) return reply.code(404).send(NOT_FOUND);
+      // Its intros are on the default now. For the default itself, onDefaultChanged already tells them, with every
+      // intro that was on the default, so telling onThemeChanged too would send them the same look twice.
       if (theme.isDefault) onDefaultChanged();
-      onThemeChanged(theme.id);
+      else onThemeChanged(theme.id);
       return reply.code(204).send();
     },
   );
