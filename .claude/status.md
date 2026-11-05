@@ -1,10 +1,11 @@
 # Status: Rollcall
-Updated: 2026-11-05 · Branch: feat/intro-pronouns-switch
+Updated: 2026-11-05 · Branch: main
 
 ## Current focus
-Skater intros (#25, merged, unreleased): adding a per-intro "Show pronouns" switch and a two-line role line on the cards (Mike's choice), on `feat/intro-pronouns-switch`. Then the follow-ups in #26, before the next release. Screen Builder gets its own design after.
+Skater intros (#25, with the "Show pronouns" switch) are merged into main and pushed, unreleased. Next: the follow-ups in #26 before the next release, then the sign-off and releases (rcl-core first, then rcl-producer). Screen Builder gets its own design after.
 
 ## Recent changes
+- 2026-11-05: Merged the pronouns switch into main and pushed (Mike).
 - 2026-11-05: Built the intro "Show pronouns" switch (on by default; when off the OBS page isn't sent pronouns) and a two-line role line on the cards, with cards kept equal height; intros saved before the switch read as on. Checked in a real browser.
 - 2026-11-05: Decided (Mike): pronouns on intro cards are a per-intro "Show pronouns" setting, on by default, and the role line takes two lines when needed; the live-state ADR is written when Live Mode starts, not now; the review follow-ups are filed as #26, to tackle where possible before the next release.
 - 2026-11-05: Merged skater intros into main and pushed (Mike).
@@ -14,7 +15,6 @@ Skater intros (#25, merged, unreleased): adding a per-intro "Show pronouns" swit
 - 2026-11-04: Fixed #24 (merged and pushed after CI passed on Node 24): exports and imports pack and read their files in a worker thread, an import writes its media files before its transaction and deletes them if anything fails, access is rechecked after each wait, and one export or import runs at a time. The longest stall while packing or reading 150 MB fell from about 200 ms to about 6 ms.
 - 2026-11-04: Fixed #12–#16 (built by parallel agents, each on its own branch, then merged into main and pushed). #12: a missing file below an app is a 404, apps may route at `/api/<id>`, `api` and `docs` are reserved ids, and a public route outside the `/api` plugin stops the server. #13: an access declaration is exactly one kind; the API explorer keeps route descriptions, offers keys only where they're accepted, and shows each app's sections. #14: the web apps catch up when your role changes or you return to the tab, and sign-in errors say what went wrong. #15: comments, tests and docs tidied, and the dev front door's `/producer` match fixed. #16: one app list for the docs lint and the release script, and the release workflow and guide reworded.
 - 2026-11-04: Decided: build #24 now. Each export or import runs our own zip code in a worker thread of its own (fflate's async API still blocks), the import doesn't reuse the preview's read, and one export or import runs at a time.
-- 2026-11-04: Decided: start Phase 2 with the overlay renderer and the team roster, and fix #12–#16 and #24 in parallel with agents.
 
 ## Pending decisions
 - **File the other server tests that never close their test app as an issue?** (raised 2026-11-04, found while fixing #15: about eight, in `http.test.ts`, `openapi.test.ts`, `setup.test.ts`, `routes/auth.test.ts` and `access.test.ts`). Options: file it / leave it.
