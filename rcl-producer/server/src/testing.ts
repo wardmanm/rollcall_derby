@@ -12,6 +12,8 @@ import { producerApp } from './index.ts';
 // route inventory sweeps the Producer app's routes with every kind of caller.
 export function testProducer({ fonts = [], teams = [] }: { fonts?: FontFamily[]; teams?: Team[] } = {}) {
   const client = new Database(':memory:');
+  // As in rcl-core's database, so ON DELETE SET NULL works.
+  client.pragma('foreign_keys = ON');
   migrate(drizzle(client), {
     migrationsFolder: producerApp.migrationsFolder ?? '',
     migrationsTable: '__drizzle_migrations_producer',

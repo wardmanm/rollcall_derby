@@ -13,6 +13,8 @@ erDiagram
   TEAM }o--o| MEDIA : "logo"
   TEAM_MEMBER }o--o| MEDIA : "photo"
   THEME ||--o{ SCREEN : styles
+  THEME |o--o{ INTRO : styles
+  TEAM |o--o{ INTRO : "introduced in (A / B)"
   SCREEN ||--o{ COMPONENT_INSTANCE : places
   EVENT ||--o{ GAME : schedules
   EVENT ||--o{ TRACK : "runs on"
@@ -34,6 +36,7 @@ erDiagram
 | Media | An uploaded file, such as a team logo, a member photo or a font: a file in the data folder's `media/`, with its type ([ADR-0022](../decisions/0022-public-media.md)) | [Team Builder](../features/team-builder.md) |
 | Font face | One uploaded font file in the font library: its family, weights and style, and its media (rcl-core) | [Theme Builder](../features/theme-builder.md) |
 | Theme | A named set of visual tokens. At most one is the default, which the OBS overlay uses (rcl-producer) | [Theme Builder](../features/theme-builder.md) |
+| Intro | A saved skater-intro setup: a name, two teams, a theme (the default when none), where the cards sit and how they appear (rcl-producer) | [Skater intros](../features/skater-intros.md) |
 | Screen | An overlay canvas: size, theme, placed components | [Screen Builder](../features/screen-builder.md) |
 | Component instance | One overlay component placed on a screen, with position, size and options | [Overlay components](../features/overlay-components.md) |
 | Event | A day of derby with one or more games and tracks | [Live Mode](../features/live-mode.md) |

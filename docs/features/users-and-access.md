@@ -54,6 +54,8 @@ Routes and live connections check [permissions](../product/glossary.md#permissio
 | `core:fonts.manage` | Upload and remove fonts | ✅ | — | — | ✅ |
 | `producer:themes.read` | View themes | ✅ | ✅ | — | ✅ |
 | `producer:themes.manage` | Create, edit, duplicate and delete themes, and choose the default | ✅ | — | — | ✅ |
+| `producer:intros.run` | See intros, open their control page, and start, step through and clear them | ✅ | ✅ | — | ✅ |
+| `producer:intros.manage` | Create, set up and delete intros | ✅ | ✅ | — | ✅ |
 
 The capabilities in the role matrix become permissions here as each feature is built.
 

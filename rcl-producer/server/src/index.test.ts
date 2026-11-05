@@ -12,6 +12,6 @@ describe('the producer app module', () => {
   it('creates only its themes table, in its own migrations table', async () => {
     const { api, client } = testProducer();
     await api.close();
-    expect(tablesIn(client)).toEqual(['__drizzle_migrations_producer', 'producer_themes']);
+    expect(tablesIn(client)).toEqual(['__drizzle_migrations_producer', 'producer_intros', 'producer_themes']);
   });
 });
