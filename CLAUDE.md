@@ -57,3 +57,17 @@ Rules:
 - When a decision is made, remove it from Pending decisions and note the outcome under Recent changes.
 - Delete loose ends once they're done. Stale items make the daily update wrong.
 - No secrets, credentials or client-confidential details. This repo is public.
+
+## Context handoffs
+
+When work reaches a natural stopping point and the next task would go better in a fresh context, tell Mike it's a good time to clear context, and give him a handoff to paste into the new session. Don't wait to be asked.
+
+- **Good points:** a feature or fix is merged, a design or plan is approved and committed, a release is done, or the session is long and the next task needs little of it. Never mid-task, or while waiting on an answer.
+- **Before handing off,** commit or record everything worth keeping, and update `.claude/status.md`. The new session can't see this one.
+- **The handoff** is one fenced block, written for a session that knows nothing about this one:
+  - **Goal:** the next task, and where it comes from (issue, spec, plan).
+  - **State:** the branch, what's merged or pushed, and anything uncommitted or still running.
+  - **Decisions:** choices already made that must be kept, and who made them.
+  - **Read first:** the files, docs and issues to open, in order. Link facts that live in the repo, such as the status log, instead of copying them.
+  - **Watch out for:** gotchas found along the way.
+  - **First step:** the first concrete action.
