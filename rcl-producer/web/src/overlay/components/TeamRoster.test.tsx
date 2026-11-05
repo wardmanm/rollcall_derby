@@ -308,4 +308,75 @@ describe('TeamRoster', () => {
     expect(card('Skater 2').dataset.state).toBe('entering');
     expect(card('Skater 3').dataset.state).toBe('opening');
   });
+
+  describe('a member removed mid-row', () => {
+    // The server's next step: the shown cards without Skater 2, and the next person joining.
+    const withoutTwo = onAir({ cards: [person(1), person(3), person(4)], upNext: person(5) });
+
+    it('leaves on its own while the others stay, then its place closes', () => {
+      const { rerender } = reload(row(1, 2, 3));
+      rerender(<TeamRoster onAir={withoutTwo} />);
+      expect(card('Skater 2').dataset.state).toBe('going');
+      expect(leaving(card('Skater 2'))).toBe(true);
+      expect(card('Skater 2').dataset.entrance).toBe('pop');
+      for (const name of ['Skater 1', 'Skater 3']) {
+        expect(card(name).dataset.state).toBe('shown');
+        expect(leaving(card(name))).toBe(false);
+      }
+      // The new card doesn't wait for the removed one to go.
+      fireEvent.load(img(card('Skater 4')));
+      expect(card('Skater 4').dataset.state).toBe('opening');
+      exited(card('Skater 2'));
+      expect(card('Skater 2').dataset.state).toBe('closing');
+      fireEvent.transitionEnd(card('Skater 2'));
+      expect(screen.queryByRole('figure', { name: 'Skater 2' })).toBeNull();
+      expect(screen.getAllByRole('figure').map((figure) => figure.getAttribute('aria-label'))).toEqual([
+        'Skater 1',
+        'Skater 3',
+        'Skater 4',
+      ]);
+    });
+
+    it('clears even with no animation or transition events', () => {
+      vi.useFakeTimers();
+      const { rerender } = reload(row(1, 2, 3));
+      rerender(<TeamRoster onAir={withoutTwo} />);
+      act(() => void vi.advanceTimersByTime(1000));
+      expect(card('Skater 2').dataset.state).toBe('closing');
+      act(() => void vi.advanceTimersByTime(1000));
+      expect(screen.queryByRole('figure', { name: 'Skater 2' })).toBeNull();
+    });
+
+    it('closes its gap too when it was the first card', () => {
+      const { rerender } = reload(row(1, 2));
+      rerender(<TeamRoster onAir={onAir({ cards: [person(2), person(3)], upNext: person(4) })} />);
+      exited(card('Skater 1'));
+      expect(card('Skater 1').dataset.state).toBe('closing');
+      // The closing first place takes the next place's gap with it (TeamRoster.module.css).
+      expect(card('Skater 1').parentElement!.firstElementChild).toBe(card('Skater 1'));
+    });
+
+    it('goes with the row if the row leaves first', () => {
+      const { rerender } = reload(row(1, 2, 3));
+      rerender(<TeamRoster onAir={withoutTwo} />);
+      rerender(<TeamRoster onAir={null} />);
+      const up = [1, 2, 3].map((n) => card(`Skater ${n}`));
+      expect(up.every(leaving)).toBe(true);
+      expect(leaving(card('Skater 4'))).toBe(false);
+      exited(up[0]!);
+      exited(up[2]!);
+      expect(screen.getByRole('figure', { name: 'Skater 2' })).toBeTruthy();
+      exited(up[1]!);
+      expect(screen.queryByRole('figure')).toBeNull();
+    });
+
+    it('is dropped at once while still waiting for its photo', () => {
+      const { rerender } = reload(row(1));
+      rerender(<TeamRoster onAir={row(1, 2)} />);
+      expect(card('Skater 2').dataset.state).toBe('waiting');
+      rerender(<TeamRoster onAir={onAir({ cards: [person(1), person(3)], upNext: person(4) })} />);
+      expect(screen.queryByRole('figure', { name: 'Skater 2' })).toBeNull();
+      expect(card('Skater 3').dataset.state).toBe('waiting');
+    });
+  });
 });

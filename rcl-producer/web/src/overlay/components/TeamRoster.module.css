@@ -25,7 +25,8 @@
 }
 
 .piece[data-state='entering'],
-.piece[data-state='shown'] {
+.piece[data-state='shown'],
+.piece[data-state='going'] {
   visibility: visible;
 }
 
@@ -58,9 +59,16 @@
   margin-inline-start: var(--card-gap);
 }
 
-.place:is([data-state='waiting'], [data-state='ready']):not([data-quiet], [data-open]) {
+.place:is([data-state='waiting'], [data-state='ready']):not([data-quiet], [data-open]),
+.place[data-state='closing'] {
   width: 0;
   margin-inline-start: 0;
+}
+
+/* A removed card's place closes once its exit has played, sliding the cards after it back. The first place has no gap
+   before it, so as it closes it takes the next place's gap with it, and the row doesn't end up off its spot. */
+.place[data-state='closing']:first-child {
+  margin-inline-end: calc(-1 * var(--card-gap));
 }
 
 /* Entrances, about 400 ms. */

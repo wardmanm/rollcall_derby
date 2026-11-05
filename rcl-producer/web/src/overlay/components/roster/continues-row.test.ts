@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RosterCard, RosterOnAir } from '@rollcall/producer-contract';
-import { continuesRow } from './continues-row.ts';
+import { continuesRow, joinRow } from './continues-row.ts';
 
 const team = {
   name: 'Harbour City Wreckers',
@@ -52,5 +52,34 @@ describe('continuesRow', () => {
     expect(continuesRow(null, row(1))).toBe(false);
     expect(continuesRow(row(1), null)).toBe(false);
     expect(continuesRow(null, null)).toBe(false);
+  });
+
+  it('is true for a row with cards removed, the rest in order and new ones after them', () => {
+    expect(continuesRow(row(1, 2, 3), row(1, 3, 4))).toBe(true);
+    expect(continuesRow(row(1, 2), row(2))).toBe(true);
+    expect(continuesRow(row(1, 2), row(1))).toBe(true);
+  });
+
+  it('is false when no card is kept, or the kept cards are in another order', () => {
+    expect(continuesRow(row(1, 2), row(3))).toBe(false);
+    expect(continuesRow(row(1, 2), row(2, 1))).toBe(false);
+  });
+
+  it("is false for another team's row, even with the same card ids", () => {
+    expect(continuesRow(row(1, 2), { ...row(1, 2, 3), team: { ...team, name: 'Other Team' } })).toBe(false);
+  });
+});
+
+describe('joinRow', () => {
+  it("keeps the shown cards in their places, with next's details, then adds next's new cards", () => {
+    const next = {
+      ...row(1, 3, 4),
+      cards: [{ ...person(1), name: 'Renamed' }, person(3), person(4)],
+      upNext: person(5),
+    };
+    const joined = joinRow(row(1, 2, 3), next);
+    expect(joined.cards.map((card) => card.id)).toEqual(['p1', 'p2', 'p3', 'p4']);
+    expect(joined.cards[0]!.name).toBe('Renamed');
+    expect(joined.upNext).toBe(next.upNext);
   });
 });

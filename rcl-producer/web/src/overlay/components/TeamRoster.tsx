@@ -5,7 +5,7 @@ import { TeamBanner } from './TeamBanner.tsx';
 import { EXIT_ANIMATIONS } from './roster/animations.ts';
 import { cssVars } from './roster/css-vars.ts';
 import { anchor, CANVAS_HEIGHT, CANVAS_WIDTH, CARD_GAP, cardWidth } from './roster/layout.ts';
-import { FALLBACK_MS, isUp, keysOf, reduceRoster, startRoster, TITLE } from './roster/roster-state.ts';
+import { FALLBACK_MS, isUp, reduceRoster, settling, startRoster, TITLE } from './roster/roster-state.ts';
 import { teamColorVariables } from './roster/team-colors.ts';
 import classes from './TeamRoster.module.css';
 
@@ -39,13 +39,13 @@ export function TeamRoster({ onAir }: TeamRosterProps) {
     return () => clearTimeout(timer);
   }, [leaving, screen]);
 
-  // Restarts whenever another place starts opening, so every place has had the whole time when it goes off.
-  const opening = JSON.stringify(keysOf(shown).filter((key) => phases[key] === 'opening'));
+  // Runs while a place is opening or a removed card is going or closing, and restarts whenever one of them moves on.
+  const stuck = settling(state);
   useEffect(() => {
-    if (opening === '[]') return undefined;
+    if (stuck === '') return undefined;
     const timer = setTimeout(() => dispatch({ type: 'stuckTimeout', screen }), FALLBACK_MS);
     return () => clearTimeout(timer);
-  }, [opening, screen]);
+  }, [stuck, screen]);
 
   // Every piece's animationend, and each place's own transitionend as it opens, bubble up to the root. This listens
   // natively: React's onAnimationEnd listens for a vendor-prefixed name where AnimationEvent is missing (as in jsdom).
@@ -83,7 +83,8 @@ export function TeamRoster({ onAir }: TeamRosterProps) {
     const width = cardWidth(CANVAS_WIDTH - 2 * edge, shown.slots);
     const pieceAttributes = (key: string) => {
       const phase = phases[key] ?? 'waiting';
-      const goes = leaving && isUp(phase);
+      // A removed card leaves on its own; anything up leaves with the row.
+      const goes = phase === 'going' || (leaving && isUp(phase));
       return {
         'data-piece': key,
         'data-state': phase,
