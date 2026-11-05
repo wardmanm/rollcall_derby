@@ -1,16 +1,46 @@
 import { fileURLToPath } from 'node:url';
-import type { AppModule } from '@rollcall/app-sdk';
+import type { AppContext, AppModule } from '@rollcall/app-sdk';
 import { APP_NAME } from '@rollcall/core-contract';
 import pkg from '../package.json' with { type: 'json' };
 import * as schema from './db/schema.ts';
+import {
+  announceIntro,
+  announceIntroGone,
+  announceIntroTheme,
+  announceIntroThemes,
+  openIntroControl,
+} from './intros/live.ts';
+import { introRuns, type IntroRuns } from './intros/runs.ts';
 import { announceDefaultTheme, openOverlay } from './overlay.ts';
+import { registerIntroRunRoutes } from './routes/intro-runs.ts';
 import { registerIntroRoutes } from './routes/intros.ts';
 import { registerThemeRoutes } from './routes/themes.ts';
 import { themeKind } from './themes/transfer.ts';
 
+// One set of intro runs per context, shared by register() (the run routes) and realtime() (the rooms), like the
+// overlay's namespace. Each change to a run is sent to the intro's rooms.
+const runsByContext = new WeakMap<AppContext, IntroRuns>();
+function runsFor(ctx: AppContext): IntroRuns {
+  const existing = runsByContext.get(ctx);
+  if (existing) return existing;
+  const runs: IntroRuns = introRuns({
+    db: ctx.db(schema),
+    teams: ctx.teams,
+    onChange: (introId) => announceIntro(ctx, runs, introId),
+  });
+  runsByContext.set(ctx, runs);
+  return runs;
+}
+
+// The default theme, to plain overlays and to the overlays of intros on the default.
+function announceDefaultThemes(ctx: AppContext): void {
+  announceDefaultTheme(ctx);
+  announceIntroThemes(ctx, null);
+}
+
 // The Producer app's server side, hosted by rcl-core as app module `producer` (ADR-0019): its routes below
-// /api/producer, its tables (producer_…), and the /producer/overlay namespace. rcl-core serves its web build at
-// /producer/, with the OBS overlay at /producer/overlay.
+// /api/producer, its tables (producer_…), and the /producer/overlay and /producer/intros namespaces. rcl-core serves
+// its web build at /producer/, with the OBS overlay at /producer/overlay.
 export const producerApp: AppModule = {
   id: 'producer',
   title: `${APP_NAME} Producer`,
@@ -41,13 +71,30 @@ export const producerApp: AppModule = {
   },
   register(api, ctx) {
     const db = ctx.db(schema);
-    registerThemeRoutes(api, { db, onDefaultChanged: () => announceDefaultTheme(ctx) });
-    // The live run (a later change) follows saves and deletes through these.
-    registerIntroRoutes(api, { db, teams: ctx.teams, onSaved: () => {}, onDeleted: () => {} });
+    const runs = runsFor(ctx);
+    // Runs' timers stop with the server.
+    api.addHook('onClose', async () => runs.close());
+    registerThemeRoutes(api, {
+      db,
+      onDefaultChanged: () => announceDefaultThemes(ctx),
+      onThemeChanged: (themeId) => announceIntroThemes(ctx, themeId),
+    });
+    registerIntroRoutes(api, {
+      db,
+      teams: ctx.teams,
+      onSaved: (before, after) => {
+        if (before && before.themeId !== after.themeId) announceIntroTheme(ctx, after);
+        announceIntro(ctx, runs, after.id);
+      },
+      onDeleted: (id) => announceIntroGone(ctx, id, runs.forget(id)),
+    });
+    registerIntroRunRoutes(api, { db, runs });
   },
   realtime(rt, ctx) {
-    openOverlay(rt, ctx);
+    const runs = runsFor(ctx);
+    openOverlay(rt, ctx, runs);
+    openIntroControl(rt, ctx, runs);
   },
   // Themes travel in export files (ADR-0024).
-  transfer: (ctx) => [themeKind({ db: ctx.db(schema), announce: () => announceDefaultTheme(ctx) })],
+  transfer: (ctx) => [themeKind({ db: ctx.db(schema), announce: () => announceDefaultThemes(ctx) })],
 };

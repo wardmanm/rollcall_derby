@@ -85,8 +85,15 @@ async function startRealtime(apps?: readonly AppModule[]) {
     const user = await addUser(rt.db, `user${(users += 1)}`, 'correct horse', role, { mustChangePassword });
     return `${SESSION_COOKIE}=${createSession(rt.db, user.id).token}`;
   };
+  // Each client gets a connection of its own: socket.io-client would otherwise share one per host across namespaces,
+  // sending the first client's headers (its cookie) for every later one.
   const open = (name: string, headers: Record<string, string> = {}) => {
-    const client = connect(`${url}${name}`, { transports: ['websocket'], reconnection: false, extraHeaders: headers });
+    const client = connect(`${url}${name}`, {
+      transports: ['websocket'],
+      reconnection: false,
+      forceNew: true,
+      extraHeaders: headers,
+    });
     clients.push(client);
     return outcome(client);
   };

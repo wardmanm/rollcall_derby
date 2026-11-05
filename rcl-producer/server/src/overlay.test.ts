@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import type { Realtime } from '@rollcall/app-sdk';
 import { APP_NAME, type FontFamily } from '@rollcall/core-contract';
 import {
   DEFAULT_TOKENS,
@@ -8,8 +7,7 @@ import {
   ThemeSchema,
   type ThemeTokens,
 } from '@rollcall/producer-contract';
-import { producerApp } from './index.ts';
-import { testProducer } from './testing.ts';
+import { testProducer, testRealtime, type Sent } from './testing.ts';
 
 const opened: ReturnType<typeof testProducer>['api'][] = [];
 afterEach(async () => {
@@ -29,38 +27,24 @@ const OSWALD_HEADINGS: ThemeTokens = {
   fonts: { ...DEFAULT_TOKENS.fonts, heading: { family: 'Oswald', weight: 700 } },
 };
 
-type Sent = [event: string, payload: unknown];
-
-// The Producer app with its /producer/overlay namespace open on a stand-in for Socket.IO: what the namespace sends to
-// every client, and a way to connect one and see what it's sent.
+// The Producer app with its /producer/overlay namespace open on a stand-in for Socket.IO: what it sends to the room
+// every plain overlay joins, and a way to connect one and see what it's sent.
 function overlay() {
   const { api, ctx } = testProducer({ fonts: [ANTON, INTER, OSWALD] });
   opened.push(api);
-  const broadcasts: Sent[] = [];
-  let onConnection: ((socket: { emit: (...sent: Sent) => void }) => void) | undefined;
-  const namespace = {
-    emit: (...sent: Sent) => broadcasts.push(sent),
-    on: (_event: 'connection', listener: typeof onConnection) => (onConnection = listener),
-  };
-  const opens: Parameters<Realtime['namespace']>[] = [];
-  const rt: Realtime = {
-    namespace: (...open) => {
-      opens.push(open);
-      return namespace as never;
-    },
-  };
-  producerApp.realtime?.(rt, ctx);
-  const connect = () => {
-    const received: Sent[] = [];
-    onConnection?.({ emit: (...sent) => received.push(sent) });
-    return received;
-  };
+  const realtime = testRealtime(ctx);
+  const broadcasts = realtime.sentTo('/producer/overlay', 'overlay:default');
+  const opens = realtime.opens.filter(([name]) => name === '/producer/overlay');
+  const connect = () => realtime.connect('/producer/overlay');
   const call = async (method: 'POST' | 'PATCH' | 'PUT' | 'DELETE', url: string, payload?: object) =>
     api.inject({ method, url: `/api/producer${url}`, ...(payload ? { payload } : {}) });
   const create = async (name: string, tokens?: ThemeTokens) =>
     ThemeSchema.parse((await call('POST', '/themes', { name, tokens })).json());
-  const themes = (sent: Sent[]) => sent.filter(([event]) => event === THEME_CHANGED_EVENT).map(([, theme]) => theme);
-  return { opens, broadcasts, connect, call, create, themes };
+  return { opens, broadcasts, connect, call, create };
+}
+
+function themes(sent: Sent[]) {
+  return sent.filter(([event]) => event === THEME_CHANGED_EVENT).map(([, theme]) => theme);
 }
 
 describe('the overlay namespace', () => {
@@ -76,14 +60,15 @@ describe('the overlay namespace', () => {
   });
 
   it('sends a new client the default theme, with only the font families it uses', async () => {
-    const { connect, call, create, themes } = overlay();
+    const { connect, call, create } = overlay();
     const theme = await create('Derby Night', OSWALD_HEADINGS);
     await call('PUT', '/default-theme', { themeId: theme.id });
     expect(themes(connect())).toEqual([{ tokens: OSWALD_HEADINGS, families: [INTER, OSWALD] }]);
   });
 
   it('sends every client the new theme when the default is saved, switched, cleared or deleted', async () => {
-    const { broadcasts, call, create, themes } = overlay();
+    const { broadcasts, connect, call, create } = overlay();
+    const client = connect();
     const night = await create('Derby Night');
     const finals = await create('Finals', OSWALD_HEADINGS);
     await call('PUT', '/default-theme', { themeId: night.id });
@@ -101,6 +86,7 @@ describe('the overlay namespace', () => {
       withOswald,
       null,
     ]);
+    expect(themes(client)).toEqual([null, ...themes(broadcasts)]);
   });
 
   it('sends nothing when a theme that is not the default changes', async () => {

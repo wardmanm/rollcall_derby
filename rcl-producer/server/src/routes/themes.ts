@@ -32,10 +32,15 @@ const TAGS = ['producer/themes'];
 
 // Themes (docs/features/theme-builder.md): anyone holding producer:themes.read may look, and producer:themes.manage
 // may change them and choose the default. `onDefaultChanged` runs after each change to what the default theme is or
-// looks like, so the OBS overlay can follow it.
+// looks like, so the OBS overlay can follow it, and `onThemeChanged` after each edit or delete of a theme, so the
+// intros using it can.
 export function registerThemeRoutes(
   fastify: FastifyInstance,
-  { db, onDefaultChanged }: { db: ProducerDatabase; onDefaultChanged: () => void },
+  {
+    db,
+    onDefaultChanged,
+    onThemeChanged,
+  }: { db: ProducerDatabase; onDefaultChanged: () => void; onThemeChanged: (themeId: string) => void },
 ) {
   const api = fastify.withTypeProvider<ZodTypeProvider>();
 
@@ -103,6 +108,7 @@ export function registerThemeRoutes(
       const theme = updateTheme(db, id, request.body);
       if (!theme) return reply.code(404).send(NOT_FOUND);
       if (theme.isDefault) onDefaultChanged();
+      onThemeChanged(theme.id);
       return theme;
     },
   );
@@ -139,6 +145,7 @@ export function registerThemeRoutes(
       const theme = deleteTheme(db, request.params.id);
       if (!theme) return reply.code(404).send(NOT_FOUND);
       if (theme.isDefault) onDefaultChanged();
+      onThemeChanged(theme.id);
       return reply.code(204).send();
     },
   );
