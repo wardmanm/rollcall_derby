@@ -7,7 +7,6 @@ import {
   SERVER_HELLO_EVENT,
   ServerHelloSchema,
   THEME_CHANGED_EVENT,
-  type IntroOverlayState,
   type ThemeChanged,
 } from '@rollcall/producer-contract';
 import * as schema from './db/schema.ts';
@@ -25,8 +24,6 @@ const DEFAULT_ROOM = 'overlay:default';
 
 /** The room an intro's overlays join here, and its control pages in /producer/intros. */
 export const introRoom = (id: string) => `intro:${id}`;
-
-const NOTHING_ON_AIR: IntroOverlayState = { revision: 0, onAir: null };
 
 /**
  * A theme as the overlay gets it: its tokens and only the font families they use. With no `themeId`, or one that's
@@ -65,7 +62,7 @@ export function openOverlay(rt: Realtime, ctx: AppContext, runs: IntroRuns): voi
     void socket.join(introRoom(id));
     socket.emit(SERVER_HELLO_EVENT, hello);
     socket.emit(THEME_CHANGED_EVENT, overlayTheme(ctx, intro?.themeId));
-    socket.emit(INTRO_STATE_EVENT, intro ? runs.overlay(intro) : NOTHING_ON_AIR);
+    socket.emit(INTRO_STATE_EVENT, runs.overlay(intro));
   });
 }
 

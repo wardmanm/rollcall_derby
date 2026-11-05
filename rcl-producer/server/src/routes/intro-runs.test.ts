@@ -11,9 +11,11 @@ import {
 import { testProducer, testRealtime, type Sent } from '../testing.ts';
 
 const opened: ReturnType<typeof testProducer>['api'][] = [];
+const NOW = new Date('2026-11-05T19:00:00.000Z');
 // Only timeouts and the clock are faked: Fastify's inject waits on the real setImmediate.
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+  vi.setSystemTime(NOW);
 });
 afterEach(async () => {
   await Promise.all(opened.splice(0).map((api) => api.close()));
@@ -86,8 +88,9 @@ const lastState = (sent: Sent[]) =>
 describe('running an intro', () => {
   it('starts a team with its title card, then shows people in team page order', async () => {
     const { read, start, next } = await running();
+    // Revisions count from when the server's runs were made, so a restarted server's are newer than any before.
     expect(await read()).toEqual({
-      revision: 0,
+      revision: NOW.getTime(),
       team: null,
       title: false,
       onAir: false,

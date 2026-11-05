@@ -1,3 +1,4 @@
+import type { FastifyBaseLogger } from 'fastify';
 import type { TeamsService } from '@rollcall/app-sdk';
 import type { Team, TeamMember } from '@rollcall/core-contract';
 import {
@@ -16,12 +17,18 @@ import { clearRun, endRun, isDone, NO_RUN, nextStep, shown, startRun, upNext, ty
  * Each intro's live run (docs/features/skater-intros.md), held in memory with its timer, so a restart leaves nothing on
  * air. Every read and press reads the run's team fresh from core: changed details show at once, someone removed is
  * skipped, and a run whose team is gone ends. Core doesn't announce changes (ADR-0023), so they're noticed here.
+ *
+ * Revisions count up from the time the runs were made, in milliseconds, so a restarted server's states are newer than
+ * any the one before it sent, and pages that drop older states still take them.
  */
 export interface IntroRuns {
   /** The control page's view of the run. */
   run(intro: Intro): IntroRun;
-  /** What the intro's overlay shows: only the cards on air and the next person, never the whole team. */
-  overlay(intro: Intro): IntroOverlayState;
+  /**
+   * What the intro's overlay shows: only the cards on air and the next person, never the whole team. For an intro that
+   * doesn't exist, nothing.
+   */
+  overlay(intro: Intro | undefined): IntroOverlayState;
   /** Starts the slot's team from its title card, or answers 'no_team' when the slot is empty or its team is gone. */
   start(intro: Intro, team: IntroTeamSlot): IntroRun | 'no_team';
   /** Shows the next person. A `revision` that isn't the run's own was pressed on a step that has passed: no change. */
@@ -83,17 +90,24 @@ function overlayView(now: Current): IntroOverlayState {
   };
 }
 
-/** The runs. `onChange` gets the intro's id after every change, even a timer's step or a run whose team is gone. */
+/**
+ * The runs. `onChange` gets the intro's id after every change, even a timer's step or a run whose team is gone. A
+ * timer's step that fails is logged with `log`, never thrown, since nothing would catch it.
+ */
 export function introRuns({
   db,
   teams,
   onChange,
+  log,
 }: {
   db: ProducerDatabase;
   teams: TeamsService;
   onChange: (introId: string) => void;
+  log: FastifyBaseLogger;
 }): IntroRuns {
   const held = new Map<string, Held>();
+  // Every intro's run before its first Start, and after it's forgotten.
+  const idle: Run = { ...NO_RUN, revision: Date.now() };
 
   // Keeps `now.run` as the intro's run, restarts its timer when it's on air on a timer with someone still to come (or
   // stops it), and tells `onChange`.
@@ -106,7 +120,14 @@ export function introRuns({
     if (run.seconds !== null && run.onAir && !isDone(run, presentIn(now))) {
       const ms = run.seconds * 1000;
       entry.deadline = Date.now() + ms;
-      entry.timer = setTimeout(() => tick(introId), ms);
+      entry.timer = setTimeout(() => {
+        try {
+          tick(introId);
+        } catch (error) {
+          // A throw here would crash the server mid-game. The run stays where it was; the next press carries on.
+          log.error({ err: error, introId }, "An intro's timer step failed");
+        }
+      }, ms);
     }
     onChange(introId);
     return now;
@@ -114,7 +135,7 @@ export function introRuns({
 
   // The intro's run, with its team read fresh. A run whose team is gone ends here.
   function current(introId: string): Current {
-    const run = held.get(introId)?.run ?? NO_RUN;
+    const run = held.get(introId)?.run ?? idle;
     const team = run.teamId === null ? undefined : teams.get(run.teamId);
     if (run.teamId !== null && !team) return keep(introId, { run: endRun(run), team, members: new Map() });
     return { run, team, members: membersOf(team) };
@@ -169,13 +190,13 @@ export function introRuns({
     const entry = held.get(introId);
     if (entry) stopTimer(entry);
     held.delete(introId);
-    return { revision: (entry?.run ?? NO_RUN).revision + 1, onAir: null };
+    return { revision: (entry?.run ?? idle).revision + 1, onAir: null };
   }
 
   return {
     run: (intro) => controlView(intro.id, current(intro.id)),
 
-    overlay: (intro) => overlayView(current(intro.id)),
+    overlay: (intro) => (intro ? overlayView(current(intro.id)) : { revision: idle.revision, onAir: null }),
 
     start(intro, slot) {
       const { run } = current(intro.id);

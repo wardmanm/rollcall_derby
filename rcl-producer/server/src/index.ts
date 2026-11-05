@@ -27,6 +27,7 @@ function runsFor(ctx: AppContext): IntroRuns {
     db: ctx.db(schema),
     teams: ctx.teams,
     onChange: (introId) => announceIntro(ctx, runs, introId),
+    log: ctx.log,
   });
   runsByContext.set(ctx, runs);
   return runs;
@@ -96,5 +97,13 @@ export const producerApp: AppModule = {
     openIntroControl(rt, ctx, runs);
   },
   // Themes travel in export files (ADR-0024).
-  transfer: (ctx) => [themeKind({ db: ctx.db(schema), announce: () => announceDefaultThemes(ctx) })],
+  transfer: (ctx) => [
+    themeKind({
+      db: ctx.db(schema),
+      announce: () => announceDefaultThemes(ctx),
+      announceThemes: (ids) => {
+        for (const id of ids) announceIntroThemes(ctx, id);
+      },
+    }),
+  ],
 };

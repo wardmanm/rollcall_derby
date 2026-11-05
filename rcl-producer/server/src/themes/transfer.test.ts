@@ -26,13 +26,14 @@ function setup() {
   opened.push(api);
   const db = ctx.db(schema);
   const announce = vi.fn<() => void>();
-  const kind = themeKind({ db, announce });
+  const announceThemes = vi.fn<(ids: string[]) => void>();
+  const kind = themeKind({ db, announce, announceThemes });
   const checked = (data: unknown) => {
     const result = kind.check(data);
     if (!result.ok) throw new Error(result.message);
     return result.data;
   };
-  return { db, kind, announce, checked };
+  return { db, kind, announce, announceThemes, checked };
 }
 
 describe('the producer:theme kind', () => {
@@ -123,5 +124,22 @@ describe('the producer:theme kind', () => {
     expect(findTheme(db, here.id)).toMatchObject({ id: here.id, tokens: OSWALD, isDefault: true });
     kind.afterImport?.();
     expect(announce).toHaveBeenCalledOnce();
+  });
+
+  it('tells which themes it saved, replaced or new, once the import is done', () => {
+    const { db, kind, checked, announce, announceThemes } = setup();
+    const plain = createTheme(db, { name: 'Plain' });
+    kind.save(checked({ ...ITEM, name: 'Plain', default: false }), { as: 'replace', id: plain.id }, noMedia, {
+      makeDefault: false,
+    });
+    kind.save(checked({ ...ITEM, default: false }), { as: 'new' }, noMedia, { makeDefault: false });
+    expect(announceThemes).not.toHaveBeenCalled();
+    kind.afterImport?.();
+    const added = listThemes(db).find((theme) => theme.name === 'Derby Night');
+    expect(announceThemes).toHaveBeenCalledExactlyOnceWith([plain.id, added?.id]);
+    expect(announce).not.toHaveBeenCalled();
+    // The next import starts afresh.
+    kind.afterImport?.();
+    expect(announceThemes).toHaveBeenCalledOnce();
   });
 });

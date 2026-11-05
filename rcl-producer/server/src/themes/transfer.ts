@@ -32,10 +32,20 @@ const fontNeeds = (tokens: ThemeTokens) =>
 
 /**
  * The `producer:theme` kind: holders of producer:themes.read export themes, and of producer:themes.manage import them.
- * `announce` tells the OBS overlay about the default theme, after an import that changed it.
+ * After an import, `announce` tells the OBS overlay about the default theme when the import changed it, and
+ * `announceThemes` gets the ids of the themes it saved, replaced or new, so the intros using them can follow.
  */
-export function themeKind({ db, announce }: { db: ProducerDatabase; announce: () => void }): TransferKind<ThemeData> {
+export function themeKind({
+  db,
+  announce,
+  announceThemes,
+}: {
+  db: ProducerDatabase;
+  announce: () => void;
+  announceThemes?: (ids: string[]) => void;
+}): TransferKind<ThemeData> {
   let defaultChanged = false;
+  let saved: string[] = [];
   return {
     name: 'producer:theme',
     label: { one: 'Theme', many: 'themes' },
@@ -95,10 +105,15 @@ export function themeKind({ db, announce }: { db: ProducerDatabase; announce: ()
         setDefaultTheme(db, id);
         defaultChanged = true;
       }
+      saved.push(id);
       return { name };
     },
 
+    // Only themes that are still here: an import that failed rolled back the ones it had saved.
     afterImport() {
+      const ids = saved.filter((id) => findTheme(db, id));
+      saved = [];
+      if (ids.length > 0) announceThemes?.(ids);
       if (!defaultChanged) return;
       defaultChanged = false;
       announce();

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { APP_NAME, type FontFamily, type Team, type TeamMember } from '@rollcall/core-contract';
 import {
   DEFAULT_PLACEMENT,
@@ -17,9 +17,18 @@ import {
   type UpdateIntroRequest,
   type ThemeTokens,
 } from '@rollcall/producer-contract';
+import { producerApp } from '../index.ts';
 import { testProducer, testRealtime, type Sent } from '../testing.ts';
 
 const opened: ReturnType<typeof testProducer>['api'][] = [];
+// Revisions count from when the app's runs were made, on this clock. Only timeouts and the clock are faked: Fastify's
+// inject waits on the real setImmediate.
+const NOW = new Date('2026-11-05T19:00:00.000Z');
+const FIRST = NOW.getTime();
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+  vi.setSystemTime(NOW);
+});
 afterEach(async () => {
   await Promise.all(opened.splice(0).map((api) => api.close()));
   vi.useRealTimers();
@@ -84,6 +93,7 @@ function live() {
     return IntroRunSchema.parse(res.json());
   };
   return {
+    ctx,
     teams,
     realtime,
     call,
@@ -95,6 +105,10 @@ function live() {
   };
 }
 
+// Themes have no media, so saving one never asks for a media id.
+const noMedia = () => {
+  throw new Error('Themes have no media');
+};
 const sentOf = (event: string, sent: Sent[]) => sent.filter(([name]) => name === event).map(([, payload]) => payload);
 const lastState = (sent: Sent[]) => IntroOverlayStateSchema.parse(sentOf(INTRO_STATE_EVENT, sent).at(-1));
 const lastRun = (sent: Sent[]) => IntroRunSchema.parse(sentOf(INTRO_RUN_EVENT, sent).at(-1));
@@ -110,16 +124,16 @@ describe('live intros', () => {
 
     const goldOverlay = overlayFor(onGold.id);
     expect(goldOverlay).toEqual([HELLO, [THEME_CHANGED_EVENT, WITH_OSWALD], [INTRO_STATE_EVENT, expect.anything()]]);
-    expect(lastState(goldOverlay)).toMatchObject({ revision: 1, onAir: { title: true, cards: [] } });
+    expect(lastState(goldOverlay)).toMatchObject({ revision: FIRST + 1, onAir: { title: true, cards: [] } });
     expect(overlayFor(onDefault.id)).toEqual([
       HELLO,
       [THEME_CHANGED_EVENT, DEFAULT_LOOK],
-      [INTRO_STATE_EVENT, { revision: 0, onAir: null }],
+      [INTRO_STATE_EVENT, { revision: FIRST, onAir: null }],
     ]);
     expect(overlayFor('nope')).toEqual([
       HELLO,
       [THEME_CHANGED_EVENT, DEFAULT_LOOK],
-      [INTRO_STATE_EVENT, { revision: 0, onAir: null }],
+      [INTRO_STATE_EVENT, { revision: FIRST, onAir: null }],
     ]);
 
     // It's in the intro's room: the next change reaches it.
@@ -133,7 +147,7 @@ describe('live intros', () => {
     const two = await intro('Bout 2');
     const [overlayOne, controlOne] = [overlayFor(one.id), controlFor(one.id)];
     const [overlayTwo, controlTwo] = [overlayFor(two.id), controlFor(two.id)];
-    expect(controlOne).toEqual([[INTRO_RUN_EVENT, expect.objectContaining({ revision: 0, team: null })]]);
+    expect(controlOne).toEqual([[INTRO_RUN_EVENT, expect.objectContaining({ revision: FIRST, team: null })]]);
 
     for (const action of ['start', 'next', 'next', 'clear'] as const) {
       const reply = await press(one.id, action);
@@ -148,11 +162,11 @@ describe('live intros', () => {
     await call('PATCH', `/intros/${one.id}`, { name: 'Bout One' });
     expect(sentOf(INTRO_RUN_EVENT, controlOne)).toHaveLength(6);
     await press(one.id, 'clear');
-    await press(one.id, 'next', { revision: 0 });
+    await press(one.id, 'next', { revision: FIRST });
     expect(sentOf(INTRO_RUN_EVENT, controlOne)).toHaveLength(6);
     expect(sentOf(INTRO_STATE_EVENT, overlayOne)).toHaveLength(6);
 
-    expect(sentOf(INTRO_STATE_EVENT, overlayTwo)).toEqual([{ revision: 0, onAir: null }]);
+    expect(sentOf(INTRO_STATE_EVENT, overlayTwo)).toEqual([{ revision: FIRST, onAir: null }]);
     expect(sentOf(INTRO_RUN_EVENT, controlTwo)).toHaveLength(1);
   });
 
@@ -209,6 +223,24 @@ describe('live intros', () => {
     expect(sentOf(THEME_CHANGED_EVENT, overlay)).toEqual([WITH_OSWALD, DEFAULT_LOOK]);
   });
 
+  it('an import over a theme an intro uses sends that intro its new look', async () => {
+    const { ctx, theme, intro, overlayFor } = live();
+    const gold = await theme('Gold');
+    const goldOverlay = overlayFor((await intro('Bout 1', { themeId: gold.id })).id);
+    const defaultOverlay = overlayFor((await intro('Bout 2')).id);
+    for (const sent of [goldOverlay, defaultOverlay]) sent.length = 0;
+
+    // As core's import does: save each item in its transaction, then tell the kind once it's committed.
+    const [kind] = producerApp.transfer?.(ctx) ?? [];
+    const checked = kind!.check({ name: 'Gold', tokens: OSWALD_HEADINGS, default: false });
+    if (!checked.ok) throw new Error(checked.message);
+    kind!.save(checked.data, { as: 'replace', id: gold.id }, noMedia, { makeDefault: false });
+    expect(goldOverlay).toEqual([]);
+    kind!.afterImport?.();
+    expect(sentOf(THEME_CHANGED_EVENT, goldOverlay)).toEqual([WITH_OSWALD]);
+    expect(defaultOverlay).toEqual([]);
+  });
+
   it("the overlay is sent only what's on air and who's next", async () => {
     const { teams, intro, press, overlayFor } = live();
     const one = await intro('Bout 1');
@@ -218,7 +250,7 @@ describe('live intros', () => {
     await press(one.id, 'next');
     const [team] = teams;
     expect(lastState(overlay)).toEqual({
-      revision: 3,
+      revision: FIRST + 3,
       onAir: {
         team: rosterTeam(team!),
         title: false,
@@ -241,14 +273,12 @@ describe('live intros', () => {
     const { realtime, intro, controlFor } = live();
     expect(realtime.opens).toContainEqual(['/producer/intros', { access: { permission: 'producer:intros.run' } }]);
     const one = await intro('Bout 1');
-    expect(lastRun(controlFor(one.id))).toMatchObject({ revision: 0, team: null, onAir: false });
+    expect(lastRun(controlFor(one.id))).toMatchObject({ revision: FIRST, team: null, onAir: false });
     expect(controlFor('nope')).toEqual([]);
     expect(realtime.connect('/producer/intros')).toEqual([]);
   });
 
   it('a run whose team is deleted ends at its next timer tick, and its rooms are told', async () => {
-    // Only timeouts and the clock are faked: Fastify's inject waits on the real setImmediate.
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     const { teams, intro, press, overlayFor, controlFor } = live();
     const one = await intro('Bout 1', {
       options: { ...DEFAULT_ROSTER_OPTIONS, advance: { mode: 'timer', seconds: 5 } },
