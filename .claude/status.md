@@ -2,7 +2,7 @@
 Updated: 2026-11-05 · Branch: feat/skater-intros
 
 ## Current focus
-Phase 2 (Screens): the skater intros design is written (`design-docs/specs/2026-11-05-skater-intros-design.md`, not committed yet) and approved by Mike; the implementation plan is next. It covers the overlay renderer, the team roster and team title card, a setup page standing in for the Screen Builder, a phone-friendly control page (Start each team, Next, Clear), and a read-only teams service for apps. Screen Builder gets its own design after.
+Phase 2 (Screens): the skater intros design is approved (`design-docs/specs/2026-11-05-skater-intros-design.md`), and its implementation plan (`design-docs/plans/2026-11-05-skater-intros.md`, 11 tasks) is waiting for Mike's review and choice of how to run it. It covers the overlay renderer, the team roster and team title card, a setup page standing in for the Screen Builder, a phone-friendly control page (Start each team, Next, Clear), and a read-only teams service for apps. Screen Builder gets its own design after.
 
 ## Recent changes
 - 2026-11-05: Decided the skater intros with Mike, using browser mockups. Person cards are photo cards (photo, number badge, name, roles and pronouns), in one centred row that never overlaps. "How many at once" is a setting: each Next (or timer step) adds a card, and a full row clears for the next group. Each team starts by hand with a banner title card in the roster's spot. Four entrances and nine positions. Bench staff are included. The whole team shows for now; active rosters (who's playing, picked when an event starts) come with Live Mode. Admins and Producers set up and run intros, the server keeps the place across reloads, and Stream Deck control is out of this work.

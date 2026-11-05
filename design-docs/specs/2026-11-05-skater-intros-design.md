@@ -1,6 +1,6 @@
 # Skater intros: design
 
-**Date:** 2026-11-05 · **Status:** written and builder-checked, waiting for Mike's review · **Issues:** to be filed with the plan (rcl-producer, plus rcl-core for the teams service) · **Mockups:** [2026-11-05-skater-intros-mockups/](2026-11-05-skater-intros-mockups/) (Mike chose card C, row A and banner B; they're HTML fragments from the brainstorm's browser companion, so open them for their sizes and animations rather than their page frame)
+**Date:** 2026-11-05 · **Status:** approved by Mike 2026-11-05 · **Plan:** [2026-11-05-skater-intros.md](../plans/2026-11-05-skater-intros.md) · **Issues:** to be filed with the plan (rcl-producer, plus rcl-core for the teams service) · **Mockups:** [2026-11-05-skater-intros-mockups/](2026-11-05-skater-intros-mockups/) (Mike chose card C, row A and banner B; they're HTML fragments from the brainstorm's browser companion, so open them for their sizes and animations rather than their page frame)
 
 ## Goal
 
