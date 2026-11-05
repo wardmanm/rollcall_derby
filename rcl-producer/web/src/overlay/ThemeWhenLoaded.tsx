@@ -25,10 +25,13 @@ export function ThemeWhenLoaded({ theme, children }: { theme: ThemeChanged; chil
   useEffect(() => {
     if (immediate || applied?.theme === theme) return undefined;
     let current = true;
-    const loads = fontsOf(theme).map((family) =>
-      Promise.resolve()
-        .then(() => document.fonts.load(`1em "${family.name}"`))
-        .catch(() => undefined),
+    // Every face is loaded, not just the regular one: a heading in bold would otherwise swap in on air.
+    const loads = fontsOf(theme).flatMap((family) =>
+      family.faces.map((face) =>
+        Promise.resolve()
+          .then(() => document.fonts.load(`${face.style} ${face.weightMin} 1em "${family.name}"`))
+          .catch(() => undefined),
+      ),
     );
     void Promise.all(loads).then(() => {
       if (!current) return undefined;

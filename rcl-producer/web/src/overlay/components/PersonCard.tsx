@@ -36,7 +36,13 @@ export function PersonCard({ card, width, logoUrl, onReady }: PersonCardProps) {
     <figure
       aria-label={card.name}
       className={classes.card}
-      style={{ width, ...cssVars({ '--name-length': Math.max(card.name.length, 1) }) }}
+      style={{
+        width,
+        ...cssVars({
+          '--name-length': Math.max(card.name.length, 1),
+          '--role-length': Math.max(card.roleLine.length, 1),
+        }),
+      }}
     >
       <div className={classes.frame}>
         <div className={classes.top}>

@@ -23,6 +23,13 @@ describe('PersonCard', () => {
     expect(screen.getByRole('figure', { name: 'Jammy Dodger' }).textContent).not.toContain('07');
   });
 
+  it('hands the name and role line lengths to the CSS that fits them', () => {
+    render(<PersonCard card={skater} width={420} logoUrl={LOGO} />);
+    const style = screen.getByRole('figure', { name: 'Jammy Dodger' }).style;
+    expect(style.getPropertyValue('--name-length')).toBe('12');
+    expect(style.getPropertyValue('--role-length')).toBe('17');
+  });
+
   it('is ready when its photo loads', () => {
     const onReady = vi.fn<() => void>();
     const { container } = render(<PersonCard card={skater} width={420} logoUrl={LOGO} onReady={onReady} />);

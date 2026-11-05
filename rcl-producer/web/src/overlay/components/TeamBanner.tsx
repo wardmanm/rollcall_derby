@@ -25,8 +25,10 @@ export function TeamBanner({ team, onReady }: TeamBannerProps) {
           <img src={team.logoUrl} alt="" onLoad={ready} onError={ready} />
         </div>
       )}
-      <div>
-        <div className={classes.name}>{team.name}</div>
+      <div className={classes.text}>
+        <div className={classes.name} style={cssVars({ '--name-length': Math.max(team.name.length, 1) })}>
+          {team.name}
+        </div>
         {team.leagueName !== null && <div className={classes.league}>{team.leagueName}</div>}
       </div>
     </div>

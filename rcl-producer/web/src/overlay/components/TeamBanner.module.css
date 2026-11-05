@@ -37,11 +37,26 @@
   object-fit: contain;
 }
 
+/* A flex item won't shrink below its content unless told, so a long name would run out of the bar. */
+.text {
+  min-width: 0;
+}
+
+/* Shrinks to fit (about 0.7em per uppercase character, an approximation) down to 60%, then wraps to two lines at most
+   and ends in an ellipsis. The bar's text area is the canvas less padding, logo and gap: 1920 - 81 - 144 - 31 - 58 = about
+   1600px, so 2 lines at 30px hold 64 characters. */
 .name {
+  --base: 50px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: clamp(calc(var(--base) * 0.6), calc(1600px / (var(--name-length) * 0.7)), var(--base));
   font-family: var(--theme-font-heading);
   font-weight: var(--theme-font-heading-weight);
   text-transform: var(--theme-heading-transform);
-  font-size: 50px;
   line-height: 1.05;
 }
 

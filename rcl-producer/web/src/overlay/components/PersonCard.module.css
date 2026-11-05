@@ -64,12 +64,19 @@
   text-align: center;
 }
 
-/* Fits one line down to 60% of the base size (11.8cqw), then wraps to two. This is an approximation, not a
-   measurement: an uppercase heading is taken to be about 0.7em wide per character, so a condensed or wide heading font
-   may shrink or wrap a little early or late. The name sits in the card's width less the frame's border (2 x 1.8cqw)
-   and the text padding (2 x 7.3cqw), 81.8cqw. */
+/* Every card in a row is the same height, so the text area is fixed: the name gets a two-line block and the role line
+   one line, whatever they say. The name fits one line down to 60% of the base size (11.8cqw), then wraps to two and
+   ends in an ellipsis. This is an approximation, not a measurement: an uppercase heading is taken to be about 0.7em
+   wide per character, so a condensed or wide heading font may shrink or wrap a little early or late. The name sits in
+   the card's width less the frame's border (2 x 1.8cqw) and the text padding (2 x 7.3cqw), 81.8cqw. */
 .name {
   --base: 11.8cqw;
+  height: calc(var(--base) * 1.1 * 2);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
   font-family: var(--theme-font-heading);
   font-weight: var(--theme-font-heading-weight);
   text-transform: var(--theme-heading-transform);
@@ -78,11 +85,17 @@
   overflow-wrap: anywhere;
 }
 
+/* One line, shrinking like the name (down to 60% of 6.4cqw), then an ellipsis. Each character takes about 0.7em plus
+   the 0.12em letter spacing. The height stays that of a full-size line, so an empty line keeps it too. */
 .role {
-  min-height: 1.5em;
-  font-size: 6.4cqw;
+  --base: 6.4cqw;
+  height: calc(var(--base) * 1.5);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: clamp(calc(var(--base) * 0.6), calc((81.8cqw) / (var(--role-length) * 0.82)), var(--base));
   font-weight: 600;
-  line-height: 1.5;
+  line-height: calc(var(--base) * 1.5);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--team-secondary);

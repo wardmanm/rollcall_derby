@@ -75,6 +75,34 @@ describe('ThemeWhenLoaded', () => {
     expect(accent(container)).toBe('#ffd700');
   });
 
+  it('waits for every face of a family, not just the regular one', async () => {
+    const loads = new Map<string, ReturnType<typeof deferred>>();
+    const load = vi.fn<(font: string) => Promise<unknown>>((font) => {
+      const entry = deferred();
+      loads.set(font, entry);
+      return entry.promise;
+    });
+    Object.defineProperty(document, 'fonts', { configurable: true, value: { load } });
+    const theme = withAccent('#ff0000');
+    const [family] = theme!.families;
+    family!.faces.push({
+      id: 'g',
+      weightMin: 700,
+      weightMax: 700,
+      style: 'normal',
+      format: 'font/woff2',
+      url: '/fonts/x-bold.woff2',
+    });
+    const { container } = render(<ThemeWhenLoaded theme={theme}>x</ThemeWhenLoaded>);
+    await vi.waitFor(() => expect(load).toHaveBeenCalledTimes(2));
+    expect(load).toHaveBeenCalledWith('normal 400 1em "Inter"');
+    expect(load).toHaveBeenCalledWith('normal 700 1em "Inter"');
+    await act(async () => loads.get('normal 400 1em "Inter"')!.resolve());
+    expect(accent(container)).toBeUndefined();
+    await act(async () => loads.get('normal 700 1em "Inter"')!.resolve());
+    expect(accent(container)).toBe('#ff0000');
+  });
+
   it('switches anyway when a font fails to load', async () => {
     Object.defineProperty(document, 'fonts', {
       configurable: true,

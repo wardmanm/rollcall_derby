@@ -22,6 +22,13 @@ describe('TeamBanner', () => {
     expect(container.querySelector('img')).toBeNull();
   });
 
+  it('hands the name length to the CSS that fits it', () => {
+    const { container } = render(<TeamBanner team={team} />);
+    expect(
+      container.querySelector<HTMLElement>('[style*="--name-length"]')?.style.getPropertyValue('--name-length'),
+    ).toBe('21');
+  });
+
   it('is ready when its logo loads or fails, and at once with no logo', () => {
     const onReady = vi.fn<() => void>();
     const { container, unmount } = render(<TeamBanner team={team} onReady={onReady} />);
