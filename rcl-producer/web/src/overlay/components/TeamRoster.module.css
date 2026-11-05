@@ -18,7 +18,9 @@
   justify-content: center;
 }
 
-.piece[data-state='waiting'] {
+/* Hidden until its picture is on show, and, for a card, until its place has opened. */
+.piece[data-state='waiting'],
+.piece[data-state='opening'] {
   visibility: hidden;
 }
 
@@ -35,8 +37,10 @@
   min-width: 0;
 }
 
-/* A card's place opens to the card's width, sliding the cards already up aside, before the card comes in. A waiting
-   card's place is closed, so it takes no room. The card is centered in its place while it opens. */
+/* A card's place opens to the card's width, sliding the cards already up aside, before the card comes in. A card
+   waiting to join the row has its place closed, so it takes no room; one on screen at a reload (data-quiet) waits in
+   its place, so the row doesn't move when it appears. The card stays hidden until its place has opened, since the open
+   card overhangs a part-open place. */
 .place {
   width: var(--card-width);
   transition:
@@ -48,20 +52,16 @@
   margin-inline-start: var(--card-gap);
 }
 
-.place[data-state='waiting'] {
+.place[data-state='waiting']:not([data-quiet]) {
   width: 0;
   margin-inline-start: 0;
 }
 
-/* Entrances, about 400 ms. A card's waits for its place to open. */
+/* Entrances, about 400 ms. */
 .piece[data-state='entering'] > .motion {
   animation-duration: 400ms;
   animation-timing-function: ease-out;
   animation-fill-mode: both;
-}
-
-.place[data-state='entering'] > .motion {
-  animation-delay: 300ms;
 }
 
 .piece[data-entrance='pop'] > .motion {
@@ -87,7 +87,6 @@
   animation-duration: 400ms;
   animation-timing-function: ease-in;
   animation-fill-mode: both;
-  animation-delay: 0s;
 }
 
 .piece[data-leaving][data-entrance='pop'] > .motion {

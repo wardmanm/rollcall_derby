@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect, waitFor } from 'storybook/test';
 import type { RosterCard, RosterOnAir } from '@rollcall/producer-contract';
 import { OverlayCanvas } from './OverlayCanvas.tsx';
 import { TeamRoster } from './TeamRoster.tsx';
@@ -55,7 +56,7 @@ function row(count: number, slots: number, fields: Partial<RosterOnAir> = {}): R
   };
 }
 
-// Mounting is a reload, so each story shows its state as it is, with no entrances.
+// Mounting is a reload: each piece appears, with no entrance, once its picture is on show.
 const meta = {
   title: 'Components/TeamRoster',
   component: TeamRoster,
@@ -69,6 +70,10 @@ const meta = {
   ],
   // The canvas fills the window, so on the docs page each story gets a frame of its own.
   parameters: { docs: { story: { inline: false, iframeHeight: 360 } } },
+  // Wait for every piece to appear, so the accessibility checks see the roster as it shows on stream.
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(canvasElement.querySelector('[data-state="waiting"]')).toBeNull());
+  },
 } satisfies Meta<typeof TeamRoster>;
 
 export default meta;

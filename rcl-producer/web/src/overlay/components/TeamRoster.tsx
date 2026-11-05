@@ -13,17 +13,20 @@ export interface TeamRosterProps {
   onAir: RosterOnAir | null;
 }
 
-/** A piece (the banner, or one card) waits for its picture, then plays its entrance, then is shown. */
-type Phase = 'waiting' | 'entering' | 'shown';
+/**
+ * A piece (the banner, or one card) waits, hidden, for its picture. A card's place then opens, with the card still
+ * hidden; the banner skips that. Then the piece plays its entrance, and is shown.
+ */
+type Phase = 'waiting' | 'opening' | 'entering' | 'shown';
 
 /** The banner's key among the pieces. Cards go by their ids; a title screen has no cards, so the two never meet. */
 const TITLE = 'title';
 
 /**
- * A leaving animation takes 400 ms. If none has ended by this time (the browser source was hidden, say), what is next
- * comes in anyway, so the roster never sticks.
+ * A place opens in 300 ms and a piece leaves in 400 ms. If neither has ended by this time (the browser source was
+ * hidden, say), the roster takes it as ended, so it never sticks.
  */
-const LEAVE_TIMEOUT_MS = 1000;
+const FALLBACK_MS = 1000;
 
 interface RosterState {
   /** The latest `onAir` given. While something is leaving, it comes in once that has gone. */
@@ -33,6 +36,11 @@ interface RosterState {
   /** Counts the screens shown, so each one mounts fresh pieces: a piece says it's ready only once. */
   screen: number;
   phases: Record<string, Phase>;
+  /**
+   * The pieces on screen at mount, which is a reload. Each waits in its place, so the row doesn't move, and appears
+   * with no entrance once its picture is on show.
+   */
+  quiet: string[];
   /** Whether what is on screen is leaving, and the pieces that have finished. */
   leaving: boolean;
   left: string[];
@@ -41,7 +49,9 @@ interface RosterState {
 type Action =
   | { type: 'onAir'; onAir: RosterOnAir | null }
   | { type: 'ready'; key: string; screen: number }
+  | { type: 'opened'; key: string }
   | { type: 'animationEnd'; key: string }
+  | { type: 'openTimeout'; screen: number }
   | { type: 'leaveTimeout'; screen: number };
 
 function keysOf(onAir: RosterOnAir | null): string[] {
@@ -49,8 +59,13 @@ function keysOf(onAir: RosterOnAir | null): string[] {
   return onAir.title ? [TITLE] : onAir.cards.map((card) => card.id);
 }
 
-function allAt(keys: string[], phase: Phase): Record<string, Phase> {
-  return Object.fromEntries(keys.map((key) => [key, phase]));
+/** Whether a piece can be seen: one still waiting for its picture, or for its place to open, is hidden. */
+function isUp(phase: Phase | undefined): boolean {
+  return phase === 'entering' || phase === 'shown';
+}
+
+function waiting(keys: string[]): Record<string, Phase> {
+  return Object.fromEntries(keys.map((key) => [key, 'waiting']));
 }
 
 /** The row carried on, or the same title again (sent again after a reconnect, say): nothing leaves. */
@@ -60,9 +75,9 @@ function carriesOn(shown: RosterOnAir | null, next: RosterOnAir | null): boolean
   return shown.title && next.title && shown.team.name === next.team.name;
 }
 
-/** The pieces that are up and so have to leave. One still waiting for its picture was never seen. */
+/** The pieces that can be seen, and so have to leave. */
 function upNow({ shown, phases }: RosterState): string[] {
-  return keysOf(shown).filter((key) => phases[key] !== 'waiting');
+  return keysOf(shown).filter((key) => isUp(phases[key]));
 }
 
 function show(state: RosterState, onAir: RosterOnAir | null): RosterState {
@@ -70,15 +85,21 @@ function show(state: RosterState, onAir: RosterOnAir | null): RosterState {
     latest: onAir,
     shown: onAir,
     screen: state.screen + 1,
-    phases: allAt(keysOf(onAir), 'waiting'),
+    phases: waiting(keysOf(onAir)),
+    quiet: [],
     leaving: false,
     left: [],
   };
 }
 
-// The first state at mount is a reload (or the first thing the server sent): it is shown as it is, with no entrances.
+// The first state at mount is a reload (or the first thing the server sent): its pieces come in quietly.
 function start(onAir: RosterOnAir | null): RosterState {
-  return { latest: onAir, shown: onAir, screen: 0, phases: allAt(keysOf(onAir), 'shown'), leaving: false, left: [] };
+  const keys = keysOf(onAir);
+  return { latest: onAir, shown: onAir, screen: 0, phases: waiting(keys), quiet: keys, leaving: false, left: [] };
+}
+
+function withPhase(state: RosterState, keys: string[], phase: Phase): RosterState {
+  return { ...state, phases: { ...state.phases, ...Object.fromEntries(keys.map((key) => [key, phase])) } };
 }
 
 function reduce(state: RosterState, action: Action): RosterState {
@@ -94,16 +115,28 @@ function reduce(state: RosterState, action: Action): RosterState {
       if (upNow(state).length === 0) return show(state, next);
       return { ...state, latest: next, leaving: true, left: [] };
     }
-    case 'ready':
-      if (action.screen !== state.screen || state.leaving || state.phases[action.key] !== 'waiting') return state;
-      return { ...state, phases: { ...state.phases, [action.key]: 'entering' } };
+    case 'ready': {
+      const { key } = action;
+      if (action.screen !== state.screen || state.leaving || state.phases[key] !== 'waiting') return state;
+      if (state.quiet.includes(key)) return withPhase(state, [key], 'shown');
+      return withPhase(state, [key], key === TITLE ? 'entering' : 'opening');
+    }
+    case 'opened':
+      // While the row leaves, a card whose place has only just opened stays hidden.
+      if (state.leaving || state.phases[action.key] !== 'opening') return state;
+      return withPhase(state, [action.key], 'entering');
     case 'animationEnd': {
       if (state.leaving) {
         const left = state.left.includes(action.key) ? state.left : [...state.left, action.key];
         return upNow(state).every((key) => left.includes(key)) ? show(state, state.latest) : { ...state, left };
       }
       if (state.phases[action.key] !== 'entering') return state;
-      return { ...state, phases: { ...state.phases, [action.key]: 'shown' } };
+      return withPhase(state, [action.key], 'shown');
+    }
+    case 'openTimeout': {
+      if (state.leaving || action.screen !== state.screen) return state;
+      const opening = keysOf(state.shown).filter((key) => state.phases[key] === 'opening');
+      return withPhase(state, opening, 'entering');
     }
     default: // 'leaveTimeout'
       return state.leaving && action.screen === state.screen ? show(state, state.latest) : state;
@@ -127,16 +160,24 @@ export function TeamRoster({ onAir }: TeamRosterProps) {
   // A new state from the server (React's pattern for state that follows a prop).
   if (state.latest !== onAir) dispatch({ type: 'onAir', onAir });
 
-  const { shown, phases, leaving, screen } = state;
+  const { shown, phases, quiet, leaving, screen } = state;
 
   useEffect(() => {
     if (!leaving) return undefined;
-    const timer = setTimeout(() => dispatch({ type: 'leaveTimeout', screen }), LEAVE_TIMEOUT_MS);
+    const timer = setTimeout(() => dispatch({ type: 'leaveTimeout', screen }), FALLBACK_MS);
     return () => clearTimeout(timer);
   }, [leaving, screen]);
 
-  // Every piece's animationend bubbles up to the root. This listens natively: React's onAnimationEnd listens for a
-  // vendor-prefixed name where AnimationEvent is missing (as in jsdom).
+  // Restarts whenever another place starts opening, so every place has had the whole time when it goes off.
+  const opening = JSON.stringify(keysOf(shown).filter((key) => phases[key] === 'opening'));
+  useEffect(() => {
+    if (opening === '[]') return undefined;
+    const timer = setTimeout(() => dispatch({ type: 'openTimeout', screen }), FALLBACK_MS);
+    return () => clearTimeout(timer);
+  }, [opening, screen]);
+
+  // Every piece's animationend, and each place's own transitionend as it opens, bubble up to the root. This listens
+  // natively: React's onAnimationEnd listens for a vendor-prefixed name where AnimationEvent is missing (as in jsdom).
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const element = root.current;
@@ -144,10 +185,16 @@ export function TeamRoster({ onAir }: TeamRosterProps) {
     const onEnd = (event: Event) => {
       const piece = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-piece]') : null;
       const key = piece?.dataset.piece;
-      if (key !== undefined) dispatch({ type: 'animationEnd', key });
+      if (key === undefined) return;
+      if (event.type === 'animationend') dispatch({ type: 'animationEnd', key });
+      else if (event.target === piece) dispatch({ type: 'opened', key });
     };
     element.addEventListener('animationend', onEnd);
-    return () => element.removeEventListener('animationend', onEnd);
+    element.addEventListener('transitionend', onEnd);
+    return () => {
+      element.removeEventListener('animationend', onEnd);
+      element.removeEventListener('transitionend', onEnd);
+    };
   }, []);
 
   const preload = onAir?.upNext?.photoUrl ?? null;
@@ -157,11 +204,12 @@ export function TeamRoster({ onAir }: TeamRosterProps) {
     const { edge, spot } = shown.placement;
     const width = cardWidth(CANVAS_WIDTH - 2 * edge, shown.slots);
     const pieceAttributes = (key: string) => {
-      const phase = phases[key] ?? 'shown';
-      const goes = leaving && phase !== 'waiting';
+      const phase = phases[key] ?? 'waiting';
+      const goes = leaving && isUp(phase);
       return {
         'data-piece': key,
         'data-state': phase,
+        'data-quiet': quiet.includes(key) ? '' : undefined,
         'data-entrance': goes || phase === 'entering' ? shown.entrance : undefined,
         'data-leaving': goes ? '' : undefined,
       };
