@@ -18,10 +18,15 @@
   justify-content: center;
 }
 
-/* Hidden until its picture is on show, and, for a card, until its place has opened. */
-.piece[data-state='waiting'],
-.piece[data-state='opening'] {
+/* Hidden until its picture is on show, and, for a card, until its place has opened. Only the states that are up show,
+   so a piece in any other state, or none, stays hidden. */
+.piece {
   visibility: hidden;
+}
+
+.piece[data-state='entering'],
+.piece[data-state='shown'] {
+  visibility: visible;
 }
 
 .motion {
