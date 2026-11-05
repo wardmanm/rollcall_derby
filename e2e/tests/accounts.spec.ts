@@ -319,5 +319,5 @@ test('an Admin sets up a skater intro and runs it on the OBS page', async ({ pag
   await expect(obs.getByText('Night Owls')).toBeVisible();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await expect(obs.getByText('Penny Lane')).toBeVisible();
-  await expect(page.getByText('On screen')).toBeVisible();
+  await expect(page.getByText('On screen', { exact: true })).toBeVisible();
 });

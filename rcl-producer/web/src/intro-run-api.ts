@@ -5,10 +5,10 @@ import { introUrl } from './api.ts';
 
 /**
  * What the control page shows: the run as the server last said it, when this phone received it (the countdown
- * counts from that, never from the server's clock) and whether the live connection is up.
+ * counts from that, never from the server's clock) and the live connection: not up yet, up, or dropped since.
  */
 export interface IntroRunView {
-  connected: boolean;
+  connection: 'connecting' | 'connected' | 'reconnecting';
   run: IntroRun;
   receivedAt: number;
 }
@@ -27,12 +27,12 @@ const runQueries = api.injectEndpoints({
     getIntroRun: build.query<IntroRunView, string>({
       query: (id) => `${introUrl(id)}/run`,
       transformResponse: (response: unknown): IntroRunView => ({
-        connected: false,
+        connection: 'connecting',
         run: IntroRunSchema.parse(response),
         receivedAt: Date.now(),
       }),
       keepUnusedDataFor: 0,
-      // A fetch again (such as on return to the tab) leaves the socket's `connected` alone and follows the same
+      // A fetch again (such as on return to the tab) leaves the socket's `connection` alone and follows the same
       // newer-revision rule as the socket's own events.
       merge: (current, incoming) => takeRun(current, incoming.run),
       async onCacheEntryAdded(id, lifecycle) {
@@ -47,9 +47,9 @@ const runQueries = api.injectEndpoints({
         let firstAfterConnect = true;
         socket.on('connect', () => {
           firstAfterConnect = true;
-          lifecycle.updateCachedData((draft) => void (draft.connected = true));
+          lifecycle.updateCachedData((draft) => void (draft.connection = 'connected'));
         });
-        socket.on('disconnect', () => lifecycle.updateCachedData((draft) => void (draft.connected = false)));
+        socket.on('disconnect', () => lifecycle.updateCachedData((draft) => void (draft.connection = 'reconnecting')));
         socket.on(INTRO_RUN_EVENT, (payload: unknown) => {
           const run = IntroRunSchema.safeParse(payload);
           if (!run.success) return;
