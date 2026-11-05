@@ -2,6 +2,7 @@ import type { RouteObject } from 'react-router';
 import { APP_NAME } from '@rollcall/core-contract';
 import { AppLayout, PageNotFound, SignInGate, type AppLink } from '@rollcall/web-sdk';
 import { HomePage } from './pages/HomePage.tsx';
+import { IntroRunPage } from './pages/IntroRunPage.tsx';
 import { IntroSetupPage } from './pages/IntroSetupPage.tsx';
 import { IntrosPage } from './pages/IntrosPage.tsx';
 import { ThemePage } from './pages/ThemePage.tsx';
@@ -29,6 +30,7 @@ export const routes: RouteObject[] = [
       { path: 'themes/:id', element: <ThemePage /> },
       { path: 'intros', element: <IntrosPage /> },
       { path: 'intros/:id', element: <IntroSetupPage /> },
+      { path: 'intros/:id/run', element: <IntroRunPage /> },
       { path: '*', element: <PageNotFound /> },
     ],
   },

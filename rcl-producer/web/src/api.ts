@@ -7,17 +7,22 @@ import {
   type TeamSummary,
 } from '@rollcall/core-contract';
 import {
+  INTRO_RUN_EVENT,
+  IntroRunSchema,
   IntroSchema,
   SetDefaultThemeRequestSchema,
   ThemeSchema,
   type CreateIntroRequest,
   type CreateThemeRequest,
   type Intro,
+  type IntroRun,
+  type IntroTeamSlot,
   type SetDefaultThemeRequest,
   type Theme,
   type UpdateIntroRequest,
   type UpdateThemeRequest,
 } from '@rollcall/producer-contract';
+import { io } from 'socket.io-client';
 import { api } from '@rollcall/web-sdk';
 
 const themeUrl = (id: string) => `producer/themes/${encodeURIComponent(id)}`;
@@ -116,6 +121,108 @@ const producerApi = api.enhanceEndpoints({ addTagTypes: ['Themes', 'Fonts', 'Int
     }),
   }),
 });
+
+/**
+ * What the control page shows: the run as the server last said it, when this phone received it (the countdown
+ * counts from that, never from the server's clock) and whether the live connection is up.
+ */
+export interface IntroRunView {
+  connected: boolean;
+  run: IntroRun;
+  receivedAt: number;
+}
+
+// A newer state replaces the shown one; `force` takes it whatever its revision (the first after a reconnect).
+function takeRun(draft: IntroRunView, run: IntroRun, force = false) {
+  if (!force && run.revision <= draft.run.revision) return;
+  draft.run = run;
+  draft.receivedAt = Date.now();
+}
+
+const runQueries = producerApi.injectEndpoints({
+  endpoints: (build) => ({
+    // An intro's live run: fetched once, then kept current by the server's `intro:run` events (ADR-0019). Held in the
+    // query cache, not a slice (hard rule 6).
+    getIntroRun: build.query<IntroRunView, string>({
+      query: (id) => `${introUrl(id)}/run`,
+      transformResponse: (response: unknown): IntroRunView => ({
+        connected: false,
+        run: IntroRunSchema.parse(response),
+        receivedAt: Date.now(),
+      }),
+      keepUnusedDataFor: 0,
+      async onCacheEntryAdded(id, lifecycle) {
+        try {
+          await lifecycle.cacheDataLoaded;
+        } catch {
+          return; // The request failed (such as an intro that was deleted): the page shows that, and no socket opens.
+        }
+        const socket = io('/producer/intros', { auth: { intro: id } });
+        // The first state after each (re)connect is taken as it comes: a server restart, or an intro deleted while
+        // disconnected, can legitimately start again from a lower revision.
+        let firstAfterConnect = true;
+        socket.on('connect', () => {
+          firstAfterConnect = true;
+          lifecycle.updateCachedData((draft) => void (draft.connected = true));
+        });
+        socket.on('disconnect', () => lifecycle.updateCachedData((draft) => void (draft.connected = false)));
+        socket.on(INTRO_RUN_EVENT, (payload: unknown) => {
+          const run = IntroRunSchema.safeParse(payload);
+          if (!run.success) return;
+          const force = firstAfterConnect;
+          firstAfterConnect = false;
+          lifecycle.updateCachedData((draft) => takeRun(draft, run.data, force));
+        });
+        await lifecycle.cacheEntryRemoved;
+        socket.close();
+      },
+    }),
+  }),
+});
+
+// An action's reply goes into the run's cache entry, under the same newer-revision rule as the socket's.
+const runApi = runQueries.injectEndpoints({
+  endpoints: (build) => ({
+    startIntro: build.mutation<IntroRun, { id: string; team: IntroTeamSlot }>({
+      query: ({ id, team }) => ({ url: `${introUrl(id)}/start`, method: 'POST', body: { team } }),
+      transformResponse: (response: unknown) => IntroRunSchema.parse(response),
+      async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(runQueries.util.updateQueryData('getIntroRun', id, (draft) => takeRun(draft, data)));
+        } catch {
+          // The page shows the failure from the mutation's own result.
+        }
+      },
+    }),
+    nextIntro: build.mutation<IntroRun, { id: string; revision: number }>({
+      query: ({ id, revision }) => ({ url: `${introUrl(id)}/next`, method: 'POST', body: { revision } }),
+      transformResponse: (response: unknown) => IntroRunSchema.parse(response),
+      async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(runQueries.util.updateQueryData('getIntroRun', id, (draft) => takeRun(draft, data)));
+        } catch {
+          // The page shows the failure from the mutation's own result.
+        }
+      },
+    }),
+    clearIntro: build.mutation<IntroRun, { id: string }>({
+      query: ({ id }) => ({ url: `${introUrl(id)}/clear`, method: 'POST', body: {} }),
+      transformResponse: (response: unknown) => IntroRunSchema.parse(response),
+      async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(runQueries.util.updateQueryData('getIntroRun', id, (draft) => takeRun(draft, data)));
+        } catch {
+          // The page shows the failure from the mutation's own result.
+        }
+      },
+    }),
+  }),
+});
+
+export const { useGetIntroRunQuery, useStartIntroMutation, useNextIntroMutation, useClearIntroMutation } = runApi;
 
 export const {
   useGetFontsQuery,
