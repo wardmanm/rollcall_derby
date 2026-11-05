@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import type { IntroRun } from '@rollcall/producer-contract';
 import { json, signedIn } from '@rollcall/web-sdk/testing';
 import { FakeSocket } from '../overlay/test-socket.ts';
@@ -44,15 +44,17 @@ async function openRun(state = run(), more = {}) {
   await screen.findByRole('button', { name: 'Start Wreckers' });
   await vi.waitFor(() => expect(socket.listening).toBe(true));
   await tell('connect');
+  await vi.waitFor(() =>
+    expect(screen.getByRole('button', { name: 'Start Wreckers' }).hasAttribute('disabled')).toBe(false),
+  );
   return { ...server, router };
 }
 
-// The server says something. The page follows a moment later, once the store has told it.
+// The server says something. The page follows once the store has told it, so tests wait for what they expect to see.
 const tell = (event: string, ...args: unknown[]) =>
   act(async () => {
     socket.emit(event, ...args);
-    if (vi.isFakeTimers()) await vi.advanceTimersByTimeAsync(20);
-    else await new Promise((resolve) => setTimeout(resolve, 20));
+    await Promise.resolve();
   });
 const send = (state: IntroRun) => tell('intro:run', state);
 
@@ -81,8 +83,25 @@ describe('the intro control page', () => {
   it('shows a newer state from the socket and ignores an older one', async () => {
     await openRun(run({ revision: 3, team: 'a', people: PEOPLE }));
     await send(run({ revision: 4, team: 'a', people: PEOPLE, title: true }));
-    expect(screen.getByText('Title card is up')).toBeTruthy();
-    await send(run({ revision: 2, team: 'a', people: PEOPLE, title: false }));
+    await screen.findByText('Title card is up');
+    // Watch the page for the stale state's mark, then send a newer state to know the stale one has had its chance.
+    let staleShown = false;
+    const watcher = new MutationObserver(() => {
+      if (document.body.textContent.includes('Stale Sam')) staleShown = true;
+    });
+    watcher.observe(document.body, { childList: true, subtree: true, characterData: true });
+    await send(
+      run({
+        revision: 2,
+        team: 'a',
+        title: false,
+        people: [{ id: 'p9', name: 'Stale Sam', number: '1', kind: 'skater' }],
+      }),
+    );
+    await send(run({ revision: 5, team: 'a', people: PEOPLE, title: true }));
+    await screen.findByText('Ada Slam');
+    watcher.disconnect();
+    expect(staleShown).toBe(false);
     expect(screen.getByText('Title card is up')).toBeTruthy();
   });
 
@@ -91,14 +110,26 @@ describe('the intro control page', () => {
     await tell('disconnect');
     await tell('connect');
     await send(run({ revision: 1, team: 'a', people: PEOPLE, title: false }));
-    expect(screen.queryByText('Title card is up')).toBeNull();
+    await vi.waitFor(() => expect(screen.queryByText('Title card is up')).toBeNull());
+  });
+
+  it('keeps the buttons enabled when the run is fetched again while connected', async () => {
+    const { requests } = await openRun(run({ revision: 3, team: 'a', people: PEOPLE }));
+    const fetches = () => requests.filter((r) => r.method === 'GET' && r.path === '/api/producer/intros/i1/run').length;
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+    });
+    await vi.waitFor(() => expect(fetches()).toBe(2));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.queryByText(/Reconnecting/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Next' }).hasAttribute('disabled')).toBe(false);
   });
 
   it('disables the buttons while the connection is down', async () => {
     await openRun(run({ team: 'a', people: PEOPLE }));
     expect(screen.getByRole('button', { name: 'Next' }).hasAttribute('disabled')).toBe(false);
     await tell('disconnect');
-    expect(screen.getByText('Reconnecting… The buttons come back when the connection does.')).toBeTruthy();
+    expect(await screen.findByText('Reconnecting… The buttons come back when the connection does.')).toBeTruthy();
     for (const name of ['Start Wreckers', 'Start Brawlers', 'Next', 'Clear']) {
       expect(screen.getByRole('button', { name }).hasAttribute('disabled')).toBe(true);
     }
@@ -114,8 +145,9 @@ describe('the intro control page', () => {
     await openRun(run({ team: 'a', people: PEOPLE, next: 'p2' }));
     vi.useFakeTimers();
     await send(run({ revision: 2, team: 'a', people: PEOPLE, next: 'p2', timerMsLeft: 5000 }));
-    expect(screen.getByText('Next in 5 s')).toBeTruthy();
-    await act(() => vi.advanceTimersByTimeAsync(2000));
+    await vi.waitFor(() => expect(screen.getByText('Next in 5 s')).toBeTruthy());
+    // Two seconds plus a little: the 250 ms ticks land exactly on 2000 ms, and the extra margin keeps the rounding safe.
+    await act(() => vi.advanceTimersByTimeAsync(2100));
     expect(screen.getByText('Next in 3 s')).toBeTruthy();
   });
 
@@ -127,16 +159,27 @@ describe('the intro control page', () => {
     expect(await screen.findByText('Pick team A first')).toBeTruthy();
   });
 
-  it('names a team that has left as Start team B and keeps it disabled', async () => {
-    const server = signedIn(RUNNER, {
-      'GET /api/producer/intros/i1': json(intro('i1', 'Saturday bout', { teamAId: 'tm1', teamBId: 'gone' })),
-      'GET /api/producer/intros/i1/run': json(run()),
-      'GET /api/core/teams': json([summary('tm1', 'Wreckers')]),
-    });
-    expect(server).toBeTruthy();
-    openProducer('/producer/intros/i1/run');
-    const button = await screen.findByRole('button', { name: 'Start team B' });
-    expect(button.hasAttribute('disabled')).toBe(true);
+  it('names a missing team or an empty slot as Start team A or B and keeps it disabled', async () => {
+    for (const [teamAId, teamBId, slot] of [
+      ['tm1', 'gone', 'B'],
+      ['tm1', null, 'B'],
+    ] as const) {
+      cleanup();
+      signedIn(RUNNER, {
+        'GET /api/producer/intros/i1': json(intro('i1', 'Saturday bout', { teamAId, teamBId })),
+        'GET /api/producer/intros/i1/run': json(run()),
+        'GET /api/core/teams': json([summary('tm1', 'Wreckers')]),
+      });
+      socket = new FakeSocket();
+      openProducer('/producer/intros/i1/run');
+      const missing = await screen.findByRole('button', { name: `Start team ${slot}` });
+      await vi.waitFor(() => expect(socket.listening).toBe(true));
+      await tell('connect');
+      await vi.waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Start Wreckers' }).hasAttribute('disabled')).toBe(false),
+      );
+      expect(missing.hasAttribute('disabled')).toBe(true);
+    }
   });
 
   it('says so when the intro was deleted, and disables the buttons', async () => {

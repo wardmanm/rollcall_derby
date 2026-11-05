@@ -151,6 +151,9 @@ const runQueries = producerApi.injectEndpoints({
         receivedAt: Date.now(),
       }),
       keepUnusedDataFor: 0,
+      // A fetch again (such as on return to the tab) leaves the socket's `connected` alone and follows the same
+      // newer-revision rule as the socket's own events.
+      merge: (current, incoming) => takeRun(current, incoming.run),
       async onCacheEntryAdded(id, lifecycle) {
         try {
           await lifecycle.cacheDataLoaded;

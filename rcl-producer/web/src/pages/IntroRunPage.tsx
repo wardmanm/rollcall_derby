@@ -28,7 +28,7 @@ const isNotFound = (error: unknown) => apiError(error)?.code === 'not_found';
 function IntroControls({ id }: { id: string }) {
   const intro = useGetIntroQuery(id);
   const teams = useGetTeamsQuery();
-  const live = useGetIntroRunQuery(id);
+  const live = useGetIntroRunQuery(id, { refetchOnFocus: true }); // a phone that slept catches up on return
   const [start] = useStartIntroMutation();
   const [next] = useNextIntroMutation();
   const [clear] = useClearIntroMutation();
