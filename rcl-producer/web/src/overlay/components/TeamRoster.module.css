@@ -1,0 +1,192 @@
+/* Row A and banner B (2-row.html, 3-title-card.html). The roster fills the canvas. Its box, set inline, is the canvas
+   inside the edge distance, and the spot anchors the row or the banner in it. Slide-up starts below the box, so the
+   roster clips at the canvas edge. */
+.roster {
+  position: relative;
+  overflow: hidden;
+}
+
+.box {
+  position: absolute;
+  display: flex;
+}
+
+/* A piece is the banner or one card's place. Its first child, .motion, plays the entrance and the exit. */
+.piece {
+  flex: none;
+  display: flex;
+  justify-content: center;
+}
+
+.piece[data-state='waiting'] {
+  visibility: hidden;
+}
+
+.motion {
+  flex: none;
+}
+
+.title {
+  max-width: 100%;
+}
+
+.title > .motion {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* A card's place opens to the card's width, sliding the cards already up aside, before the card comes in. A waiting
+   card's place is closed, so it takes no room. The card is centered in its place while it opens. */
+.place {
+  width: var(--card-width);
+  transition:
+    width 300ms ease-in-out,
+    margin 300ms ease-in-out;
+}
+
+.place + .place {
+  margin-inline-start: var(--card-gap);
+}
+
+.place[data-state='waiting'] {
+  width: 0;
+  margin-inline-start: 0;
+}
+
+/* Entrances, about 400 ms. A card's waits for its place to open. */
+.piece[data-state='entering'] > .motion {
+  animation-duration: 400ms;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+
+.place[data-state='entering'] > .motion {
+  animation-delay: 300ms;
+}
+
+.piece[data-entrance='pop'] > .motion {
+  animation-name: pop-in;
+}
+
+.piece[data-entrance='slide-up'] > .motion {
+  animation-name: slide-up-in;
+}
+
+.piece[data-entrance='fade'] > .motion {
+  animation-name: fade-in;
+}
+
+.piece[data-entrance='wipe'] > .motion {
+  animation-name: wipe-in;
+}
+
+/* Exits: the entrance in reverse, at once, everything up together. These come after the entrances and are more
+   specific, so a piece told to leave while still entering leaves. Each has its own keyframes, so it always starts a new
+   animation (and so ends with an animationend). */
+.piece[data-leaving] > .motion {
+  animation-duration: 400ms;
+  animation-timing-function: ease-in;
+  animation-fill-mode: both;
+  animation-delay: 0s;
+}
+
+.piece[data-leaving][data-entrance='pop'] > .motion {
+  animation-name: pop-out;
+}
+
+.piece[data-leaving][data-entrance='slide-up'] > .motion {
+  animation-name: slide-up-out;
+}
+
+.piece[data-leaving][data-entrance='fade'] > .motion {
+  animation-name: fade-out;
+}
+
+.piece[data-leaving][data-entrance='wipe'] > .motion {
+  animation-name: wipe-out;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pop-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+@keyframes slide-up-in {
+  from {
+    opacity: 0;
+    transform: translateY(120%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-up-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(120%);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Left to right, and back. The clip reaches 64px past the piece, so its shadow isn't cut off. */
+@keyframes wipe-in {
+  from {
+    clip-path: inset(-64px calc(100% + 64px) -64px -64px);
+  }
+  to {
+    clip-path: inset(-64px);
+  }
+}
+
+@keyframes wipe-out {
+  from {
+    clip-path: inset(-64px);
+  }
+  to {
+    clip-path: inset(-64px calc(100% + 64px) -64px -64px);
+  }
+}
