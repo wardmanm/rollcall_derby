@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { readableOn, teamColorVariables } from './team-colors.ts';
+import { DEFAULT_TOKENS } from '@rollcall/producer-contract';
+import { contrast, readableOn, roleColor, teamColorVariables } from './team-colors.ts';
+
+describe('contrast', () => {
+  it("is WCAG's contrast ratio, the same either way round", () => {
+    expect(contrast('#ffffff', '#000000')).toBeCloseTo(21);
+    expect(contrast('#000000', '#ffffff')).toBeCloseTo(21);
+    expect(contrast('#777777', '#777777')).toBeCloseTo(1);
+  });
+
+  it('counts a see-through colour as solid, ignoring its alpha', () => {
+    expect(contrast('#ffffff', '#00000033')).toBeCloseTo(21);
+  });
+});
 
 describe('readableOn', () => {
   it('picks the text color with more contrast', () => {
@@ -62,5 +75,28 @@ describe('teamColorVariables', () => {
       // A plain bar: which way the theme's text colour needs to fade isn't known.
       '--team-fade': 'var(--team-primary)',
     });
+  });
+});
+
+describe('roleColor', () => {
+  const surface = DEFAULT_TOKENS.colors.surface;
+
+  it("keeps the team's secondary colour when it reads on the card's surface", () => {
+    expect(roleColor(team('#b3123f', '#f5c518'), surface)).toBe('#f5c518');
+  });
+
+  it("uses the theme's muted text when the secondary colour is too dark for a dark surface", () => {
+    expect(roleColor(team('#b3123f', '#1d428a'), surface)).toBe('var(--theme-color-text-muted)');
+  });
+
+  it('wants 4.5:1: pure red just misses it on the default surface, and a light surface turns the test round', () => {
+    expect(roleColor(team('#000000', '#ff0000'), surface)).toBe('var(--theme-color-text-muted)');
+    expect(roleColor(team('#000000', '#1d428a'), '#fffffff0')).toBe('#1d428a');
+    expect(roleColor(team('#000000', '#f5c518'), '#fffffff0')).toBe('var(--theme-color-text-muted)');
+  });
+
+  it("uses the theme's border with no secondary colour, unchecked, as the theme's author picked it", () => {
+    expect(roleColor(team('#b3123f'), surface)).toBe('var(--theme-color-border)');
+    expect(roleColor(team('#b3123f', 'navy'), surface)).toBe('var(--theme-color-border)');
   });
 });

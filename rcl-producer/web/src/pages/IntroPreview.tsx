@@ -25,11 +25,13 @@ export interface IntroPreviewProps {
   options: RosterOptions;
   placement: IntroPlacement;
   theme: ThemeCss | null;
+  /** That theme's surface colour, which the roster checks team colours against. */
+  surface: string;
 }
 
 // A small, looping demo of the overlay (docs/features/skater-intros.md): team A's title, then its first people one
 // after another, then over again, using the overlay's own components so it looks as the OBS page will.
-export function IntroPreview({ team, options, placement, theme }: IntroPreviewProps) {
+export function IntroPreview({ team, options, placement, theme, surface }: IntroPreviewProps) {
   const people = useMemo(
     () => team?.members.map((member) => rosterCard(member, { showPronouns: options.showPronouns })) ?? [],
     [team, options.showPronouns],
@@ -66,7 +68,7 @@ export function IntroPreview({ team, options, placement, theme }: IntroPreviewPr
     <div ref={frameRef} className={classes.frame} data-testid="intro-preview">
       <OverlayCanvas scale={width / CANVAS_WIDTH}>
         <ThemeScope css={theme}>
-          <TeamRoster onAir={onAir} />
+          <TeamRoster onAir={onAir} surface={surface} />
         </ThemeScope>
       </OverlayCanvas>
     </div>

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { DEFAULT_PLACEMENT, DEFAULT_ROSTER_OPTIONS } from '@rollcall/producer-contract';
+import { DEFAULT_PLACEMENT, DEFAULT_ROSTER_OPTIONS, DEFAULT_TOKENS } from '@rollcall/producer-contract';
 import { IntroPreview } from './IntroPreview.tsx';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -31,7 +31,13 @@ describe('the intro preview', () => {
   it('scales the 1920×1080 canvas to the width of its frame, so all of it shows', async () => {
     frameMeasuredAt(300);
     render(
-      <IntroPreview team={undefined} options={DEFAULT_ROSTER_OPTIONS} placement={DEFAULT_PLACEMENT} theme={null} />,
+      <IntroPreview
+        team={undefined}
+        options={DEFAULT_ROSTER_OPTIONS}
+        placement={DEFAULT_PLACEMENT}
+        theme={null}
+        surface={DEFAULT_TOKENS.colors.surface}
+      />,
     );
     await waitFor(() => expect(screen.getByTestId('overlay-canvas').style.transform).toBe('scale(0.15625)'));
   });

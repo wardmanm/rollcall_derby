@@ -5,6 +5,7 @@ function channel(value: number): number {
   return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 }
 
+// WCAG relative luminance of a 3-, 6- or 8-digit hex colour. An 8-digit colour's alpha is ignored.
 function luminance(hex: string): number {
   const digits = hex.replace('#', '');
   const full =
@@ -18,11 +19,18 @@ function luminance(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
+/** The WCAG contrast ratio of two hex colours, from 1 to 21. A see-through colour counts as solid. */
+export function contrast(a: string, b: string): number {
+  const [x, y] = [luminance(a), luminance(b)];
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+
+/** WCAG's contrast for normal text: a team colour with less against the card's surface isn't used for its text. */
+export const MIN_TEXT_CONTRAST = 4.5;
+
 /** Black or white, whichever has the higher WCAG contrast ratio against `hex`. */
 export function readableOn(hex: string): '#000000' | '#ffffff' {
-  const l = luminance(hex);
-  // Contrast against white is 1.05 / (l + 0.05); against black it is (l + 0.05) / 0.05.
-  return 1.05 / (l + 0.05) >= (l + 0.05) / 0.05 ? '#ffffff' : '#000000';
+  return contrast(hex, '#ffffff') >= contrast(hex, '#000000') ? '#ffffff' : '#000000';
 }
 
 const HEX = /^#(?:[0-9a-f]{3}){1,2}$/i;
@@ -52,4 +60,16 @@ export function teamColorVariables(
     '--team-on-primary': onPrimary ?? 'var(--theme-color-on-accent)',
     '--team-fade': fadeToward(onPrimary),
   };
+}
+
+/**
+ * The colour of a person card's role line, which sits on the theme's `surface`: the team's secondary colour when it
+ * has at least MIN_TEXT_CONTRAST against the surface (counted as solid, since what shows through is unknown), or else
+ * the theme's muted text. A team without a secondary colour gets the theme's border, which the theme's author picked to
+ * go with its surface, so it isn't checked.
+ */
+export function roleColor(team: RosterTeam, surface: string): string {
+  const secondary = hexOrNull(team.secondaryColor);
+  if (secondary === null) return 'var(--theme-color-border)';
+  return contrast(secondary, surface) >= MIN_TEXT_CONTRAST ? secondary : 'var(--theme-color-text-muted)';
 }

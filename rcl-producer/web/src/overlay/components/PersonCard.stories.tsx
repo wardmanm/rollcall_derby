@@ -2,8 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { RosterCard } from '@rollcall/producer-contract';
 import { PersonCard } from './PersonCard.tsx';
 import { cssVars } from './roster/css-vars.ts';
-import { teamColorVariables } from './roster/team-colors.ts';
+import { roleColor, teamColorVariables } from './roster/team-colors.ts';
 import { LOGO_URL, PHOTO_URL } from './roster/story-images.ts';
+import { sampleSurface } from '../themes/sample-themes.ts';
 
 const team = {
   name: 'Harbour City Wreckers',
@@ -26,9 +27,15 @@ const meta = {
   title: 'Components/PersonCard',
   component: PersonCard,
   args: { card: skater, width: 420, logoUrl: LOGO_URL },
+  // The team colours, as the roster sets them around its cards, checked against the toolbar theme's surface.
   decorators: [
-    (Story) => (
-      <div style={cssVars(teamColorVariables(team))}>
+    (Story, { globals }) => (
+      <div
+        style={cssVars({
+          ...teamColorVariables(team),
+          '--team-role': roleColor(team, sampleSurface(globals.overlayTheme)),
+        })}
+      >
         <Story />
       </div>
     ),

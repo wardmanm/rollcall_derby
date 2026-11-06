@@ -82,6 +82,22 @@ describe('OverlayApp', () => {
       expect(banner.hasAttribute('data-entrance')).toBe(false);
     });
 
+    it("checks the team's role line colour against the surface of the theme on show", async () => {
+      const { socket, container } = overlay('abc');
+      await vi.waitFor(() => expect(socket.listening).toBe(true));
+      socket.emit('server:hello', { name: 'Rollcall', version: '0.2.0' });
+      socket.emit('theme:changed', null);
+      socket.emit('intro:state', intro(1, onAir({ title: true })));
+      await screen.findByText(team.name);
+      const role = () =>
+        container.querySelector<HTMLElement>('[style*="--team-role"]')?.style.getPropertyValue('--team-role');
+      // Gold reads on the built-in look's dark surface, but not on a light one.
+      expect(role()).toBe('#f5c518');
+      const light = { ...DEFAULT_TOKENS, colors: { ...DEFAULT_TOKENS.colors, surface: '#fffffff0' } };
+      socket.emit('theme:changed', { tokens: light, families: [] });
+      await vi.waitFor(() => expect(role()).toBe('var(--theme-color-text-muted)'));
+    });
+
     it('ignores an intro state older than the one shown', async () => {
       const { socket } = overlay('abc');
       await vi.waitFor(() => expect(socket.listening).toBe(true));

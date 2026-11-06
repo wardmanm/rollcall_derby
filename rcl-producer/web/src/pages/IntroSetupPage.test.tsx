@@ -50,6 +50,8 @@ async function openSetup(saved = SAVED, more = {}, user = MANAGER) {
   return { ...server, router };
 }
 
+// The preview's roster, which carries the team colours.
+const roster = () => screen.getByTestId('overlay-canvas').querySelector<HTMLElement>('[style*="--team-role"]');
 const choose = (label: string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } });
 const patches = (requests: { method: string }[]) => requests.filter((r) => r.method === 'PATCH');
 
@@ -243,5 +245,25 @@ describe('the intro setup page', () => {
   it('previews team A’s title card', async () => {
     await openSetup();
     expect(await screen.findByText('Wreckers', { selector: 'div' })).toBeTruthy();
+  });
+
+  it("checks team A's role line colour against the chosen theme's surface", async () => {
+    const light = {
+      ...THEME,
+      tokens: { ...DEFAULT_TOKENS, colors: { ...DEFAULT_TOKENS.colors, surface: '#fffffff0' } },
+    };
+    await openSetup(intro('i1', 'Saturday bout', { teamAId: 'tm1', themeId: 't1' }), {
+      'GET /api/producer/themes': json([light]),
+      'GET /api/core/teams/tm1': json({
+        ...team('tm1', 'Wreckers'),
+        primaryColor: '#b3123f',
+        secondaryColor: '#f5c518',
+      }),
+    });
+    await screen.findByText('Wreckers', { selector: 'div' });
+    // Gold doesn't read on the light surface; it does on the built-in look's dark one.
+    expect(roster()?.style.getPropertyValue('--team-role')).toBe('var(--theme-color-text-muted)');
+    choose('Theme', '');
+    await vi.waitFor(() => expect(roster()?.style.getPropertyValue('--team-role')).toBe('#f5c518'));
   });
 });

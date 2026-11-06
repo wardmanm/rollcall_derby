@@ -100,7 +100,7 @@
   line-height: var(--line);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--team-secondary);
+  color: var(--team-role);
 }
 
 .roleText {

@@ -25,6 +25,9 @@ const GOLD = withAccent('#ffd700');
 const accent = (container: HTMLElement) =>
   container.querySelector<HTMLElement>('[data-theme-scope]')?.style.getPropertyValue('--theme-color-accent');
 
+/** Shows the accent of the theme it is handed. */
+const inside = (applied: ThemeChanged) => <output>{applied?.tokens.colors.accent ?? 'built-in'}</output>;
+
 /** A font load that never ends. */
 const hang = () => new Promise<unknown>(() => undefined);
 
@@ -45,11 +48,7 @@ describe('ThemeWhenLoaded', () => {
       configurable: true,
       value: { load: vi.fn<() => Promise<unknown>>(() => pending.promise) },
     });
-    const { container } = render(
-      <ThemeWhenLoaded theme={RED}>
-        <p>roster</p>
-      </ThemeWhenLoaded>,
-    );
+    const { container } = render(<ThemeWhenLoaded theme={RED}>{() => <p>roster</p>}</ThemeWhenLoaded>);
     expect(container.textContent).not.toContain('roster');
     expect(container.querySelector('style[data-pending-fonts]')?.textContent).toContain('font-family: "Inter"');
     await act(async () => pending.resolve());
@@ -63,7 +62,7 @@ describe('ThemeWhenLoaded', () => {
       configurable: true,
       value: { load: vi.fn<() => Promise<unknown>>(() => Promise.resolve()) },
     });
-    const { container, rerender } = render(<ThemeWhenLoaded theme={RED}>x</ThemeWhenLoaded>);
+    const { container, rerender } = render(<ThemeWhenLoaded theme={RED}>{() => 'x'}</ThemeWhenLoaded>);
     await vi.waitFor(() => expect(accent(container)).toBe('#ff0000'));
 
     const pending = deferred();
@@ -71,11 +70,33 @@ describe('ThemeWhenLoaded', () => {
       configurable: true,
       value: { load: vi.fn<() => Promise<unknown>>(() => pending.promise) },
     });
-    rerender(<ThemeWhenLoaded theme={withAccent('#ffd700', 'Oswald')}>x</ThemeWhenLoaded>);
+    rerender(<ThemeWhenLoaded theme={withAccent('#ffd700', 'Oswald')}>{() => 'x'}</ThemeWhenLoaded>);
     expect(accent(container)).toBe('#ff0000');
     expect(container.querySelector('style[data-pending-fonts]')?.textContent).toContain('"Oswald"');
     await act(async () => pending.resolve());
     expect(accent(container)).toBe('#ffd700');
+  });
+
+  it('hands what is inside the theme on show: the old one until the new one is applied', async () => {
+    Object.defineProperty(document, 'fonts', {
+      configurable: true,
+      value: { load: vi.fn<() => Promise<unknown>>(() => Promise.resolve()) },
+    });
+    const { container, rerender } = render(<ThemeWhenLoaded theme={null}>{inside}</ThemeWhenLoaded>);
+    const shown = () => container.querySelector('output')?.textContent;
+    expect(shown()).toBe('built-in');
+    rerender(<ThemeWhenLoaded theme={RED}>{inside}</ThemeWhenLoaded>);
+    await vi.waitFor(() => expect(shown()).toBe('#ff0000'));
+
+    const pending = deferred();
+    Object.defineProperty(document, 'fonts', {
+      configurable: true,
+      value: { load: vi.fn<() => Promise<unknown>>(() => pending.promise) },
+    });
+    rerender(<ThemeWhenLoaded theme={withAccent('#ffd700', 'Oswald')}>{inside}</ThemeWhenLoaded>);
+    expect(shown()).toBe('#ff0000');
+    await act(async () => pending.resolve());
+    expect(shown()).toBe('#ffd700');
   });
 
   it('waits for every face of a family, not just the regular one', async () => {
@@ -96,7 +117,7 @@ describe('ThemeWhenLoaded', () => {
       format: 'font/woff2',
       url: '/fonts/x-bold.woff2',
     });
-    const { container } = render(<ThemeWhenLoaded theme={theme}>x</ThemeWhenLoaded>);
+    const { container } = render(<ThemeWhenLoaded theme={theme}>{() => 'x'}</ThemeWhenLoaded>);
     await vi.waitFor(() => expect(load).toHaveBeenCalledTimes(2));
     expect(load).toHaveBeenCalledWith('normal 400 1em "Inter"');
     expect(load).toHaveBeenCalledWith('normal 700 1em "Inter"');
@@ -111,19 +132,19 @@ describe('ThemeWhenLoaded', () => {
       configurable: true,
       value: { load: vi.fn<() => Promise<unknown>>(() => Promise.reject(new Error('no'))) },
     });
-    const { container } = render(<ThemeWhenLoaded theme={GOLD}>x</ThemeWhenLoaded>);
+    const { container } = render(<ThemeWhenLoaded theme={GOLD}>{() => 'x'}</ThemeWhenLoaded>);
     await vi.waitFor(() => expect(accent(container)).toBe('#ffd700'));
   });
 
   it('switches at once without a font loading API', () => {
-    const { container, rerender } = render(<ThemeWhenLoaded theme={RED}>x</ThemeWhenLoaded>);
+    const { container, rerender } = render(<ThemeWhenLoaded theme={RED}>{() => 'x'}</ThemeWhenLoaded>);
     expect(accent(container)).toBe('#ff0000');
-    rerender(<ThemeWhenLoaded theme={GOLD}>x</ThemeWhenLoaded>);
+    rerender(<ThemeWhenLoaded theme={GOLD}>{() => 'x'}</ThemeWhenLoaded>);
     expect(accent(container)).toBe('#ffd700');
   });
 
   it('shows the built-in look at once for no theme', () => {
-    const { container } = render(<ThemeWhenLoaded theme={null}>roster</ThemeWhenLoaded>);
+    const { container } = render(<ThemeWhenLoaded theme={null}>{() => 'roster'}</ThemeWhenLoaded>);
     expect(container.textContent).toBe('roster');
   });
 
@@ -136,7 +157,7 @@ describe('ThemeWhenLoaded', () => {
         configurable: true,
         value: { load: vi.fn<() => Promise<unknown>>(hang) },
       });
-      const { container } = render(<ThemeWhenLoaded theme={RED}>roster</ThemeWhenLoaded>);
+      const { container } = render(<ThemeWhenLoaded theme={RED}>{() => 'roster'}</ThemeWhenLoaded>);
       await act(async () => void vi.advanceTimersByTime(3999));
       expect(container.textContent).not.toContain('roster');
       await act(async () => void vi.advanceTimersByTime(1));
@@ -149,9 +170,9 @@ describe('ThemeWhenLoaded', () => {
         configurable: true,
         value: { load: vi.fn<() => Promise<unknown>>(hang) },
       });
-      const { container, rerender } = render(<ThemeWhenLoaded theme={RED}>x</ThemeWhenLoaded>);
+      const { container, rerender } = render(<ThemeWhenLoaded theme={RED}>{() => 'x'}</ThemeWhenLoaded>);
       await act(async () => void vi.advanceTimersByTime(2000));
-      rerender(<ThemeWhenLoaded theme={withAccent('#ffd700', 'Oswald')}>x</ThemeWhenLoaded>);
+      rerender(<ThemeWhenLoaded theme={withAccent('#ffd700', 'Oswald')}>{() => 'x'}</ThemeWhenLoaded>);
       await act(async () => void vi.advanceTimersByTime(2000));
       expect(accent(container)).toBeUndefined();
       await act(async () => void vi.advanceTimersByTime(2000));
@@ -164,7 +185,7 @@ describe('ThemeWhenLoaded', () => {
         configurable: true,
         value: { load: vi.fn<() => Promise<unknown>>(hang) },
       });
-      const { unmount } = render(<ThemeWhenLoaded theme={RED}>x</ThemeWhenLoaded>);
+      const { unmount } = render(<ThemeWhenLoaded theme={RED}>{() => 'x'}</ThemeWhenLoaded>);
       unmount();
       expect(vi.getTimerCount()).toBe(0);
     });
@@ -178,8 +199,8 @@ describe('ThemeWhenLoaded', () => {
       return entry.promise;
     });
     Object.defineProperty(document, 'fonts', { configurable: true, value: { load } });
-    const { container, rerender } = render(<ThemeWhenLoaded theme={RED}>x</ThemeWhenLoaded>);
-    rerender(<ThemeWhenLoaded theme={withAccent('#ffd700', 'Oswald')}>x</ThemeWhenLoaded>);
+    const { container, rerender } = render(<ThemeWhenLoaded theme={RED}>{() => 'x'}</ThemeWhenLoaded>);
+    rerender(<ThemeWhenLoaded theme={withAccent('#ffd700', 'Oswald')}>{() => 'x'}</ThemeWhenLoaded>);
     await vi.waitFor(() => expect(loads.has('normal 400 1em "Oswald"')).toBe(true));
     await act(async () => loads.get('normal 400 1em "Inter"')!.resolve());
     expect(accent(container)).toBeUndefined();

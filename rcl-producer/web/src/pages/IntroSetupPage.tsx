@@ -242,7 +242,8 @@ function IntroForm({ intro: saved, canReadThemes }: { intro: Intro; canReadTheme
   // The preview shows team A on the chosen theme, or the default theme, or the built-in look.
   const teamA = useGetTeamQuery(current.teamAId ?? '', { skip: current.teamAId === null });
   const theme = themes.data?.find((t) => t.id === current.themeId) ?? themes.data?.find((t) => t.isDefault);
-  const css = useMemo(() => themeToCss(theme?.tokens ?? DEFAULT_TOKENS, fonts.data ?? []), [theme, fonts.data]);
+  const tokens = theme?.tokens ?? DEFAULT_TOKENS;
+  const css = useMemo(() => themeToCss(tokens, fonts.data ?? []), [tokens, fonts.data]);
 
   return (
     <Stack>
@@ -350,7 +351,13 @@ function IntroForm({ intro: saved, canReadThemes }: { intro: Intro; canReadTheme
             <Text size="sm" fw={500}>
               Preview
             </Text>
-            <IntroPreview team={teamA.data} options={options} placement={placement} theme={css} />
+            <IntroPreview
+              team={teamA.data}
+              options={options}
+              placement={placement}
+              theme={css}
+              surface={tokens.colors.surface}
+            />
           </Stack>
           <ObsAddress id={saved.id} />
         </Stack>

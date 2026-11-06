@@ -11,6 +11,7 @@ import {
 import { OverlayCanvas } from './OverlayCanvas.tsx';
 import { TeamRoster } from './TeamRoster.tsx';
 import { LOGO_URL, PHOTO_URL } from './roster/story-images.ts';
+import { sampleSurface } from '../themes/sample-themes.ts';
 
 // A team of fifteen in team page order: skaters by number, then bench staff by name. Every fourth has no photo, so
 // the logo stands in.
@@ -63,11 +64,13 @@ function row(count: number, slots: number, fields: Partial<RosterOnAir> = {}): R
   };
 }
 
-// Mounting is a reload: each piece appears, with no entrance, once its picture is on show.
+// Mounting is a reload: each piece appears, with no entrance, once its picture is on show. The roster gets the surface
+// of the theme picked in the toolbar, as the OBS page gets its theme's.
 const meta = {
   title: 'Components/TeamRoster',
   component: TeamRoster,
-  args: { onAir: row(3, 4) },
+  args: { onAir: row(3, 4), surface: sampleSurface('default') },
+  render: (args, { globals }) => <TeamRoster {...args} surface={sampleSurface(globals.overlayTheme)} />,
   decorators: [
     (Story) => (
       <OverlayCanvas>
@@ -96,6 +99,12 @@ export const WholeTeamOfFifteen: Story = { args: { onAir: row(15, 15) } };
 
 export const TopLeft: Story = {
   args: { onAir: row(2, 4, { placement: { spot: 'top-left', edge: 48 } }) },
+};
+
+// A secondary colour too dark to read on the default theme's dark surface: the role line uses the theme's muted text.
+// On the Light theme, the team's colour is kept.
+export const DarkSecondaryColour: Story = {
+  args: { onAir: { ...row(3, 4), team: { ...team, primaryColor: '#f5c518', secondaryColor: '#1d428a' } } },
 };
 
 // A run as the server keeps one (rcl-producer/server/src/intros/run.ts), cut down for the stepping story. `step` 0 is the
@@ -140,14 +149,14 @@ function removeFirstOnScreen(run: StepRun): StepRun {
 const CONTROLS: CSSProperties = { position: 'absolute', top: 48, left: 48, display: 'flex', gap: 24, fontSize: 36 };
 const CONTROL: CSSProperties = { font: 'inherit', padding: '12px 28px' };
 
-function SteppingRoster() {
+function SteppingRoster({ surface }: { surface: string }) {
   const [run, setRun] = useState<StepRun | null>(null);
   const [entrance, setEntrance] = useState<RosterEntrance>('pop');
   // The same object until something changes, as the roster compares states by identity.
   const onAir = useMemo(() => onAirFor(run, entrance), [run, entrance]);
   return (
     <>
-      <TeamRoster onAir={onAir} />
+      <TeamRoster onAir={onAir} surface={surface} />
       <div style={CONTROLS}>
         <button type="button" style={CONTROL} onClick={() => setRun({ people, step: 0, rowStart: 0, onAir: true })}>
           Start
@@ -193,7 +202,7 @@ function SteppingRoster() {
  * four leaves for the next), Remove a member to take the row's first card off mid-row, and Clear.
  */
 export const Stepping: Story = {
-  render: () => <SteppingRoster />,
+  render: (_args, { globals }) => <SteppingRoster surface={sampleSurface(globals.overlayTheme)} />,
   play: async ({ canvas }) => {
     await expect(canvas.getByRole('button', { name: 'Start' })).toBeVisible();
   },

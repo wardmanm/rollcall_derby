@@ -9,12 +9,18 @@ const needsLoad = (theme: ThemeChanged) => 'fonts' in document && fontsOf(theme)
 
 /**
  * Shows `children` inside the last theme whose fonts have loaded: nothing comes in until its fonts have, so a theme
- * change never flashes text in a fallback font. The first theme holds `children` back until its fonts
- * are ready; a later theme leaves the old one on show until then. A font that fails to load, or a browser with no font
- * loading API, switches at once, and fonts still loading after LOAD_LIMIT_MS count as failed, so the theme is never
- * stuck.
+ * change never flashes text in a fallback font. The first theme holds `children` back until its fonts are ready; a
+ * later theme leaves the old one on show until then. A font that fails to load, or a browser with no font loading API,
+ * switches at once, and fonts still loading after LOAD_LIMIT_MS count as failed, so the theme is never stuck.
+ * `children` is given the theme on show (null for the built-in look), for anything that needs its tokens as data.
  */
-export function ThemeWhenLoaded({ theme, children }: { theme: ThemeChanged; children: ReactNode }) {
+export function ThemeWhenLoaded({
+  theme,
+  children,
+}: {
+  theme: ThemeChanged;
+  children: (applied: ThemeChanged) => ReactNode;
+}) {
   const [applied, setApplied] = useState<{ theme: ThemeChanged } | null>(() => (needsLoad(theme) ? null : { theme }));
 
   // A theme with no fonts to wait for is applied at once (React's pattern for state that follows a prop).
@@ -58,7 +64,7 @@ export function ThemeWhenLoaded({ theme, children }: { theme: ThemeChanged; chil
   return (
     <>
       {pendingFaces ? <style data-pending-fonts>{pendingFaces}</style> : null}
-      {applied ? <ThemeScope css={css}>{children}</ThemeScope> : null}
+      {applied ? <ThemeScope css={css}>{children(shown)}</ThemeScope> : null}
     </>
   );
 }

@@ -6,12 +6,17 @@ import { EXIT_ANIMATIONS } from './roster/animations.ts';
 import { cssVars } from './roster/css-vars.ts';
 import { anchor, CANVAS_HEIGHT, CANVAS_WIDTH, CARD_GAP, cardWidth } from './roster/layout.ts';
 import { FALLBACK_MS, isUp, reduceRoster, settling, startRoster, TITLE } from './roster/roster-state.ts';
-import { teamColorVariables } from './roster/team-colors.ts';
+import { roleColor, teamColorVariables } from './roster/team-colors.ts';
 import classes from './TeamRoster.module.css';
 
 export interface TeamRosterProps {
   /** What is on air, as the server sends it; null when nothing is. */
   onAir: RosterOnAir | null;
+  /**
+   * The surface colour of the theme on show, which the cards sit on, so a team colour that wouldn't read on it isn't
+   * used for text.
+   */
+  surface: string;
 }
 
 // Lays a new card's place out while it is still closed, so its opening is a transition even when the card is ready at
@@ -26,7 +31,7 @@ function settle(place: HTMLDivElement | null): void {
  * unless the row is carried on, when a new card's place opens (the cards already up slide aside) and then the card
  * comes in. Each piece comes in only once its picture is on show.
  */
-export function TeamRoster({ onAir }: TeamRosterProps) {
+export function TeamRoster({ onAir, surface }: TeamRosterProps) {
   const [state, dispatch] = useReducer(reduceRoster, onAir, startRoster);
   // A new state from the server (React's pattern for state that follows a prop).
   if (state.latest !== onAir) dispatch({ type: 'onAir', onAir });
@@ -130,11 +135,12 @@ export function TeamRoster({ onAir }: TeamRosterProps) {
     );
   }
 
+  const colors = shown && { ...teamColorVariables(shown.team), '--team-role': roleColor(shown.team, surface) };
   return (
     <div
       ref={root}
       className={classes.roster}
-      style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, ...(shown ? cssVars(teamColorVariables(shown.team)) : {}) }}
+      style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, ...(colors ? cssVars(colors) : {}) }}
     >
       {preload !== null && <link rel="preload" as="image" href={preload} />}
       {box}

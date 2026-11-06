@@ -18,7 +18,7 @@ export interface PersonCardProps {
 }
 
 // The photo card: a 4:3 photo (or the team logo), the number as a badge, then the name and role line. Team colors come
-// from --team-primary and --team-secondary, set by a parent (see roster/team-colors.ts).
+// from --team-primary, --team-on-primary and --team-role (the role line's), set by a parent (see roster/team-colors.ts).
 export function PersonCard({ card, width, logoUrl, onReady }: PersonCardProps) {
   // The photo that failed, so a new photo address (a corrected photo) is tried.
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
