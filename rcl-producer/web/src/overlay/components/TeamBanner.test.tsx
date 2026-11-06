@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { RosterTeam } from '@rollcall/producer-contract';
 import { TeamBanner } from './TeamBanner.tsx';
 
@@ -50,8 +50,24 @@ describe('TeamBanner', () => {
       expect(onReady).not.toHaveBeenCalled();
       act(() => void vi.advanceTimersByTime(1));
       expect(onReady).toHaveBeenCalledTimes(1);
+      // It comes in without its logo, not with an empty circle the logo might pop into on air.
+      expect(screen.queryByTestId('banner-logo')).toBeNull();
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('a logo that fails to load leaves no empty circle', () => {
+    const { container } = render(<TeamBanner team={team} />);
+    expect(screen.getByTestId('banner-logo')).toBeTruthy();
+    fireEvent.error(container.querySelector('img')!);
+    expect(screen.queryByTestId('banner-logo')).toBeNull();
+  });
+
+  it('tries a new logo when the logo address changes', () => {
+    const { container, rerender } = render(<TeamBanner team={team} />);
+    fireEvent.error(container.querySelector('img')!);
+    rerender(<TeamBanner team={{ ...team, logoUrl: '/new-logo.png' }} />);
+    expect(container.querySelector('img')!.getAttribute('src')).toBe('/new-logo.png');
   });
 });
