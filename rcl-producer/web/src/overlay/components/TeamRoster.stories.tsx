@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, waitFor } from 'storybook/test';
 import {
@@ -107,42 +107,53 @@ export const DarkSecondaryColour: Story = {
   args: { onAir: { ...row(3, 4), team: { ...team, primaryColor: '#f5c518', secondaryColor: '#1d428a' } } },
 };
 
-// A run as the server keeps one (rcl-producer/server/src/intros/run.ts), cut down for the stepping story. `step` 0 is the
-// title; k >= 1 means people[k-1] is the latest shown, and the row is people[rowStart..step).
+// A run as the server keeps one (rcl-producer/server/src/intros/run.ts), cut down for the stepping story. The team is
+// fixed at Start: `step` 0 is the title, k >= 1 means people[k-1] is the latest shown, and the row is the people in
+// people[rowStart..step) still on the team. A removed member stays in `people` and is only `gone`, as the server's
+// isPresent tells it, so the overlay hears of the removal at the next step.
 interface StepRun {
-  people: RosterCard[];
   step: number;
   rowStart: number;
   onAir: boolean;
+  /** Fixed at Start, as the server fixes it. */
+  entrance: RosterEntrance;
+  gone: ReadonlySet<string>;
 }
 
 const STEP_SLOTS = 4;
 
-function onAirFor(run: StepRun | null, entrance: RosterEntrance): RosterOnAir | null {
-  if (!run?.onAir) return null;
+const nextIndex = (run: StepRun) => people.findIndex((card, i) => i >= run.step && !run.gone.has(card.id));
+const rowOf = (run: StepRun) => people.slice(run.rowStart, run.step).filter((card) => !run.gone.has(card.id));
+
+function nextStep(run: StepRun): StepRun {
+  const index = nextIndex(run);
+  if (index < 0) return run;
+  // The row is full by the cards in it still on the team, so one whose person left has room again.
+  const fresh = run.step === 0 || !run.onAir || rowOf(run).length >= STEP_SLOTS;
+  return { ...run, step: index + 1, rowStart: fresh ? index : run.rowStart, onAir: true };
+}
+
+// What the server sends the overlay after Start, Next or Clear. A removal alone sends nothing.
+function onAirFor(run: StepRun): RosterOnAir | null {
+  if (!run.onAir) return null;
   const title = run.step === 0;
   return {
     team,
     title,
-    cards: title ? [] : run.people.slice(run.rowStart, run.step),
-    upNext: run.people[run.step] ?? null,
+    cards: title ? [] : rowOf(run),
+    upNext: people[nextIndex(run)] ?? null,
     slots: STEP_SLOTS,
-    entrance,
+    entrance: run.entrance,
     placement: { spot: 'bottom-center', edge: 48 },
   };
 }
 
-function nextStep(run: StepRun): StepRun {
-  if (run.step >= run.people.length) return run;
-  const fresh = run.step === 0 || !run.onAir || run.step - run.rowStart >= STEP_SLOTS;
-  return { ...run, step: run.step + 1, rowStart: fresh ? run.step : run.rowStart, onAir: true };
-}
-
-// Deletes the member whose card is first in the row, as Team Builder would mid-intro. The server tells the overlay at
-// its next step; here the overlay is told at once, as a timer tick would.
-function removeFirstOnScreen(run: StepRun): StepRun {
-  if (!run.onAir || run.step - run.rowStart < 2) return run;
-  return { ...run, people: run.people.filter((_, i) => i !== run.rowStart), step: run.step - 1 };
+// Deletes the member whose card is first on screen, as Team Builder would mid-intro, when at least two are up. The
+// overlay isn't told until the next step: then that card leaves on its own, and its place closes as the next opens.
+function removeFirstOnScreen(run: StepRun, sent: RosterOnAir | null): StepRun {
+  const up = sent?.cards.filter((card) => !run.gone.has(card.id)) ?? [];
+  if (up.length < 2) return run;
+  return { ...run, gone: new Set([...run.gone, up[0]!.id]) };
 }
 
 // The controls sit on the canvas, so they're sized in canvas pixels.
@@ -151,24 +162,33 @@ const CONTROL: CSSProperties = { font: 'inherit', padding: '12px 28px' };
 
 function SteppingRoster({ surface }: { surface: string }) {
   const [run, setRun] = useState<StepRun | null>(null);
+  // What the overlay was last told: the same object until the next step, as the roster compares states by identity.
+  const [sent, setSent] = useState<RosterOnAir | null>(null);
   const [entrance, setEntrance] = useState<RosterEntrance>('pop');
-  // The same object until something changes, as the roster compares states by identity.
-  const onAir = useMemo(() => onAirFor(run, entrance), [run, entrance]);
+  const send = (next: StepRun) => {
+    if (next === run) return;
+    setRun(next);
+    setSent(onAirFor(next));
+  };
   return (
     <>
-      <TeamRoster onAir={onAir} surface={surface} />
+      <TeamRoster onAir={sent} surface={surface} />
       <div style={CONTROLS}>
-        <button type="button" style={CONTROL} onClick={() => setRun({ people, step: 0, rowStart: 0, onAir: true })}>
+        <button
+          type="button"
+          style={CONTROL}
+          onClick={() => send({ step: 0, rowStart: 0, onAir: true, entrance, gone: new Set() })}
+        >
           Start
         </button>
-        <button type="button" style={CONTROL} disabled={run === null} onClick={() => setRun(run && nextStep(run))}>
+        <button type="button" style={CONTROL} disabled={run === null} onClick={() => run && send(nextStep(run))}>
           Next
         </button>
         <button
           type="button"
           style={CONTROL}
           disabled={run === null}
-          onClick={() => setRun(run && { ...run, onAir: false })}
+          onClick={() => run?.onAir && send({ ...run, onAir: false })}
         >
           Clear
         </button>
@@ -176,7 +196,7 @@ function SteppingRoster({ surface }: { surface: string }) {
           type="button"
           style={CONTROL}
           disabled={run === null}
-          onClick={() => setRun(run && removeFirstOnScreen(run))}
+          onClick={() => run && setRun(removeFirstOnScreen(run, sent))}
         >
           Remove a member
         </button>
@@ -199,11 +219,27 @@ function SteppingRoster({ surface }: { surface: string }) {
 
 /**
  * Steps through a team as the control page would, so the motion shows: Start, then Next to add cards (a full row of
- * four leaves for the next), Remove a member to take the row's first card off mid-row, and Clear.
+ * four leaves for the next), Remove a member to delete the row's first person mid-row (their card leaves at the next
+ * Next, as on the OBS page), and Clear. A new entrance applies from the next Start.
  */
 export const Stepping: Story = {
   render: (_args, { globals }) => <SteppingRoster surface={sampleSurface(globals.overlayTheme)} />,
-  play: async ({ canvas }) => {
-    await expect(canvas.getByRole('button', { name: 'Start' })).toBeVisible();
+  play: async ({ canvas, userEvent }) => {
+    const click = (name: string) => userEvent.click(canvas.getByRole('button', { name }));
+    const piece = (name: string) => canvas.getByRole('figure', { name }).closest('[data-piece]');
+    await click('Start');
+    // The title, then three cards.
+    await click('Next');
+    await click('Next');
+    await click('Next');
+    // The title leaves first, then each card's place opens and the card comes in.
+    await waitFor(() => expect(canvas.getAllByRole('figure')).toHaveLength(3), { timeout: 5000 });
+    await click('Remove a member');
+    // The overlay isn't told yet, so the card stays up.
+    await expect(piece('Rolla Coaster')?.hasAttribute('data-leaving')).toBe(false);
+    await click('Next');
+    // Then it leaves on its own, and its place closes as the next person's opens.
+    const names = () => canvas.getAllByRole('figure').map((figure) => figure.getAttribute('aria-label'));
+    await waitFor(() => expect(names()).toEqual(['Pivot Table', 'Track Star', 'Jammy Dodger']), { timeout: 5000 });
   },
 };
