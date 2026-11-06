@@ -23,21 +23,21 @@ export function PersonCard({ card, width, logoUrl, onReady }: PersonCardProps) {
   // The photo that failed, so a new photo address (a corrected photo) is tried.
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const showPhoto = card.photoUrl !== null && card.photoUrl !== failedUrl;
-  const src = showPhoto ? card.photoUrl : logoUrl;
+  // The logo loads from the start, hidden behind a photo, so it's ready the moment a photo fails or hangs. This is the
+  // logo address whose load has ended, loaded or failed.
+  const [logoSettled, setLogoSettled] = useState<string | null>(null);
+  const logoReady = logoUrl === null || logoSettled === logoUrl;
   // A photo still loading at the limit counts as failed: the logo shows, and the card comes in without waiting for it.
   const ready = useReadyOnce(onReady, () => {
     if (showPhoto) setFailedUrl(card.photoUrl);
   });
 
+  // A photo makes the card ready itself, when it loads. Without one, the logo (if any) has to have loaded or failed.
   useEffect(() => {
-    if (src === null) ready();
-  }, [src, ready]);
+    if (!showPhoto && logoReady) ready();
+  }, [showPhoto, logoReady, ready]);
 
-  const onError = () => {
-    // A failed photo fails over to the logo, which then has to load (or fail) before the card is ready.
-    if (showPhoto) setFailedUrl(card.photoUrl);
-    else ready();
-  };
+  const settleLogo = () => setLogoSettled(logoUrl);
 
   return (
     <figure
@@ -52,14 +52,25 @@ export function PersonCard({ card, width, logoUrl, onReady }: PersonCardProps) {
         <div className={classes.top}>
           {card.number !== null && <div className={classes.number}>{card.number}</div>}
           <div className={classes.photo}>
-            {src !== null && (
+            {showPhoto && (
               <img
-                key={src}
-                src={src}
+                key={card.photoUrl}
+                src={card.photoUrl ?? undefined}
                 alt=""
-                className={showPhoto ? classes.cover : classes.logo}
+                className={classes.cover}
                 onLoad={ready}
-                onError={onError}
+                onError={() => setFailedUrl(card.photoUrl)}
+              />
+            )}
+            {logoUrl !== null && (
+              <img
+                key={logoUrl}
+                src={logoUrl}
+                alt=""
+                className={classes.logo}
+                hidden={showPhoto}
+                onLoad={settleLogo}
+                onError={settleLogo}
               />
             )}
           </div>
