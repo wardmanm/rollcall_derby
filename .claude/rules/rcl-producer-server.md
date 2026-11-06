@@ -18,6 +18,6 @@ paths:
 - **Intros** (`docs/features/skater-intros.md`):
   - `src/intros/`: `run.ts` (the pure step machine), `runs.ts` (the in-memory runs and timers, reading teams fresh from `ctx.teams`), `live.ts` (the realtime side) and `intros.ts` (the stored setups, `producer_intros`). Routes are `src/routes/intros.ts` (setup) and `intro-runs.ts` (Start, Next, Clear).
   - Rooms: `overlay:default` for plain overlays, and `intro:<id>` in both `/producer/overlay` (public, sent only what's on air plus who's next) and `/producer/intros` (control pages, needs `producer:intros.run`). `src/overlay.ts` opens the first, `live.ts` the second.
-  - Tests that need teams pass them in: `testProducer({ teams })`.
+  - Tests that need teams pass them in: `testProducer({ teams })`, usually with `allStars()` (`src/testing.ts`), the six-person team the intro tests share.
 - **Export files** (ADR-0024): the Producer app's kind is `themeKind` (`src/themes/transfer.ts`), listed by `producerApp.transfer`. Core hosts import and export; the kind saves into `producer_themes` inside core's transaction, and tells the overlay after the commit when the default changed.
 - **`rollcall.requiresCore`** in `package.json` is the rcl-core range this app works with. Change it deliberately when core's version changes.

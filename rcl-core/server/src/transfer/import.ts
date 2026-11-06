@@ -326,9 +326,10 @@ export async function applyImport({
           rows.add(path);
           return file.id;
         };
+        // Noted before it saves, so a kind whose save throws is told the import failed.
+        kindsSaved.add(item.kind);
         const done = item.kind.save(item.data, save, mediaId, { makeDefault: choices.default === item.index });
         unused.push(...(done.unusedMedia ?? []));
-        kindsSaved.add(item.kind);
         if (save.as === 'new') result.added += 1;
         else if (save.as === 'replace') result.replaced += 1;
         else {
@@ -338,8 +339,9 @@ export async function applyImport({
       }
     })();
   } catch (error) {
-    // The rows rolled back; the files written for them go too.
+    // The rows rolled back; the files written for them go too, and the kinds forget what they noted.
     for (const { id } of written.values()) rmSync(join(mediaDir, id), { force: true });
+    for (const kind of kindsSaved) kind.afterFailedImport?.();
     throw error;
   }
   // Files written for items that, by the time they were saved, didn't use them.

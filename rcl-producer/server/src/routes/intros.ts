@@ -9,7 +9,15 @@ import {
   UpdateIntroRequestSchema,
   type Intro,
 } from '@rollcall/producer-contract';
-import { createIntro, deleteIntro, findIntro, introNameTaken, listIntros, updateIntro } from '../intros/intros.ts';
+import {
+  changesNothing,
+  createIntro,
+  deleteIntro,
+  findIntro,
+  introNameTaken,
+  listIntros,
+  updateIntro,
+} from '../intros/intros.ts';
 import { findTheme, type ProducerDatabase } from '../themes/themes.ts';
 
 const RUN: { config: { access: Access } } = { config: { access: { permission: 'producer:intros.run' } } };
@@ -96,6 +104,7 @@ export function registerIntroRoutes(
       schema: {
         tags: TAGS,
         summary: "Change an intro's name, teams, theme or settings: a missing field stays as it is",
+        description: 'A save that changes nothing answers with the intro as it is, without marking it updated.',
         params: IntroParamsSchema,
         body: UpdateIntroRequestSchema,
         response: { 200: IntroSchema, ...ERROR_RESPONSES },
@@ -114,6 +123,8 @@ export function registerIntroRoutes(
       const teamAId = changes.teamAId === undefined ? before.teamAId : changes.teamAId;
       const teamBId = changes.teamBId === undefined ? before.teamBId : changes.teamBId;
       if (teamAId !== null && teamAId === teamBId) return reply.code(400).send(SAME_TEAM);
+      // Nothing to save, so nothing to tell: the intro stays as it is, updatedAt too.
+      if (changesNothing(before, changes)) return before;
       const after = updateIntro(db, id, changes);
       if (!after) return reply.code(404).send(NOT_FOUND);
       onSaved(before, after);

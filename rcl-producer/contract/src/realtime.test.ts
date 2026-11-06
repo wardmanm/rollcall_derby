@@ -46,9 +46,14 @@ describe('intro events and handshake', () => {
     expect(INTRO_RUN_EVENT).toBe('intro:run');
   });
 
-  it('needs an intro id in the handshake', () => {
+  it('needs an intro id in the handshake, of at most 64 characters', () => {
     expect(IntroHandshakeSchema.parse({ intro: 'i1' })).toEqual({ intro: 'i1' });
+    const uuid = 'a3bb189e-8bf9-3888-9912-ace4e6543002';
+    expect(IntroHandshakeSchema.parse({ intro: uuid })).toEqual({ intro: uuid });
+    expect(IntroHandshakeSchema.safeParse({ intro: 'x'.repeat(64) }).success).toBe(true);
+    expect(IntroHandshakeSchema.safeParse({ intro: 'x'.repeat(65) }).success).toBe(false);
     expect(IntroHandshakeSchema.safeParse({ intro: '' }).success).toBe(false);
+    expect(IntroHandshakeSchema.safeParse({ intro: 7 }).success).toBe(false);
     expect(IntroHandshakeSchema.safeParse({}).success).toBe(false);
   });
 });

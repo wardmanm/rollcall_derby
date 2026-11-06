@@ -109,7 +109,7 @@ export function themeKind({
       return { name };
     },
 
-    // Only themes that are still here: an import that failed rolled back the ones it had saved.
+    // Only themes that are still here, in case one was deleted since.
     afterImport() {
       const ids = saved.filter((id) => findTheme(db, id));
       saved = [];
@@ -117,6 +117,12 @@ export function themeKind({
       if (!defaultChanged) return;
       defaultChanged = false;
       announce();
+    },
+
+    // What a failed import saved rolled back, so the next import doesn't tell it again.
+    afterFailedImport() {
+      saved = [];
+      defaultChanged = false;
     },
   };
 }

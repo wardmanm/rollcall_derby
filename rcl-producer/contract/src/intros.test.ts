@@ -8,9 +8,13 @@ import {
   IntroOverlayStateSchema,
   IntroPlacementSchema,
   IntroRunSchema,
+  IntroSchema,
+  NextIntroRequestSchema,
   ROSTER_ENTRANCES,
   ROSTER_SPOTS,
+  RosterOnAirSchema,
   RosterOptionsSchema,
+  StartIntroRequestSchema,
   UpdateIntroRequestSchema,
   roleLine,
   rosterCard,
@@ -52,14 +56,60 @@ describe('roster options and placement', () => {
     expect(DEFAULT_ROSTER_OPTIONS.showPronouns).toBe(true);
   });
 
+  it('accepts settings at the ends of their ranges', () => {
+    expect(options({ atOnce: 1 })).toBe(true);
+    expect(options({ atOnce: 20 })).toBe(true);
+    expect(options({ advance: { mode: 'timer', seconds: 2 } })).toBe(true);
+    expect(options({ advance: { mode: 'timer', seconds: 60 } })).toBe(true);
+    expect(IntroPlacementSchema.safeParse({ spot: 'top-left', edge: 0 }).success).toBe(true);
+    expect(IntroPlacementSchema.safeParse({ spot: 'top-left', edge: 200 }).success).toBe(true);
+  });
+
   it('refuses out-of-range settings', () => {
     expect(options({ atOnce: 0 })).toBe(false);
     expect(options({ atOnce: 21 })).toBe(false);
+    expect(options({ atOnce: 2.5 })).toBe(false);
     expect(options({ atOnce: 'all' })).toBe(false);
     expect(options({ advance: { mode: 'timer', seconds: 1 } })).toBe(false);
     expect(options({ advance: { mode: 'timer', seconds: 61 } })).toBe(false);
+    expect(options({ advance: { mode: 'timer' } })).toBe(false);
+    expect(options({ advance: { mode: 'next', seconds: 5 } })).toBe(false);
+    expect(options({ entrance: 'spin' })).toBe(false);
+    expect(options({ extra: true })).toBe(false);
     expect(IntroPlacementSchema.safeParse({ spot: 'top-left', edge: -1 }).success).toBe(false);
     expect(IntroPlacementSchema.safeParse({ spot: 'top-left', edge: 201 }).success).toBe(false);
+    expect(IntroPlacementSchema.safeParse({ spot: 'centre', edge: 0 }).success).toBe(false);
+  });
+});
+
+const INTRO = {
+  id: 'i1',
+  name: 'Bout 1',
+  teamAId: 't1',
+  teamBId: null,
+  themeId: null,
+  placement: DEFAULT_PLACEMENT,
+  options: DEFAULT_ROSTER_OPTIONS,
+  createdAt: '2026-11-05T19:00:00.000Z',
+  updatedAt: '2026-11-05T19:05:00.000Z',
+};
+
+describe('an intro', () => {
+  it('accepts a saved intro, with or without its teams and theme', () => {
+    expect(IntroSchema.parse(INTRO)).toEqual(INTRO);
+    const bare = { ...INTRO, teamAId: null, themeId: null };
+    expect(IntroSchema.parse(bare)).toEqual(bare);
+    expect(IntroSchema.parse({ ...INTRO, themeId: 'th1', teamBId: 't2' })).toMatchObject({ themeId: 'th1' });
+  });
+
+  it('refuses one with a missing or bad field, or an extra one', () => {
+    const { updatedAt: _updatedAt, ...noUpdatedAt } = INTRO;
+    expect(IntroSchema.safeParse(noUpdatedAt).success).toBe(false);
+    expect(IntroSchema.safeParse({ ...INTRO, createdAt: 'yesterday' }).success).toBe(false);
+    expect(IntroSchema.safeParse({ ...INTRO, teamAId: undefined }).success).toBe(false);
+    expect(IntroSchema.safeParse({ ...INTRO, placement: { spot: 'top-left' } }).success).toBe(false);
+    expect(IntroSchema.safeParse({ ...INTRO, options: { ...DEFAULT_ROSTER_OPTIONS, atOnce: 0 } }).success).toBe(false);
+    expect(IntroSchema.safeParse({ ...INTRO, running: true }).success).toBe(false);
   });
 });
 
@@ -80,6 +130,33 @@ describe('intro requests', () => {
     expect(UpdateIntroRequestSchema.safeParse({ teamAId: 't1', teamBId: null }).success).toBe(true);
     expect(UpdateIntroRequestSchema.safeParse({ teamAId: null, teamBId: null }).success).toBe(true);
     expect(UpdateIntroRequestSchema.safeParse({ teamAId: 't1', teamBId: 't2' }).success).toBe(true);
+  });
+
+  it('leaves the same-team rule to the server when team A is empty or not sent', () => {
+    // Without team A in the request, the stored one decides, which only the server knows.
+    expect(UpdateIntroRequestSchema.safeParse({ teamBId: 't1' }).success).toBe(true);
+    expect(UpdateIntroRequestSchema.safeParse({ teamAId: null, teamBId: 't1' }).success).toBe(true);
+    expect(UpdateIntroRequestSchema.safeParse({ teamAId: undefined, teamBId: 't1' }).success).toBe(true);
+  });
+
+  it('starts team A or B', () => {
+    expect(StartIntroRequestSchema.parse({ team: 'a' })).toEqual({ team: 'a' });
+    expect(StartIntroRequestSchema.parse({ team: 'b' })).toEqual({ team: 'b' });
+    expect(StartIntroRequestSchema.safeParse({ team: 'c' }).success).toBe(false);
+    expect(StartIntroRequestSchema.safeParse({ team: 'A' }).success).toBe(false);
+    expect(StartIntroRequestSchema.safeParse({}).success).toBe(false);
+    expect(StartIntroRequestSchema.safeParse({ team: 'a', revision: 1 }).success).toBe(false);
+  });
+
+  it('presses Next with or without the revision it was pressed on', () => {
+    expect(NextIntroRequestSchema.parse({})).toEqual({});
+    expect(NextIntroRequestSchema.parse({ revision: 0 })).toEqual({ revision: 0 });
+    expect(NextIntroRequestSchema.parse({ revision: 1_762_369_200_000 })).toEqual({ revision: 1_762_369_200_000 });
+    expect(NextIntroRequestSchema.safeParse({ revision: -1 }).success).toBe(false);
+    expect(NextIntroRequestSchema.safeParse({ revision: 1.5 }).success).toBe(false);
+    expect(NextIntroRequestSchema.safeParse({ revision: '3' }).success).toBe(false);
+    expect(NextIntroRequestSchema.safeParse({ revision: null }).success).toBe(false);
+    expect(NextIntroRequestSchema.safeParse({ team: 'a' }).success).toBe(false);
   });
 });
 
@@ -152,5 +229,38 @@ describe('the run and overlay state', () => {
     expect(IntroRunSchema.parse({ ...run, team: null, timerMsLeft: null }).team).toBeNull();
     expect(IntroRunSchema.safeParse({ ...run, revision: -1 }).success).toBe(false);
     expect(IntroOverlayStateSchema.parse({ revision: 0, onAir: null })).toEqual({ revision: 0, onAir: null });
+  });
+
+  const card = rosterCard(member());
+  const ON_AIR = {
+    team: { name: 'Rollers', leagueName: null, logoUrl: null, primaryColor: '#112233', secondaryColor: null },
+    title: false,
+    cards: [card],
+    upNext: { ...card, id: 'm2' },
+    slots: 4,
+    entrance: 'pop',
+    placement: DEFAULT_PLACEMENT,
+  };
+
+  it("accept what's on air: the title card, a row of cards, and who's next or no one", () => {
+    expect(RosterOnAirSchema.parse(ON_AIR)).toEqual(ON_AIR);
+    const title = { ...ON_AIR, title: true, cards: [], upNext: card };
+    expect(RosterOnAirSchema.parse(title)).toEqual(title);
+    expect(RosterOnAirSchema.parse({ ...ON_AIR, upNext: null }).upNext).toBeNull();
+    expect(RosterOnAirSchema.parse({ ...ON_AIR, slots: 1 }).slots).toBe(1);
+    expect(IntroOverlayStateSchema.parse({ revision: 4, onAir: ON_AIR })).toEqual({ revision: 4, onAir: ON_AIR });
+  });
+
+  it("refuse what's on air with a bad shape", () => {
+    expect(RosterOnAirSchema.safeParse({ ...ON_AIR, slots: 0 }).success).toBe(false);
+    expect(RosterOnAirSchema.safeParse({ ...ON_AIR, slots: 1.5 }).success).toBe(false);
+    expect(RosterOnAirSchema.safeParse({ ...ON_AIR, entrance: 'spin' }).success).toBe(false);
+    expect(RosterOnAirSchema.safeParse({ ...ON_AIR, placement: { spot: 'top-left', edge: 201 } }).success).toBe(false);
+    expect(RosterOnAirSchema.safeParse({ ...ON_AIR, cards: [{ ...card, kind: 'referee' }] }).success).toBe(false);
+    expect(RosterOnAirSchema.safeParse({ ...ON_AIR, cards: [{ ...card, pronouns: 'she/her' }] }).success).toBe(false);
+    const { upNext: _upNext, ...noUpNext } = ON_AIR;
+    expect(RosterOnAirSchema.safeParse(noUpNext).success).toBe(false);
+    const { name: _name, ...nameless } = ON_AIR.team;
+    expect(RosterOnAirSchema.safeParse({ ...ON_AIR, team: nameless }).success).toBe(false);
   });
 });

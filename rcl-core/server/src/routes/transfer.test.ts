@@ -44,11 +44,12 @@ afterEach(async () => {
 });
 
 // A demo app with one kind, "demo:note", kept in memory: version 2, migrated from 1, able to be the default, needing a
-// font family, failing to save a note named "boom", and calling `onExport` each time it exports a note, for what core's
-// own kinds don't show.
+// font family, failing to save a note named "boom", counting the imports it's told were committed or failed, and
+// calling `onExport` each time it exports a note, for what core's own kinds don't show.
 function demoApp(db: () => ReturnType<typeof testApp>['db']) {
   const notes: { id: string; name: string; text: string; isDefault: boolean; fontHere: boolean }[] = [];
   let afterImports = 0;
+  let afterFailedImports = 0;
   const hooks = { onExport: () => {} };
   const NoteSchema = z.strictObject({
     name: z.string().min(1, 'Give the note a name'),
@@ -109,6 +110,7 @@ function demoApp(db: () => ReturnType<typeof testApp>['db']) {
       return { name: notes.at(-1)!.name };
     },
     afterImport: () => void (afterImports += 1),
+    afterFailedImport: () => void (afterFailedImports += 1),
   };
   const app: AppModule = {
     id: 'demo',
@@ -118,7 +120,7 @@ function demoApp(db: () => ReturnType<typeof testApp>['db']) {
     permissions: [{ key: 'demo:notes.manage', summary: 'Manage notes', roles: [] }],
     transfer: () => [kind],
   };
-  return { app, notes, hooks, afterImports: () => afterImports };
+  return { app, notes, hooks, afterImports: () => afterImports, afterFailedImports: () => afterFailedImports };
 }
 
 // An app with `role` signed in, and ways to export and import as them.
@@ -658,6 +660,7 @@ describe('importing', () => {
       ['Old', 'from v1', true, true],
     ]);
     expect(notes.afterImports()).toBe(1);
+    expect(notes.afterFailedImports()).toBe(0);
   });
 
   it('makes nothing the default unless chosen, and only an item that can be', async () => {
@@ -674,7 +677,7 @@ describe('importing', () => {
     expect(notes.notes.map((n) => n.isDefault)).toEqual([false]);
   });
 
-  it('saves nothing, and leaves no files, when an item fails partway', async () => {
+  it('saves nothing, and leaves no files, when an item fails partway, and tells its kind', async () => {
     const { db, mediaDir, notes, preview, importFile, allStars } = await as('admin', { demo: true });
     allStars('Here already');
     const before = readdirSync(mediaDir);
@@ -685,6 +688,8 @@ describe('importing', () => {
     expect(listTeams(db).map((t) => t.name)).toEqual(['Here already']);
     expect(notes.notes).toEqual([]);
     expect(readdirSync(mediaDir).toSorted()).toEqual(before.toSorted());
+    // The kind whose save threw is told too, so it can forget what it noted for afterImport.
+    expect([notes.afterImports(), notes.afterFailedImports()]).toEqual([0, 1]);
   });
 
   it('saves nothing, and leaves no files, if the caller loses access while the files are written', async () => {

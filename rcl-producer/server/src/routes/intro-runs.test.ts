@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Team, TeamMember } from '@rollcall/core-contract';
 import {
   DEFAULT_ROSTER_OPTIONS,
   INTRO_STATE_EVENT,
@@ -8,7 +7,7 @@ import {
   IntroSchema,
   type RosterOptions,
 } from '@rollcall/producer-contract';
-import { testProducer, testRealtime, type Sent } from '../testing.ts';
+import { allStars, testProducer, testRealtime, type Sent } from '../testing.ts';
 
 const opened: ReturnType<typeof testProducer>['api'][] = [];
 const NOW = new Date('2026-11-05T19:00:00.000Z');
@@ -22,38 +21,8 @@ afterEach(async () => {
   vi.useRealTimers();
 });
 
+// All Stars' six people, in team page order: five skaters, then a bench coach.
 const [m1, m2, m3, m4, m5, m6] = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6'] as const;
-const skater = (id: string, number: string, name: string): TeamMember => ({
-  id,
-  kind: 'skater',
-  name,
-  number,
-  pronouns: null,
-  roles: [],
-  customRoles: [],
-  photoUrl: null,
-});
-
-// Six people in team page order: five skaters, then a bench coach.
-const allStars = (): Team => ({
-  id: 't1',
-  name: 'All Stars',
-  leagueName: 'Derby City',
-  shortName: null,
-  primaryColor: '#d4145a',
-  secondaryColor: '#ffffff',
-  logoUrl: null,
-  updatedAt: '2026-01-01T00:00:00.000Z',
-  createdAt: '2026-01-01T00:00:00.000Z',
-  members: [
-    skater(m1, '1', 'Ada Bruise'),
-    skater(m2, '2', 'Betty Blocker'),
-    skater(m3, '3', 'Cat Astrophe'),
-    skater(m4, '4', 'Dee Struction'),
-    skater(m5, '5', 'Eve Il'),
-    { ...skater(m6, '', 'Fay Coach'), kind: 'bench', number: null, roles: ['bench-coach'] },
-  ],
-});
 
 // The Producer app with an intro whose team A is All Stars, four at once, and ways to run it.
 async function running(options: Partial<RosterOptions> = {}) {
@@ -137,13 +106,19 @@ describe('running an intro', () => {
     }
   });
 
-  it('ignores a Next pressed on a step that has passed', async () => {
-    const { start, next } = await running();
+  it('answers a Next pressed on a step that has passed with the run as it is, moving nothing', async () => {
+    const { read, start, next } = await running();
     const { revision } = await start('a');
     const first = await next({ revision });
-    const second = await next({ revision });
-    expect(second.revision).toBe(first.revision);
-    expect(second.onScreen).toEqual([m1]);
+    // A second press on the same step, or a retry after a reconnect.
+    const stale = await next({ revision });
+    expect(stale).toEqual(first);
+    expect(stale.onScreen).toEqual([m1]);
+    expect(await read()).toEqual(first);
+    // So is one with a revision the run hasn't reached.
+    expect(await next({ revision: first.revision + 1 })).toEqual(first);
+    // The run's own revision moves on.
+    expect((await next({ revision: first.revision })).onScreen).toEqual([m1, m2]);
   });
 
   it('a Next without a revision always moves on', async () => {
@@ -215,8 +190,9 @@ describe('running an intro', () => {
     const overlay = testRealtime(ctx).connect('/producer/overlay', { intro: intro.id });
     await start('a');
     await next();
-    expect(lastState(overlay).onAir?.cards.map((card) => card.photoUrl)).toEqual([null]);
+    expect(lastState(overlay).onAir?.cards.map((card) => card.photoUrl)).toEqual(['/media/photo-1']);
     teams[0]!.members[0]!.photoUrl = '/media/new-photo';
+    teams[0]!.members[1]!.photoUrl = null;
     await next();
     expect(lastState(overlay).onAir?.cards.map((card) => card.photoUrl)).toEqual(['/media/new-photo', null]);
   });

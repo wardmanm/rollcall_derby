@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { APP_NAME, type FontFamily, type Team, type TeamMember } from '@rollcall/core-contract';
+import { APP_NAME, type FontFamily } from '@rollcall/core-contract';
 import {
   DEFAULT_PLACEMENT,
   DEFAULT_ROSTER_OPTIONS,
@@ -18,7 +18,7 @@ import {
   type ThemeTokens,
 } from '@rollcall/producer-contract';
 import { producerApp } from '../index.ts';
-import { testProducer, testRealtime, type Sent } from '../testing.ts';
+import { allStars, testProducer, testRealtime, type Sent } from '../testing.ts';
 
 const opened: ReturnType<typeof testProducer>['api'][] = [];
 // Revisions count from when the app's runs were made, on this clock. Only timeouts and the clock are faked: Fastify's
@@ -48,29 +48,6 @@ const OSWALD_HEADINGS: ThemeTokens = {
 const DEFAULT_LOOK = { tokens: DEFAULT_TOKENS, families: [INTER] };
 const WITH_OSWALD = { tokens: OSWALD_HEADINGS, families: [INTER, OSWALD] };
 const HELLO: Sent = [SERVER_HELLO_EVENT, { name: APP_NAME, version: '0.1.0' }];
-
-const person = (n: number): TeamMember => ({
-  id: `m${n}`,
-  kind: 'skater',
-  name: `Skater Number ${n}`,
-  number: String(n),
-  pronouns: null,
-  roles: [],
-  customRoles: [],
-  photoUrl: `/media/photo-${n}`,
-});
-const allStars = (): Team => ({
-  id: 't1',
-  name: 'All Stars',
-  leagueName: 'Derby City',
-  shortName: null,
-  primaryColor: '#d4145a',
-  secondaryColor: '#ffffff',
-  logoUrl: '/media/logo',
-  updatedAt: '2026-01-01T00:00:00.000Z',
-  createdAt: '2026-01-01T00:00:00.000Z',
-  members: [1, 2, 3, 4, 5, 6].map(person),
-});
 
 // The Producer app with both its namespaces open on a stand-in for Socket.IO, and All Stars, a team of six.
 function live() {
@@ -223,6 +200,23 @@ describe('live intros', () => {
     expect(sentOf(THEME_CHANGED_EVENT, overlay)).toEqual([WITH_OSWALD, DEFAULT_LOOK]);
   });
 
+  it('deleting the default theme sends every overlay on the default its new look once', async () => {
+    const { realtime, call, theme, intro, overlayFor } = live();
+    const night = await theme('Night', OSWALD_HEADINGS);
+    await call('PUT', '/default-theme', { themeId: night.id });
+    const onDefault = overlayFor((await intro('Bout 1')).id);
+    // Picked by name, so deleting it moves this intro to the default too.
+    const onNight = overlayFor((await intro('Bout 2', { themeId: night.id })).id);
+    const plain = realtime.connect('/producer/overlay');
+    for (const sent of [onDefault, onNight, plain]) sent.length = 0;
+
+    expect((await call('DELETE', `/themes/${night.id}`)).statusCode).toBe(204);
+    // No default is left, so each gets the built-in look.
+    expect(sentOf(THEME_CHANGED_EVENT, onDefault)).toEqual([null]);
+    expect(sentOf(THEME_CHANGED_EVENT, onNight)).toEqual([null]);
+    expect(sentOf(THEME_CHANGED_EVENT, plain)).toEqual([null]);
+  });
+
   it('an import over a theme an intro uses sends that intro its new look', async () => {
     const { ctx, theme, intro, overlayFor } = live();
     const gold = await theme('Gold');
@@ -262,10 +256,10 @@ describe('live intros', () => {
       },
     });
     const everything = JSON.stringify(overlay);
-    for (const n of [4, 5, 6]) {
-      expect(everything).not.toContain(`"m${n}"`);
-      expect(everything).not.toContain(`Skater Number ${n}`);
-      expect(everything).not.toContain(`photo-${n}`);
+    for (const later of team!.members.slice(3)) {
+      expect(everything).not.toContain(`"${later.id}"`);
+      expect(everything).not.toContain(later.name);
+      expect(everything).not.toContain(later.photoUrl!);
     }
   });
 

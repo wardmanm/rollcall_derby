@@ -54,7 +54,10 @@ export interface PermissionDef {
 export interface AppWeb {
   /** The production build folder. Skipped while it has no index.html (e.g. in development). */
   dir: string;
-  /** More HTML pages, each answering one path below `/<id>/` and everything under it, such as `{ overlay: 'overlay.html' }`. */
+  /**
+   * More HTML pages, each answering one path below `/<id>/` and everything under it, such as
+   * `{ overlay: 'overlay.html' }`.
+   */
   pages?: Record<string, string>;
 }
 
@@ -74,14 +77,17 @@ export interface FontsService {
 export interface TeamsService {
   /** Every team by name with its member counts: the same list as `GET /api/core/teams`. */
   list(): TeamSummary[];
-  /** A team with its members in order, or undefined when there's no such team: the same as `GET /api/core/teams/:id`. */
+  /**
+   * A team with its members in order, or undefined when there's no such team: the same as
+   * `GET /api/core/teams/:id`.
+   */
   get(id: string): Team | undefined;
 }
 
 /**
  * What core gives each app while hosting it: one object per app, passed to both `register()` and `realtime()`, so an
- * app can share state between them through it. Core's data comes through read-only services, fonts and teams so far (ADR-0023).
- * CRG and OBS come later.
+ * app can share state between them through it. Core's data comes through read-only services, fonts and teams so far
+ * (ADR-0023). CRG and OBS come later.
  */
 export interface AppContext {
   /** Core's logger, labelled with the app's id. */
@@ -105,7 +111,10 @@ export interface TransferMedia {
   what: string;
 }
 
-/** Items of another kind that an item needs, by key, such as a theme's font family: `{ kind: 'core:font-face', key }`. */
+/**
+ * Items of another kind that an item needs, by key, such as a theme's font family:
+ * `{ kind: 'core:font-face', key }`.
+ */
 export interface TransferNeed {
   kind: KindName;
   key: string;
@@ -132,8 +141,8 @@ export type TransferMatch =
 export type TransferSave = { as: 'new' } | { as: 'copy' } | { as: 'replace'; id: string };
 
 /**
- * One kind of item in Rollcall export files, owned by the app that stores it (ADR-0024). Core reads and writes the files
- * and calls these; the kind reads and writes its own data. Saving is synchronous, so it joins core's transaction.
+ * One kind of item in Rollcall export files, owned by the app that stores it (ADR-0024). Core reads and writes the
+ * files and calls these; the kind reads and writes its own data. Saving is synchronous, so it joins core's transaction.
  */
 export interface TransferKind<Data = unknown> {
   /** `<app id>:<thing>`, such as `producer:theme`. */
@@ -189,6 +198,11 @@ export interface TransferKind<Data = unknown> {
   ): { name: string; unusedMedia?: readonly (string | null)[] };
   /** Runs once an import that saved items of this kind is committed, such as telling overlays about a new default. */
   afterImport?(): void;
+  /**
+   * Runs instead of `afterImport` when an import that saved, or tried to save, items of this kind fails and its rows
+   * roll back, so the kind can forget what it noted for `afterImport`.
+   */
+  afterFailedImport?(): void;
 }
 
 /** An rcl app, as rcl-core hosts it (split spec). */

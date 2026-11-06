@@ -56,7 +56,7 @@ interface Current {
 }
 
 const membersOf = (team: Team | undefined) => new Map(team?.members.map((member) => [member.id, member]));
-// Whether the person is still on the team: one argument, since run.ts filters with it.
+// Whether the person is still on the team.
 const presentIn =
   ({ members }: Current) =>
   (id: string) =>
@@ -137,6 +137,8 @@ export function introRuns({
   function current(introId: string): Current {
     const run = held.get(introId)?.run ?? idle;
     const team = run.teamId === null ? undefined : teams.get(run.teamId);
+    // keep() tells onChange, and announceIntro reads the run again through overlay() and run(), calling current()
+    // inside itself. That stops there only because keep() has already stored the ended run, which has no team.
     if (run.teamId !== null && !team) return keep(introId, { run: endRun(run), team, members: new Map() });
     return { run, team, members: membersOf(team) };
   }
