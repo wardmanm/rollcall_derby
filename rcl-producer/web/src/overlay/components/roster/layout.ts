@@ -6,9 +6,12 @@ export const CANVAS_HEIGHT = 1080;
 export const MAX_CARD_WIDTH = 420;
 export const CARD_GAP = 24;
 
-/** The width of one card when `slots` of them (and the gaps between) share a box `boxWidth` wide. */
+/**
+ * The width of one card when `slots` of them (and the gaps between) share a box `boxWidth` wide. Never under 1px, so a
+ * team too big to fit still lays out (and runs off the screen) rather than breaking.
+ */
 export function cardWidth(boxWidth: number, slots: number): number {
-  return Math.min(MAX_CARD_WIDTH, Math.floor((boxWidth - CARD_GAP * (slots - 1)) / slots));
+  return Math.max(1, Math.min(MAX_CARD_WIDTH, Math.floor((boxWidth - CARD_GAP * (slots - 1)) / slots)));
 }
 
 type Edge = 'flex-start' | 'center' | 'flex-end';

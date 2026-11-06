@@ -18,10 +18,16 @@
   justify-content: center;
 }
 
-/* Hidden until its picture is on show, and, for a card, until its place has opened. */
-.piece[data-state='waiting'],
-.piece[data-state='opening'] {
+/* Hidden until its picture is on show, and, for a card, until its place has opened. Only the states that are up show,
+   so a piece in any other state, or none, stays hidden. */
+.piece {
   visibility: hidden;
+}
+
+.piece[data-state='entering'],
+.piece[data-state='shown'],
+.piece[data-state='going'] {
+  visibility: visible;
 }
 
 .motion {
@@ -38,11 +44,17 @@
 }
 
 /* A card's place opens to the card's width, sliding the cards already up aside, before the card comes in. A card
-   waiting to join the row has its place closed, so it takes no room; one on screen at a reload (data-quiet) waits in
-   its place, so the row doesn't move when it appears. The card stays hidden until its place has opened, since the open
-   card overhangs a part-open place. */
+   waiting to join the row, or waiting its turn (ready), has its place closed, so it takes no room. One on screen at a
+   reload (data-quiet) waits in its place, so the row doesn't move when it appears, and a screen's first card
+   (data-open) has nothing to slide aside, so its place is open from the start. The card stays hidden until its place
+   has opened, since the open card overhangs a part-open place. */
 .place {
   width: var(--card-width);
+}
+
+/* Only a place that is opening or closing moves. A place already up loses its gap at once when it becomes the first
+   (the closed place before it is dropped): animated, the row would drift by half a gap and back. */
+.place:is([data-state='opening'], [data-state='closing']) {
   transition:
     width 300ms ease-in-out,
     margin 300ms ease-in-out;
@@ -52,9 +64,16 @@
   margin-inline-start: var(--card-gap);
 }
 
-.place[data-state='waiting']:not([data-quiet]) {
+.place:is([data-state='waiting'], [data-state='ready']):not([data-quiet], [data-open]),
+.place[data-state='closing'] {
   width: 0;
   margin-inline-start: 0;
+}
+
+/* A removed card's place closes once its exit has played, sliding the cards after it back. The first place has no gap
+   before it, so as it closes it takes the next place's gap with it, and the row doesn't end up off its spot. */
+.place[data-state='closing']:first-child {
+  margin-inline-end: calc(-1 * var(--card-gap));
 }
 
 /* Entrances, about 400 ms. */

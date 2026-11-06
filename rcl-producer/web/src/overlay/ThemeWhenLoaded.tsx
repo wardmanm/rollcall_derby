@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { fontFaceRules } from '@rollcall/core-contract';
 import { familiesUsedBy, themeToCss, type ThemeChanged } from '@rollcall/producer-contract';
+import { LOAD_LIMIT_MS } from './load-limit.ts';
 import { ThemeScope } from './ThemeScope.tsx';
-
-// Nothing comes in until its fonts have loaded, so a theme change must not flash text in a fallback font.
 
 const fontsOf = (theme: ThemeChanged) => (theme ? familiesUsedBy(theme.tokens, theme.families) : []);
 const needsLoad = (theme: ThemeChanged) => 'fonts' in document && fontsOf(theme).length > 0;
 
 /**
- * Shows `children` inside the last theme whose fonts have loaded. The first theme holds `children` back until its fonts
+ * Shows `children` inside the last theme whose fonts have loaded: nothing comes in until its fonts have, so a theme
+ * change never flashes text in a fallback font. The first theme holds `children` back until its fonts
  * are ready; a later theme leaves the old one on show until then. A font that fails to load, or a browser with no font
- * loading API, switches at once, so the theme is never stuck.
+ * loading API, switches at once, and fonts still loading after LOAD_LIMIT_MS count as failed, so the theme is never
+ * stuck.
  */
 export function ThemeWhenLoaded({ theme, children }: { theme: ThemeChanged; children: ReactNode }) {
   const [applied, setApplied] = useState<{ theme: ThemeChanged } | null>(() => (needsLoad(theme) ? null : { theme }));
@@ -33,13 +34,19 @@ export function ThemeWhenLoaded({ theme, children }: { theme: ThemeChanged; chil
           .catch(() => undefined),
       ),
     );
-    void Promise.all(loads).then(() => {
+    // A font that hangs counts as failed at the limit, so the theme is applied with whatever has loaded.
+    let limit: ReturnType<typeof setTimeout> | undefined;
+    const timeUp = new Promise<void>((done) => {
+      limit = setTimeout(done, LOAD_LIMIT_MS);
+    });
+    void Promise.race([Promise.all(loads), timeUp]).then(() => {
       if (!current) return undefined;
       setApplied({ theme });
       return undefined;
     });
     return () => {
       current = false;
+      clearTimeout(limit);
     };
   }, [theme, applied, immediate]);
 

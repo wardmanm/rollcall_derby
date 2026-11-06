@@ -1,4 +1,6 @@
-/* Mockup banner B (3-title-card.html), in canvas pixels (1cqw there = 19.2px). */
+/* Mockup banner B (3-title-card.html), in canvas pixels (1cqw there = 19.2px). The bar fades from the team colour
+   toward --team-fade, black or white, whichever is opposite the text, so the text reads all the way along
+   (roster/team-colors.ts). */
 .banner {
   display: inline-flex;
   align-items: center;
@@ -11,7 +13,7 @@
   background: linear-gradient(
     90deg,
     var(--team-primary),
-    color-mix(in srgb, var(--team-primary) 60%, var(--theme-color-surface))
+    color-mix(in srgb, var(--team-primary) 60%, var(--team-fade))
   );
   border-radius: var(--theme-radius);
   border-bottom: 9px solid var(--team-secondary);

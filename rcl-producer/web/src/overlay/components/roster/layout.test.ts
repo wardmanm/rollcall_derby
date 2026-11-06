@@ -11,6 +11,11 @@ describe('cardWidth', () => {
     expect(cardWidth(1824, 10)).toBe(160);
     expect(cardWidth(1824, 20)).toBe(68);
   });
+
+  it('never gives a card less than 1px, however many there are', () => {
+    expect(cardWidth(1824, 64)).toBeGreaterThanOrEqual(1);
+    expect(cardWidth(1824, 200)).toBe(1);
+  });
 });
 
 describe('anchor', () => {

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { themeToCss } from '@rollcall/producer-contract';
+import { themeToCss, type ThemeChanged } from '@rollcall/producer-contract';
 import { PlaceholderCard } from './components/PlaceholderCard.tsx';
 import { IntroOverlay } from './IntroOverlay.tsx';
 import { useGetLiveStateQuery } from './live.ts';
@@ -11,12 +11,18 @@ import { ThemeScope } from './ThemeScope.tsx';
 export function OverlayApp({ introId }: { introId: string | null }) {
   const { data } = useGetLiveStateQuery();
   const theme = data?.theme ?? null;
-  const css = useMemo(() => (theme ? themeToCss(theme.tokens, theme.families) : null), [theme]);
   if (!data?.server) return null;
   if (introId !== null) return <IntroOverlay state={data.intro} theme={theme} />;
+  return <DefaultOverlay title={data.server.name} subtitle={`v${data.server.version}`} theme={theme} />;
+}
+
+// Any address that isn't an intro's: the placeholder, in the default theme. Its own component, so an intro's page
+// (which themes itself, in ThemeWhenLoaded) never works out this CSS.
+function DefaultOverlay({ title, subtitle, theme }: { title: string; subtitle: string; theme: ThemeChanged }) {
+  const css = useMemo(() => (theme ? themeToCss(theme.tokens, theme.families) : null), [theme]);
   return (
     <ThemeScope css={css}>
-      <PlaceholderCard title={data.server.name} subtitle={`v${data.server.version}`} />
+      <PlaceholderCard title={title} subtitle={subtitle} />
     </ThemeScope>
   );
 }

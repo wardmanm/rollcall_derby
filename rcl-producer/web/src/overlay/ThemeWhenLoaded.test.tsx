@@ -25,6 +25,9 @@ const GOLD = withAccent('#ffd700');
 const accent = (container: HTMLElement) =>
   container.querySelector<HTMLElement>('[data-theme-scope]')?.style.getPropertyValue('--theme-color-accent');
 
+/** A font load that never ends. */
+const hang = () => new Promise<unknown>(() => undefined);
+
 function deferred() {
   let resolve!: () => void;
   const promise = new Promise<void>((done) => void (resolve = done));
@@ -122,5 +125,65 @@ describe('ThemeWhenLoaded', () => {
   it('shows the built-in look at once for no theme', () => {
     const { container } = render(<ThemeWhenLoaded theme={null}>roster</ThemeWhenLoaded>);
     expect(container.textContent).toBe('roster');
+  });
+
+  describe('with fonts that hang', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('applies the theme after 4 s anyway', async () => {
+      vi.useFakeTimers();
+      Object.defineProperty(document, 'fonts', {
+        configurable: true,
+        value: { load: vi.fn<() => Promise<unknown>>(hang) },
+      });
+      const { container } = render(<ThemeWhenLoaded theme={RED}>roster</ThemeWhenLoaded>);
+      await act(async () => void vi.advanceTimersByTime(3999));
+      expect(container.textContent).not.toContain('roster');
+      await act(async () => void vi.advanceTimersByTime(1));
+      expect(accent(container)).toBe('#ff0000');
+    });
+
+    it("doesn't apply an old theme when its 4 s run out after a newer theme came", async () => {
+      vi.useFakeTimers();
+      Object.defineProperty(document, 'fonts', {
+        configurable: true,
+        value: { load: vi.fn<() => Promise<unknown>>(hang) },
+      });
+      const { container, rerender } = render(<ThemeWhenLoaded theme={RED}>x</ThemeWhenLoaded>);
+      await act(async () => void vi.advanceTimersByTime(2000));
+      rerender(<ThemeWhenLoaded theme={withAccent('#ffd700', 'Oswald')}>x</ThemeWhenLoaded>);
+      await act(async () => void vi.advanceTimersByTime(2000));
+      expect(accent(container)).toBeUndefined();
+      await act(async () => void vi.advanceTimersByTime(2000));
+      expect(accent(container)).toBe('#ffd700');
+    });
+
+    it('stops waiting when it unmounts', () => {
+      vi.useFakeTimers();
+      Object.defineProperty(document, 'fonts', {
+        configurable: true,
+        value: { load: vi.fn<() => Promise<unknown>>(hang) },
+      });
+      const { unmount } = render(<ThemeWhenLoaded theme={RED}>x</ThemeWhenLoaded>);
+      unmount();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+  });
+
+  it("a newer theme wins: the old theme's fonts finishing don't apply it", async () => {
+    const loads = new Map<string, ReturnType<typeof deferred>>();
+    const load = vi.fn<(font: string) => Promise<unknown>>((font) => {
+      const entry = deferred();
+      loads.set(font, entry);
+      return entry.promise;
+    });
+    Object.defineProperty(document, 'fonts', { configurable: true, value: { load } });
+    const { container, rerender } = render(<ThemeWhenLoaded theme={RED}>x</ThemeWhenLoaded>);
+    rerender(<ThemeWhenLoaded theme={withAccent('#ffd700', 'Oswald')}>x</ThemeWhenLoaded>);
+    await vi.waitFor(() => expect(loads.has('normal 400 1em "Oswald"')).toBe(true));
+    await act(async () => loads.get('normal 400 1em "Inter"')!.resolve());
+    expect(accent(container)).toBeUndefined();
+    await act(async () => loads.get('normal 400 1em "Oswald"')!.resolve());
+    expect(accent(container)).toBe('#ffd700');
   });
 });
