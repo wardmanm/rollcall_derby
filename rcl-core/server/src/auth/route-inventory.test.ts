@@ -108,7 +108,9 @@ const where = (routes: readonly ApiRoute[], test: (access: Access) => boolean) =
 const isPublic = (access: Access) => access.public !== undefined;
 const allowsPendingChange = (access: Access) => access.signedIn === true && access.allowPendingPasswordChange === true;
 
-describe('route inventory', () => {
+// These call every route, one at a time, as several callers, so they slow down as apps add routes: about 2 s for the
+// slowest alone, but past the default 5 s on CI under a full run's load (2026-11-06).
+describe('route inventory', { timeout: 20_000 }, () => {
   it('pins the public routes and those that work while a password change is pending', async () => {
     const { app, routes } = await inventory();
     await app.close();
