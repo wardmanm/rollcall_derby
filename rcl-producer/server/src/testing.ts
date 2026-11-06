@@ -4,12 +4,12 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import Fastify from 'fastify';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import type { AppContext, Realtime } from '@rollcall/app-sdk';
-import type { FontFamily, Team } from '@rollcall/core-contract';
+import type { FontFamily, Team, TeamMember } from '@rollcall/core-contract';
 import { producerApp } from './index.ts';
 
 // The Producer app hosted the way rcl-core hosts it, for its own tests: an in-memory database with its migrations
-// run, a context with the fonts and teams given, and its routes below /api/producer. Core's access checks aren't here: core's
-// route inventory sweeps the Producer app's routes with every kind of caller.
+// run, a context with the fonts and teams given, and its routes below /api/producer. Core's access checks aren't
+// here: core's route inventory sweeps the Producer app's routes with every kind of caller.
 export function testProducer({ fonts = [], teams = [] }: { fonts?: FontFamily[]; teams?: Team[] } = {}) {
   const client = new Database(':memory:');
   // As in rcl-core's database, so ON DELETE SET NULL works.
@@ -40,6 +40,41 @@ export function testProducer({ fonts = [], teams = [] }: { fonts?: FontFamily[];
   void api.register(async (scope) => producerApp.register?.(scope, ctx), { prefix: '/api/producer' });
   return { api, ctx, client, teams };
 }
+
+const skater = (n: number, name: string): TeamMember => ({
+  id: `m${n}`,
+  kind: 'skater',
+  name,
+  number: String(n),
+  pronouns: null,
+  roles: [],
+  customRoles: [],
+  photoUrl: `/media/photo-${n}`,
+});
+
+/**
+ * All Stars (`t1`), the team intro tests run: six people m1 to m6 in team page order, five skaters numbered 1 to 5 and
+ * then a bench coach, each with a photo. Made fresh for each call, so a test can change it.
+ */
+export const allStars = (): Team => ({
+  id: 't1',
+  name: 'All Stars',
+  leagueName: 'Derby City',
+  shortName: null,
+  primaryColor: '#d4145a',
+  secondaryColor: '#ffffff',
+  logoUrl: '/media/logo',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+  createdAt: '2026-01-01T00:00:00.000Z',
+  members: [
+    skater(1, 'Ada Bruise'),
+    skater(2, 'Betty Blocker'),
+    skater(3, 'Cat Astrophe'),
+    skater(4, 'Dee Struction'),
+    skater(5, 'Eve Il'),
+    { ...skater(6, 'Fay Coach'), kind: 'bench', number: null, roles: ['bench-coach'] },
+  ],
+});
 
 export type Sent = [event: string, payload: unknown];
 

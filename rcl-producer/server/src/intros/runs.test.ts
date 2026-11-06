@@ -1,10 +1,10 @@
 import type { FastifyBaseLogger } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TeamsService } from '@rollcall/app-sdk';
-import type { Team, TeamMember } from '@rollcall/core-contract';
+import type { Team } from '@rollcall/core-contract';
 import { DEFAULT_ROSTER_OPTIONS, IntroSchema, type RosterOptions } from '@rollcall/producer-contract';
 import * as schema from '../db/schema.ts';
-import { testProducer } from '../testing.ts';
+import { allStars, testProducer } from '../testing.ts';
 import { introRuns } from './runs.ts';
 
 const opened: ReturnType<typeof testProducer>['api'][] = [];
@@ -19,31 +19,10 @@ afterEach(async () => {
   vi.useRealTimers();
 });
 
-const skater = (id: string, pronouns: string | null = null): TeamMember => ({
-  id,
-  kind: 'skater',
-  name: `Skater ${id}`,
-  number: id.slice(1),
-  pronouns,
-  roles: [],
-  customRoles: [],
-  photoUrl: null,
-});
-const team: Team = {
-  id: 't1',
-  name: 'All Stars',
-  leagueName: null,
-  shortName: null,
-  primaryColor: null,
-  secondaryColor: null,
-  logoUrl: null,
-  updatedAt: '2026-01-01T00:00:00.000Z',
-  createdAt: '2026-01-01T00:00:00.000Z',
-  members: ['m1', 'm2', 'm3'].map((id) => skater(id)),
-};
-
 // An intro of All Stars as team A, saved through the routes, and what a runs service needs, without the app's own.
+// `team` is All Stars as core has it, for a test to change.
 async function anIntro(options: RosterOptions = DEFAULT_ROSTER_OPTIONS) {
+  const team = allStars();
   const { api, ctx } = testProducer({ teams: [team] });
   opened.push(api);
   const created = await api.inject({ method: 'POST', url: '/api/producer/intros', payload: { name: 'Bout 1' } });
@@ -56,6 +35,7 @@ async function anIntro(options: RosterOptions = DEFAULT_ROSTER_OPTIONS) {
   const log = { error: vi.fn<(details: object, message: string) => void>() };
   return {
     intro: IntroSchema.parse(saved.json()),
+    team,
     db: ctx.db(schema),
     teams: ctx.teams,
     log,
@@ -83,13 +63,34 @@ describe('the intro runs service', () => {
     after.close();
   });
 
-  it('shows pronouns for an intro saved before the switch existed', async () => {
-    const { intro, db, logger } = await anIntro();
-    const withPronouns: Team = { ...team, members: ['m1', 'm2', 'm3'].map((id) => skater(id, 'she/her')) };
-    const runs = introRuns({ db, teams: { list: () => [], get: () => withPronouns }, onChange: () => {}, log: logger });
+  it('shows pronouns on the cards by default', async () => {
+    const { intro, team, db, teams, logger } = await anIntro();
+    team.members[0]!.pronouns = 'she/her';
+    const runs = introRuns({ db, teams, onChange: () => {}, log: logger });
     runs.start(intro, 'a');
     runs.next(intro);
     expect(runs.overlay(intro).onAir?.cards[0]?.roleLine).toBe('she/her');
+    runs.close();
+  });
+
+  it('tells onChange after a timer step that finds no one left, so control pages stop counting down', async () => {
+    const { intro, team, db, teams, logger } = await anIntro({
+      ...DEFAULT_ROSTER_OPTIONS,
+      advance: { mode: 'timer', seconds: 5 },
+    });
+    const onChange = vi.fn<(introId: string) => void>();
+    const runs = introRuns({ db, teams, onChange, log: logger });
+    const started = runs.start(intro, 'a');
+    if (started === 'no_team') throw new Error('All Stars is team A');
+    expect(started.timerMsLeft).toBe(5000);
+    onChange.mockClear();
+    // Everyone leaves the team while the title card is up.
+    team.members = [];
+    vi.advanceTimersByTime(5000);
+    expect(onChange).toHaveBeenCalledExactlyOnceWith(intro.id);
+    // The step changed nothing but the timer, which has stopped.
+    expect(runs.run(intro)).toMatchObject({ revision: started.revision, title: true, done: true, timerMsLeft: null });
+    expect(vi.getTimerCount()).toBe(0);
     runs.close();
   });
 
