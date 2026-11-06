@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useElementSize } from '@mantine/hooks';
 import type { Team } from '@rollcall/core-contract';
 import {
   rosterCard,
@@ -9,6 +10,7 @@ import {
   type ThemeCss,
 } from '@rollcall/producer-contract';
 import { OverlayCanvas } from '../overlay/components/OverlayCanvas.tsx';
+import { CANVAS_WIDTH } from '../overlay/components/roster/layout.ts';
 import { TeamRoster } from '../overlay/components/TeamRoster.tsx';
 import { ThemeScope } from '../overlay/ThemeScope.tsx';
 import classes from './IntroPreview.module.css';
@@ -56,9 +58,13 @@ export function IntroPreview({ team, options, placement, theme }: IntroPreviewPr
     };
   }, [team, people, step, demo, slots, options.entrance, placement]);
 
+  // The canvas is scaled to the frame's width, which the frame's 16:9 shape matches, so all of it shows at any width.
+  // Until the frame is measured (one frame after it appears), the scale is 0 and nothing shows.
+  const { ref: frameRef, width } = useElementSize();
+
   return (
-    <div className={classes.frame} data-testid="intro-preview">
-      <OverlayCanvas scale={0.25}>
+    <div ref={frameRef} className={classes.frame} data-testid="intro-preview">
+      <OverlayCanvas scale={width / CANVAS_WIDTH}>
         <ThemeScope css={theme}>
           <TeamRoster onAir={onAir} />
         </ThemeScope>
