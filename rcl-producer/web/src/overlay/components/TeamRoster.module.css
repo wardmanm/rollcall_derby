@@ -50,6 +50,11 @@
    has opened, since the open card overhangs a part-open place. */
 .place {
   width: var(--card-width);
+}
+
+/* Only a place that is opening or closing moves. A place already up loses its gap at once when it becomes the first
+   (the closed place before it is dropped): animated, the row would drift by half a gap and back. */
+.place:is([data-state='opening'], [data-state='closing']) {
   transition:
     width 300ms ease-in-out,
     margin 300ms ease-in-out;
