@@ -286,6 +286,9 @@ test('an Admin exports teams and themes with an uploaded font, deletes them, and
   await expect(page.getByRole('row', { name: /Derby Night/ })).toContainText('Default');
 });
 
+/** Whether an element shows all of its content across, without scrolling or clipping it. */
+const fits = (element: Element) => element.scrollWidth <= element.clientWidth;
+
 // Skater intros (skater-intros R2–R4), on the OBS page and the control page in one browser.
 test('an Admin sets up a skater intro and runs it on the OBS page', async ({ page }) => {
   await page.goto('/producer/intros');
@@ -310,6 +313,13 @@ test('an Admin sets up a skater intro and runs it on the OBS page', async ({ pag
   );
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   expect((await saved).status()).toBe(200);
+
+  // On a phone, the OBS address wraps, rather than scrolling inside its box and squeezing the Copy button's label.
+  const viewport = page.viewportSize()!;
+  await page.setViewportSize({ width: 360, height: 800 });
+  expect(await page.locator('code', { hasText: '/overlay/intros/' }).evaluate(fits)).toBe(true);
+  expect(await page.locator('.mantine-Button-label', { hasText: 'Copy' }).evaluate(fits)).toBe(true);
+  await page.setViewportSize(viewport);
 
   const obs = await page.context().newPage();
   await obs.goto(`/producer/overlay/intros/${id}`);

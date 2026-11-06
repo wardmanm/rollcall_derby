@@ -381,9 +381,10 @@ function ObsAddress({ id }: { id: string }) {
   return (
     <Stack gap="xs">
       <Title order={3}>OBS browser source</Title>
-      <Group wrap="nowrap">
-        <Code>{address}</Code>
-        <Button variant="default" size="compact-sm" onClick={() => void copy()}>
+      {/* The address wraps anywhere, as it has no spaces, so on a phone it neither scrolls nor squeezes the button. */}
+      <Group wrap="nowrap" align="flex-start">
+        <Code style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{address}</Code>
+        <Button variant="default" size="compact-sm" style={{ flex: 'none' }} onClick={() => void copy()}>
           {copied ? 'Copied' : 'Copy'}
         </Button>
       </Group>
