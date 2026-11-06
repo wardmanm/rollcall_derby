@@ -5,6 +5,7 @@ import {
   Anchor,
   Button,
   Group,
+  Loader,
   Modal,
   Stack,
   Table,
@@ -29,9 +30,11 @@ export function IntrosPage() {
   return <IntroList canManage={me.permissions.includes('producer:intros.manage')} />;
 }
 
-// "Team A vs Team B", or "No teams yet". A team that was deleted shows as such once the teams have loaded.
-function teamsOf(intro: Intro, teams: readonly TeamSummary[] | undefined): string {
+// "Team A vs Team B", or "No teams yet". A team that was deleted shows as such once the teams have loaded, and
+// "Teams unavailable" stands for both if they couldn't be.
+function teamsOf(intro: Intro, teams: readonly TeamSummary[] | undefined, failed: boolean): string {
   if (intro.teamAId === null && intro.teamBId === null) return 'No teams yet';
+  if (!teams && failed) return 'Teams unavailable';
   const nameOf = (id: string | null) => {
     if (id === null) return 'No team';
     return teams?.find((team) => team.id === id)?.name ?? (teams ? 'Deleted team' : '…');
@@ -48,6 +51,11 @@ function IntroList({ canManage }: { canManage: boolean }) {
       <Title order={2}>Intros</Title>
       <Text size="sm">An intro introduces each team's people on the OBS overlay, one step at a time.</Text>
       {canManage && <NewIntro />}
+      {intros.isLoading && (
+        <output aria-label="Loading intros">
+          <Loader />
+        </output>
+      )}
       {intros.isError && <Alert color="red">{problemWith(intros.error)}</Alert>}
       {intros.data?.length === 0 && <Text>No intros yet.</Text>}
       {intros.data && intros.data.length > 0 && (
@@ -65,7 +73,7 @@ function IntroList({ canManage }: { canManage: boolean }) {
             {intros.data.map((intro) => (
               <Table.Tr key={intro.id}>
                 <Table.Td>{intro.name}</Table.Td>
-                <Table.Td>{teamsOf(intro, teams.data)}</Table.Td>
+                <Table.Td>{teamsOf(intro, teams.data, teams.isError)}</Table.Td>
                 <Table.Td>
                   <Group gap="md" justify="flex-end">
                     {canManage && (

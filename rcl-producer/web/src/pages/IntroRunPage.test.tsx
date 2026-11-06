@@ -1,10 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { createMemoryRouter } from 'react-router';
 import type { IntroRun } from '@rollcall/producer-contract';
+import { App, makeStore } from '@rollcall/web-sdk';
 import { json, signedIn } from '@rollcall/web-sdk/testing';
+import { PRODUCER_BASE } from '../base.ts';
 import { FakeSocket } from '../overlay/test-socket.ts';
 import { intro, RUNNER, summary } from '../test/intro-fixtures.ts';
 import { openProducer } from '../test/open-producer.tsx';
+import { IntroRunPage } from './IntroRunPage.tsx';
 
 let socket = new FakeSocket();
 vi.mock('socket.io-client', () => ({ io: () => socket }));
@@ -114,14 +118,41 @@ describe('the intro control page', () => {
   });
 
   it('keeps the buttons enabled when the run is fetched again while connected', async () => {
-    const { requests } = await openRun(run({ revision: 3, team: 'a', people: PEOPLE }));
-    const fetches = () => requests.filter((r) => r.method === 'GET' && r.path === '/api/producer/intros/i1/run').length;
+    // The second fetch has a newer state, so the page shows when it has arrived.
+    const states = [run({ revision: 3, team: 'a', people: PEOPLE }), run({ revision: 4, team: 'a', title: true })];
+    let fetches = 0;
+    await openRun(states[0], { 'GET /api/producer/intros/i1/run': () => Response.json(states[fetches++]) });
     act(() => {
       window.dispatchEvent(new Event('focus'));
     });
-    await vi.waitFor(() => expect(fetches()).toBe(2));
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await screen.findByText('Title card is up');
+    expect(fetches).toBe(2);
+    expect(screen.queryByText(/onnecting/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Next' }).hasAttribute('disabled')).toBe(false);
+  });
+
+  it('says nothing about the connection on load, then "Connecting…" once it has taken a second', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    signedIn(RUNNER, {
+      'GET /api/producer/intros/i1': json(SAVED),
+      'GET /api/producer/intros/i1/run': json(run({ team: 'a', people: PEOPLE })),
+      'GET /api/core/teams': json([summary('tm1', 'Wreckers'), summary('tm2', 'Brawlers')]),
+    });
+    openProducer('/producer/intros/i1/run');
+    await vi.waitFor(() => {
+      expect(socket.listening).toBe(true);
+      expect(screen.getByText('Ada Slam')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Start Wreckers' })).toBeTruthy();
+    });
+    expect(screen.queryByText(/onnecting/)).toBeNull();
+    for (const name of ['Start Wreckers', 'Start Brawlers', 'Next', 'Clear']) {
+      expect(screen.getByRole('button', { name }).hasAttribute('disabled')).toBe(true);
+    }
+    await act(() => vi.advanceTimersByTimeAsync(1000));
+    expect(screen.getByText('Connecting…')).toBeTruthy();
     expect(screen.queryByText(/Reconnecting/)).toBeNull();
+    await tell('connect');
+    await vi.waitFor(() => expect(screen.queryByText('Connecting…')).toBeNull());
     expect(screen.getByRole('button', { name: 'Next' }).hasAttribute('disabled')).toBe(false);
   });
 
@@ -133,6 +164,18 @@ describe('the intro control page', () => {
     for (const name of ['Start Wreckers', 'Start Brawlers', 'Next', 'Clear']) {
       expect(screen.getByRole('button', { name }).hasAttribute('disabled')).toBe(true);
     }
+  });
+
+  it('shows a loader, never "can\'t run intros", while your account is loading', async () => {
+    signedIn(RUNNER, { 'GET /api/core/auth/me': () => new Promise<Response>(() => {}) }); // never answers
+    // The page alone, without the sign-in gate, which waits for the account itself.
+    const router = createMemoryRouter([{ path: '/intros/:id/run', element: <IntroRunPage /> }], {
+      basename: PRODUCER_BASE,
+      initialEntries: ['/producer/intros/i1/run'],
+    });
+    render(<App router={router} store={makeStore()} />);
+    expect(await screen.findByRole('status', { name: 'Loading your account' })).toBeTruthy();
+    expect(screen.queryByText("Your account can't run intros.")).toBeNull();
   });
 
   it('says the team is done after the last person', async () => {
@@ -189,6 +232,31 @@ describe('the intro control page', () => {
     const back = within(screen.getByText('This intro was deleted.').closest('.mantine-Alert-root')!);
     expect(back.getByRole('link', { name: 'Intros' }).getAttribute('href')).toBe('/producer/intros');
     expect(screen.getByRole('button', { name: 'Start Wreckers' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it.each([
+    ['Next', 'next'],
+    ['Clear', 'clear'],
+  ])('says so when %s finds the intro was deleted', async (button, action) => {
+    const running = run({ revision: 2, team: 'a', onAir: true, people: PEOPLE, onScreen: ['p1'], next: 'p2' });
+    await openRun(running, { [`POST /api/producer/intros/i1/${action}`]: json({ error: 'not_found' }, 404) });
+    fireEvent.click(screen.getByRole('button', { name: button }));
+    expect(await screen.findByText('This intro was deleted.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: button }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('shows the run the server answers when Next was pressed on a step that has already passed', async () => {
+    // This phone shows revision 3; another has pressed Next since, so the server ignores this press and answers with
+    // the run as it is, one step on.
+    const now = run({ revision: 4, team: 'a', onAir: true, people: PEOPLE, onScreen: ['p1'], next: 'p2' });
+    await openRun(run({ revision: 3, team: 'a', onAir: true, people: PEOPLE, title: true, next: 'p1' }), {
+      'POST /api/producer/intros/i1/next': json(now),
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await vi.waitFor(() =>
+      expect(within(screen.getByText('Ada Slam').closest('li')!).queryByText('On screen')).toBeTruthy(),
+    );
+    expect(within(screen.getByText('Bea Block').closest('li')!).getByText('Next')).toBeTruthy();
   });
 
   it('says so when the run cannot be found at all', async () => {

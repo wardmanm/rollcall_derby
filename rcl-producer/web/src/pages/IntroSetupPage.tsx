@@ -39,6 +39,7 @@ import {
   useUpdateIntroMutation,
 } from '../api.ts';
 import { PRODUCER_BASE } from '../base.ts';
+import { isSame } from '../is-same.ts';
 import { IntroPreview } from './IntroPreview.tsx';
 
 const ENTRANCE_NAMES: Record<(typeof ROSTER_ENTRANCES)[number], string> = {
@@ -68,6 +69,7 @@ const ADVANCE = [
 ];
 const DEFAULT_SECONDS = 5;
 const DELETED_TEAM = 'This team was deleted. Pick another.';
+const DELETED_THEME = 'This theme was deleted. Pick another.';
 
 // A number field's value: a cleared field is NaN, which the contract refuses in plain words.
 const numberOf = (value: string | number) => (typeof value === 'number' ? value : Number.NaN);
@@ -113,17 +115,26 @@ interface Edits {
   placement?: IntroPlacement;
   options?: RosterOptions;
 }
+const EDIT_FIELDS = ['name', 'teamAId', 'teamBId', 'themeId', 'placement', 'options'] as const;
 
-const isEqual = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+// The edits left once a save has replied: those changed since you pressed Save (`sent`), so nothing typed while the
+// save was on its way is lost. The rest are in the saved intro now.
+function changedSince(latest: Edits, sent: Edits): Edits {
+  const kept: Edits = {};
+  for (const field of EDIT_FIELDS) {
+    const value = latest[field];
+    if (value !== undefined && !isSame(value, sent[field])) Object.assign(kept, { [field]: value });
+  }
+  return kept;
+}
+
 const orNull = (value: string) => (value === '' ? null : value);
 
-function IntroForm({ intro, canReadThemes }: { intro: Intro; canReadThemes: boolean }) {
+// `saved` is the intro as the server last said, kept current in the cache, a save's reply included.
+function IntroForm({ intro: saved, canReadThemes }: { intro: Intro; canReadThemes: boolean }) {
   const [updateIntro, { isLoading, error }] = useUpdateIntroMutation();
   const [edits, setEdits] = useState<Edits>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  // The reply to your last save, until the intro is fetched again and catches up with it.
-  const [lastSaved, setLastSaved] = useState<Intro | undefined>(undefined);
-  const saved = lastSaved && lastSaved.updatedAt > intro.updatedAt ? lastSaved : intro;
 
   const teams = useGetTeamsQuery();
   const themes = useGetThemesQuery(undefined, { skip: !canReadThemes });
@@ -150,14 +161,14 @@ function IntroForm({ intro, canReadThemes }: { intro: Intro; canReadThemes: bool
     if (checked.data.teamAId !== saved.teamAId) changes.teamAId = checked.data.teamAId;
     if (checked.data.teamBId !== saved.teamBId) changes.teamBId = checked.data.teamBId;
     if (checked.data.themeId !== saved.themeId) changes.themeId = checked.data.themeId;
-    if (!isEqual(checked.data.placement, saved.placement)) changes.placement = checked.data.placement;
-    if (!isEqual(checked.data.options, saved.options)) changes.options = checked.data.options;
+    if (!isSame(checked.data.placement, saved.placement)) changes.placement = checked.data.placement;
+    if (!isSame(checked.data.options, saved.options)) changes.options = checked.data.options;
+    const sent = edits;
     if (Object.keys(changes).length > 0) {
-      const result = await updateIntro({ id: intro.id, changes });
+      const result = await updateIntro({ id: saved.id, changes });
       if (!result.data) return;
-      setLastSaved(result.data);
     }
-    setEdits({});
+    setEdits((latest) => changedSince(latest, sent));
   };
 
   const discard = () => {
@@ -172,7 +183,9 @@ function IntroForm({ intro, canReadThemes }: { intro: Intro; canReadThemes: bool
       { value: '', label: 'No team' },
       ...(teams.data ?? []).map((t) => ({ value: t.id, label: t.name })),
     ];
-    if (value !== null && teams.data === undefined) options.push({ value, label: '…' });
+    if (value !== null && teams.data === undefined) {
+      options.push({ value, label: teams.isError ? 'Teams unavailable' : '…' });
+    }
     if (deleted) options.push({ value, label: 'Deleted team' });
     return (
       <NativeSelect
@@ -181,6 +194,34 @@ function IntroForm({ intro, canReadThemes }: { intro: Intro; canReadThemes: bool
         value={value ?? ''}
         error={errors[field] ?? (deleted ? DELETED_TEAM : undefined)}
         onChange={(event) => change({ [field]: orNull(event.currentTarget.value) })}
+      />
+    );
+  };
+
+  // The theme stays as saved until you pick another. One the list can't show is named by why.
+  const unlistedTheme = (value: string | null) => {
+    if (value === null || themes.data?.some((t) => t.id === value)) return undefined;
+    if (!canReadThemes) return 'Saved theme';
+    if (themes.data) return 'Deleted theme';
+    return themes.isError ? 'Themes unavailable' : '…';
+  };
+  const themeField = () => {
+    const value = current.themeId;
+    const unlisted = unlistedTheme(value);
+    const choices = [
+      { value: '', label: 'Default theme' },
+      ...(themes.data ?? [])
+        .toSorted((a, b) => a.name.localeCompare(b.name))
+        .map((t) => ({ value: t.id, label: t.name })),
+    ];
+    if (value !== null && unlisted) choices.push({ value, label: unlisted });
+    return (
+      <NativeSelect
+        label="Theme"
+        data={choices}
+        value={value ?? ''}
+        onChange={(event) => change({ themeId: orNull(event.currentTarget.value) })}
+        error={errors.themeId ?? (unlisted === 'Deleted theme' ? DELETED_THEME : undefined)}
       />
     );
   };
@@ -224,18 +265,7 @@ function IntroForm({ intro, canReadThemes }: { intro: Intro; canReadThemes: bool
               {teamField('Team A', 'teamAId')}
               {teamField('Team B', 'teamBId')}
             </SimpleGrid>
-            <NativeSelect
-              label="Theme"
-              data={[
-                { value: '', label: 'Default theme' },
-                ...(themes.data ?? [])
-                  .toSorted((a, b) => a.name.localeCompare(b.name))
-                  .map((t) => ({ value: t.id, label: t.name })),
-              ]}
-              value={current.themeId ?? ''}
-              onChange={(event) => change({ themeId: orNull(event.currentTarget.value) })}
-              error={errors.themeId}
-            />
+            {themeField()}
 
             <Title order={3}>Steps</Title>
             <NativeSelect
@@ -322,7 +352,7 @@ function IntroForm({ intro, canReadThemes }: { intro: Intro; canReadThemes: bool
             </Text>
             <IntroPreview team={teamA.data} options={options} placement={placement} theme={css} />
           </Stack>
-          <ObsAddress id={intro.id} />
+          <ObsAddress id={saved.id} />
         </Stack>
       </SimpleGrid>
     </Stack>

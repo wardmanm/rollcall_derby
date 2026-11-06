@@ -1,29 +1,37 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { Alert, Anchor, Badge, Button, Group, Stack, Text, Title } from '@mantine/core';
+import { Alert, Anchor, Badge, Button, Group, Loader, Stack, Text, Title } from '@mantine/core';
 import type { IntroTeamSlot } from '@rollcall/producer-contract';
 import { apiError, problemWith, useGetMeQuery } from '@rollcall/web-sdk';
+import { useGetIntroQuery, useGetTeamsQuery } from '../api.ts';
 import {
   useClearIntroMutation,
-  useGetIntroQuery,
   useGetIntroRunQuery,
-  useGetTeamsQuery,
   useNextIntroMutation,
   useStartIntroMutation,
-} from '../api.ts';
+} from '../intro-run-api.ts';
 
 // The control page for one intro (docs/features/skater-intros.md), made for a phone: start a team, press Next as each
 // person is called, Clear when done. The server decides what happens; this page shows the state it last sent.
 export function IntroRunPage() {
   const { data: me } = useGetMeQuery();
   const { id = '' } = useParams();
-  if (!me?.permissions.includes('producer:intros.run')) {
+  if (!me) {
+    return (
+      <output aria-label="Loading your account">
+        <Loader />
+      </output>
+    );
+  }
+  if (!me.permissions.includes('producer:intros.run')) {
     return <Alert color="gray">Your account can't run intros.</Alert>;
   }
   return <IntroControls id={id} />;
 }
 
 const isNotFound = (error: unknown) => apiError(error)?.code === 'not_found';
+/** How long the first connection may take before the page says it's connecting. */
+const SLOW_CONNECT_MS = 1000;
 
 function IntroControls({ id }: { id: string }) {
   const intro = useGetIntroQuery(id);
@@ -35,6 +43,7 @@ function IntroControls({ id }: { id: string }) {
   const [problem, setProblem] = useState<string | null>(null);
   const [deleted, setDeleted] = useState(false);
   const now = useNow(live.data?.run.timerMsLeft != null);
+  const slow = useAfter(SLOW_CONNECT_MS);
 
   const gone = deleted || isNotFound(live.error) || isNotFound(intro.error);
   const view = live.data;
@@ -53,7 +62,8 @@ function IntroControls({ id }: { id: string }) {
     return { team, label: team ? `Start ${team.name}` : `Start team ${slot.toUpperCase()}` };
   };
 
-  const connected = !!view?.connected && !gone;
+  const connection = view?.connection ?? 'connecting';
+  const connected = connection === 'connected' && !gone;
   const run = view?.run;
   const startButton = (slot: IntroTeamSlot) => {
     const { team, label } = nameOf(slot);
@@ -88,7 +98,9 @@ function IntroControls({ id }: { id: string }) {
         </Alert>
       )}
       {!gone && live.isError && <Alert color="red">{problemWith(live.error)}</Alert>}
-      {!gone && view && !view.connected && (
+      {/* Nothing is said about a first connection that comes quickly, so a page that has just opened doesn't flash. */}
+      {!gone && !live.isError && connection === 'connecting' && slow && <Alert color="yellow">Connecting…</Alert>}
+      {!gone && connection === 'reconnecting' && (
         <Alert color="yellow">Reconnecting… The buttons come back when the connection does.</Alert>
       )}
       {problem && !gone && <Alert color="red">{problem}</Alert>}
@@ -138,6 +150,16 @@ function IntroControls({ id }: { id: string }) {
       </Group>
     </Stack>
   );
+}
+
+// Whether `ms` have passed since the page opened.
+function useAfter(ms: number) {
+  const [passed, setPassed] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setPassed(true), ms);
+    return () => clearTimeout(timer);
+  }, [ms]);
+  return passed;
 }
 
 // The time, ticking every 250 ms while `running`. Counting from when this phone received a state keeps its own clock's

@@ -1,5 +1,6 @@
-/* A 480x270 window on the overlay canvas at 25%. The transform gives the canvas's fixed-position window this box to
-   fill, so the preview stays inside the page. */
+/* A 16:9 window on the overlay canvas, up to 480 px wide, narrower on a small screen. The preview scales the canvas
+   to this box's width. The transform gives the canvas's fixed-position window this box to fill, so the preview stays
+   inside the page. */
 .frame {
   position: relative;
   width: 480px;
