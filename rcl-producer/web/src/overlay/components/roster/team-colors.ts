@@ -25,13 +25,31 @@ export function readableOn(hex: string): '#000000' | '#ffffff' {
   return 1.05 / (l + 0.05) >= (l + 0.05) / 0.05 ? '#ffffff' : '#000000';
 }
 
+const HEX = /^#(?:[0-9a-f]{3}){1,2}$/i;
+
+/** The colour if it's 3- or 6-digit hex, which is all the roster can read; anything else counts as none. */
+const hexOrNull = (color: string | null): string | null => (color !== null && HEX.test(color) ? color : null);
+
+/**
+ * The colour the title banner fades toward: black under white text and white under black, so the text only gets
+ * easier to read along it. With the theme's accent, which way is safe isn't known, so the bar stays plain.
+ */
+const fadeToward = (onPrimary: string | null): string => {
+  if (onPrimary === null) return 'var(--team-primary)';
+  return onPrimary === '#ffffff' ? '#000000' : '#ffffff';
+};
+
 /** The custom properties the roster pieces use for a team, falling back to the theme. */
 export function teamColorVariables(
   team: RosterTeam,
-): Record<'--team-primary' | '--team-secondary' | '--team-on-primary', string> {
+): Record<'--team-primary' | '--team-secondary' | '--team-on-primary' | '--team-fade', string> {
+  const primary = hexOrNull(team.primaryColor);
+  const secondary = hexOrNull(team.secondaryColor);
+  const onPrimary = primary === null ? null : readableOn(primary);
   return {
-    '--team-primary': team.primaryColor ?? 'var(--theme-color-accent)',
-    '--team-secondary': team.secondaryColor ?? 'var(--theme-color-border)',
-    '--team-on-primary': team.primaryColor ? readableOn(team.primaryColor) : 'var(--theme-color-on-accent)',
+    '--team-primary': primary ?? 'var(--theme-color-accent)',
+    '--team-secondary': secondary ?? 'var(--theme-color-border)',
+    '--team-on-primary': onPrimary ?? 'var(--theme-color-on-accent)',
+    '--team-fade': fadeToward(onPrimary),
   };
 }
