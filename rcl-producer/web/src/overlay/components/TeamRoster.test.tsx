@@ -387,4 +387,35 @@ describe('TeamRoster', () => {
     expect(card('Skater 1').hasAttribute('data-entrance')).toBe(false);
     expect(img(card('Skater 1')).getAttribute('src')).toBe('/new.png');
   });
+
+  describe('races', () => {
+    const other: RosterTeam = { ...team, name: 'Seaside Sirens', logoUrl: '/other.png' };
+
+    it('the latest state wins after a leave', () => {
+      const { rerender } = reload(row(1));
+      rerender(<TeamRoster onAir={title} />);
+      rerender(<TeamRoster onAir={row(5)} />);
+      exited(card('Skater 1'));
+      expect(screen.queryByText(team.name)).toBeNull();
+      expect(card('Skater 5').dataset.state).toBe('waiting');
+    });
+
+    it('another team started mid-row: the row leaves, then their title comes in', () => {
+      const { rerender } = reload(row(1, 2));
+      rerender(<TeamRoster onAir={onAir({ team: other, title: true, upNext: person(1) })} />);
+      const up = [card('Skater 1'), card('Skater 2')];
+      expect(up.every(leaving)).toBe(true);
+      expect(screen.queryByText(other.name)).toBeNull();
+      for (const piece of up) exited(piece);
+      expect(screen.queryByRole('figure')).toBeNull();
+      expect(screen.getByText(other.name).closest<HTMLElement>('[data-state]')!.dataset.state).toBe('waiting');
+    });
+
+    it("another team's row never carries on this team's row, even with the same card ids", () => {
+      const { rerender } = reload(row(1, 2));
+      rerender(<TeamRoster onAir={{ ...row(1, 2, 3), team: other }} />);
+      expect(leaving(card('Skater 1'))).toBe(true);
+      expect(leaving(card('Skater 2'))).toBe(true);
+    });
+  });
 });

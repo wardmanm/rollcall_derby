@@ -4,13 +4,12 @@ import { familiesUsedBy, themeToCss, type ThemeChanged } from '@rollcall/produce
 import { LOAD_LIMIT_MS } from './load-limit.ts';
 import { ThemeScope } from './ThemeScope.tsx';
 
-// Nothing comes in until its fonts have loaded, so a theme change must not flash text in a fallback font.
-
 const fontsOf = (theme: ThemeChanged) => (theme ? familiesUsedBy(theme.tokens, theme.families) : []);
 const needsLoad = (theme: ThemeChanged) => 'fonts' in document && fontsOf(theme).length > 0;
 
 /**
- * Shows `children` inside the last theme whose fonts have loaded. The first theme holds `children` back until its fonts
+ * Shows `children` inside the last theme whose fonts have loaded: nothing comes in until its fonts have, so a theme
+ * change never flashes text in a fallback font. The first theme holds `children` back until its fonts
  * are ready; a later theme leaves the old one on show until then. A font that fails to load, or a browser with no font
  * loading API, switches at once, and fonts still loading after LOAD_LIMIT_MS count as failed, so the theme is never
  * stuck.

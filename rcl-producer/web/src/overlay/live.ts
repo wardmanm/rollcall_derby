@@ -82,9 +82,11 @@ export const liveApi = createApi({
 
 export const { useGetLiveStateQuery } = liveApi;
 
-// The overlay's own lean store; it shares nothing with the admin store (ADR-0003, ADR-0006). It connects to the
-// public /producer/overlay namespace, because OBS browser sources can't log in (ADR-0018).
-export function makeOverlayStore(connect: ConnectLive = () => io('/producer/overlay')) {
+/** The public namespace the overlay connects to, because OBS browser sources can't log in (ADR-0018). */
+export const OVERLAY_NAMESPACE = '/producer/overlay';
+
+// The overlay's own lean store; it shares nothing with the admin store (ADR-0003, ADR-0006).
+export function makeOverlayStore(connect: ConnectLive = () => io(OVERLAY_NAMESPACE)) {
   return configureStore({
     reducer: { [liveApi.reducerPath]: liveApi.reducer },
     middleware: (getDefaultMiddleware) =>
