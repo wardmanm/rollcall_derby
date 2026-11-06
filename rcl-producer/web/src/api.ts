@@ -28,6 +28,9 @@ const themeChanged = (_theme: unknown, _error: unknown, { id }: { id: string }) 
 ];
 
 export const introUrl = (id: string) => `producer/intros/${encodeURIComponent(id)}`;
+// The later of two copies of an intro, by when each was saved. A fetch that set off before a save and lands after it
+// is older than the save's reply, so the reply stays.
+const laterIntro = (cached: Intro, incoming: Intro) => (incoming.updatedAt < cached.updatedAt ? cached : incoming);
 // A change to one intro: that intro, and the list that shows it.
 const introChanged = (_intro: unknown, _error: unknown, { id }: { id: string }) => [
   { type: 'Intros' as const, id },
@@ -65,6 +68,7 @@ const producerApi = api.enhanceEndpoints({ addTagTypes: ['Themes', 'Fonts', 'Int
       query: (id) => introUrl(id),
       transformResponse: (response: unknown) => IntroSchema.parse(response),
       providesTags: (_intro, _error, id) => [{ type: 'Intros', id }],
+      merge: laterIntro,
     }),
     createIntro: build.mutation<Intro, CreateIntroRequest>({
       query: (body) => ({ url: 'producer/intros', method: 'POST', body }),
@@ -75,6 +79,16 @@ const producerApi = api.enhanceEndpoints({ addTagTypes: ['Themes', 'Fonts', 'Int
       query: ({ id, changes }) => ({ url: introUrl(id), method: 'PATCH', body: changes }),
       transformResponse: (response: unknown) => IntroSchema.parse(response),
       invalidatesTags: introChanged,
+      // The reply is the intro as saved, so it goes into the intro's cache entry at once, before the fetch again
+      // that the change sets off.
+      async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(producerApi.util.updateQueryData('getIntro', id, (cached) => laterIntro(cached, data)));
+        } catch {
+          // The page shows the failure from the mutation's own result.
+        }
+      },
     }),
     deleteIntro: build.mutation<void, { id: string }>({
       query: ({ id }) => ({ url: introUrl(id), method: 'DELETE' }),

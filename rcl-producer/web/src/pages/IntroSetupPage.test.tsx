@@ -134,6 +134,34 @@ describe('the intro setup page', () => {
     });
   });
 
+  it('keeps what you change while a save is on its way', async () => {
+    let reply: ((response: Response) => void) | undefined;
+    const { requests } = await openSetup(SAVED, {
+      'PATCH /api/producer/intros/i1': () => new Promise<Response>((resolve) => (reply = resolve)),
+    });
+    const save = screen.getByRole<HTMLButtonElement>('button', { name: 'Save' });
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Sunday bout' } });
+    choose('Entrance', 'wipe');
+    fireEvent.click(save);
+    await vi.waitFor(() => expect(patches(requests)).toHaveLength(1));
+    // While it's on its way, the name changes again, and so does the position, which wasn't sent.
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Sunday night' } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Top left' }));
+    reply?.(
+      Response.json({
+        ...SAVED,
+        name: 'Sunday bout',
+        options: { ...SAVED.options, entrance: 'wipe' },
+        updatedAt: '2026-11-01T11:00:00.000Z',
+      }),
+    );
+    await screen.findByRole('heading', { name: 'Sunday bout' });
+    await vi.waitFor(() => expect(save.disabled).toBe(false));
+    expect(screen.getByLabelText<HTMLInputElement>('Name').value).toBe('Sunday night');
+    expect(screen.getByRole<HTMLInputElement>('radio', { name: 'Top left' }).checked).toBe(true);
+    expect(screen.getByLabelText<HTMLSelectElement>('Entrance').value).toBe('wipe');
+  });
+
   it('refuses the same team twice before sending', async () => {
     const { requests } = await openSetup();
     await screen.findAllByRole('option', { name: 'Wreckers' });
