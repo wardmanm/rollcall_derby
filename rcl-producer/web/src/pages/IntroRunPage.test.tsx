@@ -234,6 +234,31 @@ describe('the intro control page', () => {
     expect(screen.getByRole('button', { name: 'Start Wreckers' }).hasAttribute('disabled')).toBe(true);
   });
 
+  it.each([
+    ['Next', 'next'],
+    ['Clear', 'clear'],
+  ])('says so when %s finds the intro was deleted', async (button, action) => {
+    const running = run({ revision: 2, team: 'a', onAir: true, people: PEOPLE, onScreen: ['p1'], next: 'p2' });
+    await openRun(running, { [`POST /api/producer/intros/i1/${action}`]: json({ error: 'not_found' }, 404) });
+    fireEvent.click(screen.getByRole('button', { name: button }));
+    expect(await screen.findByText('This intro was deleted.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: button }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('shows the run the server answers when Next was pressed on a step that has already passed', async () => {
+    // This phone shows revision 3; another has pressed Next since, so the server ignores this press and answers with
+    // the run as it is, one step on.
+    const now = run({ revision: 4, team: 'a', onAir: true, people: PEOPLE, onScreen: ['p1'], next: 'p2' });
+    await openRun(run({ revision: 3, team: 'a', onAir: true, people: PEOPLE, title: true, next: 'p1' }), {
+      'POST /api/producer/intros/i1/next': json(now),
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await vi.waitFor(() =>
+      expect(within(screen.getByText('Ada Slam').closest('li')!).queryByText('On screen')).toBeTruthy(),
+    );
+    expect(within(screen.getByText('Bea Block').closest('li')!).getByText('Next')).toBeTruthy();
+  });
+
   it('says so when the run cannot be found at all', async () => {
     signedIn(RUNNER, { 'GET /api/core/teams': json([]) });
     openProducer('/producer/intros/i1/run');
