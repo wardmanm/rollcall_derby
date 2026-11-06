@@ -1,11 +1,12 @@
 # Status: Rollcall
-Updated: 2026-11-06 · Branch: main
+Updated: 2026-11-06 · Branch: fix/intro-leftovers
 
 ## Current focus
-#26 is merged, pushed and closed. Next: the #26 leftovers (Mike: fix them now, before the release) on a new branch `fix/intro-leftovers`, then the sign-off and releases (rcl-core first, then rcl-producer). Screen Builder gets its own design after.
+The six #26 leftovers are fixed on `fix/intro-leftovers` (not pushed), with the fix for main's red CI. Next: Mike reviews and merges it, then the sign-off and releases (rcl-core first, then rcl-producer). Screen Builder gets its own design after.
 
 ## Recent changes
-- 2026-11-06: Decided (Mike): an intro card's role line keeps the team's secondary colour when it contrasts enough with the card's surface (from the theme), and otherwise uses the theme's muted text colour.
+- 2026-11-06: Fixed the six #26 leftovers on `fix/intro-leftovers`, one commit each: the role line check (below); the setup page's OBS address wraps at 360 px instead of squeezing Copy (now in the intro e2e test); the exit keyframe names are checked in the real build (`bundle.test.ts`); the Stepping story notices a removal at the next Next (with a play test); a card's fallback logo loads alongside its photo, so it's ready at the 4 s limit; the `ThemeWhenLoaded` comment. Also gave rcl-core's route-inventory tests 20 s, since one timed out on CI and turned main red. `yarn check` (825 tests), 54 story tests and 14 e2e tests pass; checked in a real browser (role colours, a hung photo, 360 px).
+- 2026-11-06: Decided (Mike): an intro card's role line keeps the team's secondary colour when it has at least 4.5:1 contrast with the theme's surface, counted as solid, and otherwise uses the theme's muted text; a team with no secondary keeps the theme's border, unchecked; fix main's CI timeout on this branch.
 - 2026-11-06: Merged #26 (`integrate/26`: the on-air, pages and server branches) into main and pushed, and closed #26 (Mike). Decided (Mike): a second Start while the title card is up keeps it up, as the feature page says; keep the app SDK's `afterFailedImport` hook; fix the #26 leftovers now, before the release.
 - 2026-11-06: Built #26. `fix/intro-on-air` (the OBS page, from a plan, reviewed by a fresh agent, two review findings fixed): cards come in in order, a row's first card comes straight in, a removed member's card leaves on its own and its place closes as the next opens, a hanging photo, logo or font counts as failed after 4 s, the banner fades toward black or white, plus race tests and a stepping story. `fix/intro-pages` and `fix/intro-server` (built by agents) cover the setup and control pages, and the server, tests and docs. Combined on `integrate/26`: 810 unit tests, 53 story tests and 14 e2e tests pass; checked in a real browser (banners, removals, reload, preview at 360 px).
 - 2026-11-05: Mike approved the on-air plan (a 4 s limit, no new changelog lines since intros are unreleased) and its calls: a team without colours gets a plain banner, a slow photo stays on the logo, a colour that isn't hex counts as none.
@@ -13,10 +14,6 @@ Updated: 2026-11-06 · Branch: main
 - 2026-11-05: Merged the context-handoff rule (CLAUDE.md) into main and pushed (Mike).
 - 2026-11-05: Merged the pronouns switch into main and pushed (Mike).
 - 2026-11-05: Built the intro "Show pronouns" switch (on by default; when off the OBS page isn't sent pronouns) and a two-line role line on the cards, with cards kept equal height; intros saved before the switch read as on. Checked in a real browser.
-- 2026-11-05: Decided (Mike): pronouns on intro cards are a per-intro "Show pronouns" setting, on by default, and the role line takes two lines when needed; the live-state ADR is written when Live Mode starts, not now; the review follow-ups are filed as #26, to tackle where possible before the next release.
-- 2026-11-05: Merged skater intros into main and pushed (Mike).
-- 2026-11-05: Built skater intros (#25) with subagents, 11 tasks plus a final review and fix wave: rcl-core gives apps read-only teams (`ctx.teams`); the Producer app has intros (setup page with preview, OBS page at `/producer/overlay/intros/<id>`, phone-first control page), run live from the server with a timer, and docs, changelog line and an end-to-end test. Checked in a real browser: banner, row, long names, equal card heights, reload mid-intro.
-- 2026-11-05: Decided the skater intros with Mike, using browser mockups. Person cards are photo cards (photo, number badge, name, roles and pronouns), in one centred row that never overlaps. "How many at once" is a setting: each Next (or timer step) adds a card, and a full row clears for the next group. Each team starts by hand with a banner title card in the roster's spot. Four entrances and nine positions. Bench staff are included. The whole team shows for now; active rosters (who's playing, picked when an event starts) come with Live Mode. Admins and Producers set up and run intros, the server keeps the place across reloads, and Stream Deck control is out of this work.
 
 ## Pending decisions
 - **File the other server tests that never close their test app as an issue?** (raised 2026-11-04, found while fixing #15: about eight, in `http.test.ts`, `openapi.test.ts`, `setup.test.ts`, `routes/auth.test.ts` and `access.test.ts`). Options: file it / leave it.
@@ -28,5 +25,5 @@ Updated: 2026-11-06 · Branch: main
 - The release sign-off's walk-through hasn't run for real yet: the next `/release` is its first use.
 - Found while reviewing #24, not filed: if a team's logo is replaced at the exact moment an export reads that file, the export fails with a generic error; trying again works.
 - Found while planning Theme Builder: team logo and photo uploads set a `Content-Type` header that RTK Query drops for file bodies. They work because browsers type PNG, JPEG and WebP files. Not filed yet.
-- #26 leftovers, to fix now (Mike, 2026-11-06): a card's role line is in the team's secondary colour with no contrast check, so a dark secondary is unreadable on the dark card (fix decided, above); at 360 px the setup page's OBS address clips its Copy button; the keyframe-name test can't fail under Vitest (assert the exports in `bundle.test.ts`); the Stepping story shows a removal at once, not at the next Next; a card's fallback logo can be blank for a moment at the 4 s limit; one comment in `ThemeWhenLoaded.tsx` wraps short.
+- `fix/intro-leftovers` is waiting on Mike's review and merge. Until it's merged, CI's app job on main stays red (the route-inventory timeout on f296c1d).
 - #26 isn't on the Producer board (#8), though it has the `rcl-producer` label. Mike may want to add it by hand.
