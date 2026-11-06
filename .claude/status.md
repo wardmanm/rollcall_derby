@@ -2,9 +2,10 @@
 Updated: 2026-11-06 · Branch: main
 
 ## Current focus
-#26 is merged and pushed. Next: the #26 leftovers (Mike: fix them now, before the release) on a new branch, then the sign-off and releases (rcl-core first, then rcl-producer). Screen Builder gets its own design after.
+#26 is merged, pushed and closed. Next: the #26 leftovers (Mike: fix them now, before the release) on a new branch `fix/intro-leftovers`, then the sign-off and releases (rcl-core first, then rcl-producer). Screen Builder gets its own design after.
 
 ## Recent changes
+- 2026-11-06: Decided (Mike): an intro card's role line keeps the team's secondary colour when it contrasts enough with the card's surface (from the theme), and otherwise uses the theme's muted text colour.
 - 2026-11-06: Merged #26 (`integrate/26`: the on-air, pages and server branches) into main and pushed, and closed #26 (Mike). Decided (Mike): a second Start while the title card is up keeps it up, as the feature page says; keep the app SDK's `afterFailedImport` hook; fix the #26 leftovers now, before the release.
 - 2026-11-06: Built #26. `fix/intro-on-air` (the OBS page, from a plan, reviewed by a fresh agent, two review findings fixed): cards come in in order, a row's first card comes straight in, a removed member's card leaves on its own and its place closes as the next opens, a hanging photo, logo or font counts as failed after 4 s, the banner fades toward black or white, plus race tests and a stepping story. `fix/intro-pages` and `fix/intro-server` (built by agents) cover the setup and control pages, and the server, tests and docs. Combined on `integrate/26`: 810 unit tests, 53 story tests and 14 e2e tests pass; checked in a real browser (banners, removals, reload, preview at 360 px).
 - 2026-11-05: Mike approved the on-air plan (a 4 s limit, no new changelog lines since intros are unreleased) and its calls: a team without colours gets a plain banner, a slow photo stays on the logo, a colour that isn't hex counts as none.
@@ -27,4 +28,5 @@ Updated: 2026-11-06 · Branch: main
 - The release sign-off's walk-through hasn't run for real yet: the next `/release` is its first use.
 - Found while reviewing #24, not filed: if a team's logo is replaced at the exact moment an export reads that file, the export fails with a generic error; trying again works.
 - Found while planning Theme Builder: team logo and photo uploads set a `Content-Type` header that RTK Query drops for file bodies. They work because browsers type PNG, JPEG and WebP files. Not filed yet.
-- #26 leftovers, to fix now (Mike, 2026-11-06): a card's role line is in the team's secondary colour with no contrast check, so a dark secondary is unreadable on the dark card; at 360 px the setup page's OBS address clips its Copy button; the keyframe-name test can't fail under Vitest (assert the exports in `bundle.test.ts`); the Stepping story shows a removal at once, not at the next Next; a card's fallback logo can be blank for a moment at the 4 s limit; one comment in `ThemeWhenLoaded.tsx` wraps short.
+- #26 leftovers, to fix now (Mike, 2026-11-06): a card's role line is in the team's secondary colour with no contrast check, so a dark secondary is unreadable on the dark card (fix decided, above); at 360 px the setup page's OBS address clips its Copy button; the keyframe-name test can't fail under Vitest (assert the exports in `bundle.test.ts`); the Stepping story shows a removal at once, not at the next Next; a card's fallback logo can be blank for a moment at the 4 s limit; one comment in `ThemeWhenLoaded.tsx` wraps short.
+- #26 isn't on the Producer board (#8), though it has the `rcl-producer` label. Mike may want to add it by hand.
