@@ -7,7 +7,7 @@ import classes from './TeamBanner.module.css';
 
 export interface TeamBannerProps {
   team: RosterTeam;
-  /** Called once, when the logo has loaded or failed, or at once when there is none. */
+  /** Called once, when the logo has loaded or failed, or at once when there is none, or after LOAD_LIMIT_MS at the latest. */
   onReady?: () => void;
 }
 

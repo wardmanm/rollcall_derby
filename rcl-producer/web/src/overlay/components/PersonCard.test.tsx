@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { RosterCard } from '@rollcall/producer-contract';
 import { PersonCard } from './PersonCard.tsx';
 
@@ -84,5 +84,41 @@ describe('PersonCard', () => {
     );
     expect(container.querySelector('img')).toBeNull();
     expect(onReady).toHaveBeenCalledTimes(1);
+  });
+
+  describe('with a photo that hangs', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('counts it as failed after 4 s: the logo shows and the card is ready', () => {
+      vi.useFakeTimers();
+      const onReady = vi.fn<() => void>();
+      const { container } = render(<PersonCard card={skater} width={420} logoUrl={LOGO} onReady={onReady} />);
+      act(() => void vi.advanceTimersByTime(3999));
+      expect(onReady).not.toHaveBeenCalled();
+      act(() => void vi.advanceTimersByTime(1));
+      expect(onReady).toHaveBeenCalledTimes(1);
+      expect(container.querySelector('img')!.getAttribute('src')).toBe(LOGO);
+    });
+
+    it('is ready once, however many loads follow', () => {
+      vi.useFakeTimers();
+      const onReady = vi.fn<() => void>();
+      const { container, rerender } = render(<PersonCard card={skater} width={420} logoUrl={LOGO} onReady={onReady} />);
+      fireEvent.load(container.querySelector('img')!);
+      rerender(<PersonCard card={{ ...skater, photoUrl: '/new.png' }} width={420} logoUrl={LOGO} onReady={onReady} />);
+      fireEvent.load(container.querySelector('img')!);
+      act(() => void vi.advanceTimersByTime(5000));
+      expect(onReady).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('tries a new photo when the photo address changes', () => {
+    const { container, rerender } = render(
+      <PersonCard card={{ ...skater, photoUrl: '/a.png' }} width={420} logoUrl={LOGO} />,
+    );
+    fireEvent.error(container.querySelector('img')!);
+    expect(container.querySelector('img')!.getAttribute('src')).toBe(LOGO);
+    rerender(<PersonCard card={{ ...skater, photoUrl: '/b.png' }} width={420} logoUrl={LOGO} />);
+    expect(container.querySelector('img')!.getAttribute('src')).toBe('/b.png');
   });
 });

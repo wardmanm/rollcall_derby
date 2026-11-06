@@ -379,4 +379,12 @@ describe('TeamRoster', () => {
       expect(card('Skater 3').dataset.state).toBe('waiting');
     });
   });
+
+  it("a shown card's new photo swaps in place without the card coming in again", () => {
+    const { rerender } = reload(row(1));
+    rerender(<TeamRoster onAir={onAir({ cards: [{ ...person(1), photoUrl: '/new.png' }], upNext: person(2) })} />);
+    expect(card('Skater 1').dataset.state).toBe('shown');
+    expect(card('Skater 1').hasAttribute('data-entrance')).toBe(false);
+    expect(img(card('Skater 1')).getAttribute('src')).toBe('/new.png');
+  });
 });

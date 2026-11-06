@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render } from '@testing-library/react';
+import { act, fireEvent, render } from '@testing-library/react';
 import type { RosterTeam } from '@rollcall/producer-contract';
 import { TeamBanner } from './TeamBanner.tsx';
 
@@ -39,5 +39,19 @@ describe('TeamBanner', () => {
     const again = vi.fn<() => void>();
     render(<TeamBanner team={{ ...team, logoUrl: null }} onReady={again} />);
     expect(again).toHaveBeenCalledTimes(1);
+  });
+
+  it('a logo that hangs makes the banner ready after 4 s', () => {
+    vi.useFakeTimers();
+    try {
+      const onReady = vi.fn<() => void>();
+      render(<TeamBanner team={team} onReady={onReady} />);
+      act(() => void vi.advanceTimersByTime(3999));
+      expect(onReady).not.toHaveBeenCalled();
+      act(() => void vi.advanceTimersByTime(1));
+      expect(onReady).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
