@@ -12,8 +12,11 @@ import { continuesRow, joinRow } from './continues-row.ts';
  */
 export type Phase = 'waiting' | 'ready' | 'opening' | 'entering' | 'shown' | 'going' | 'closing';
 
-/** The phases of a card that has come in, so the cards after it may follow. */
-const ENTERED: ReadonlySet<Phase> = new Set<Phase>(['entering', 'shown', 'going', 'closing']);
+/**
+ * The phases that let the cards after a card come in. A removed card still playing its exit (going) holds them back, so
+ * the next card's place opens as the removed one's closes and the row keeps its width.
+ */
+const ENTERED: ReadonlySet<Phase> = new Set<Phase>(['entering', 'shown', 'closing']);
 
 /** A removed member's card, on its way out. */
 const DEPARTING: ReadonlySet<Phase> = new Set<Phase>(['going', 'closing']);
@@ -232,7 +235,7 @@ export function reduceRoster(state: RosterState, action: RosterAction): RosterSt
         return upNow(state).every((key) => left.includes(key)) ? show(state, state.latest) : { ...state, left };
       }
       const phase = state.phases[action.key];
-      if (action.exit) return phase === 'going' ? withPhase(state, [action.key], 'closing') : state;
+      if (action.exit) return phase === 'going' ? advance(withPhase(state, [action.key], 'closing')) : state;
       return phase === 'entering' ? withPhase(state, [action.key], 'shown') : state;
     }
     case 'stuckTimeout': {

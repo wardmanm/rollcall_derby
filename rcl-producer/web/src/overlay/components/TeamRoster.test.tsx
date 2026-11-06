@@ -323,11 +323,13 @@ describe('TeamRoster', () => {
         expect(card(name).dataset.state).toBe('shown');
         expect(leaving(card(name))).toBe(false);
       }
-      // The new card doesn't wait for the removed one to go.
+      // The new card waits for the removed one's exit, then its place opens as the removed one's closes, so the row
+      // keeps its width instead of growing and shrinking back.
       fireEvent.load(img(card('Skater 4')));
-      expect(card('Skater 4').dataset.state).toBe('opening');
+      expect(card('Skater 4').dataset.state).toBe('ready');
       exited(card('Skater 2'));
       expect(card('Skater 2').dataset.state).toBe('closing');
+      expect(card('Skater 4').dataset.state).toBe('opening');
       fireEvent.transitionEnd(card('Skater 2'));
       expect(screen.queryByRole('figure', { name: 'Skater 2' })).toBeNull();
       expect(screen.getAllByRole('figure').map((figure) => figure.getAttribute('aria-label'))).toEqual([
