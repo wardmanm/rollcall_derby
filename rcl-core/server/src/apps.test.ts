@@ -154,6 +154,23 @@ describe("an app's context", () => {
     expect(teams.list()).toEqual(listTeams(db));
     expect(teams.get(team.id)).toEqual(findTeam(db, team.id));
     expect(teams.get('nope')).toBeUndefined();
+
+    // As they are when called: a member added since the last call is in the next.
+    expect(teams.list()[0]?.skaterCount).toBe(2);
+    addMember(db, team.id, {
+      kind: 'skater',
+      number: '11',
+      name: 'Cat Astrophe',
+      roles: [],
+      customRoles: [],
+      pronouns: null,
+    });
+    expect(teams.list()[0]?.skaterCount).toBe(3);
+    expect(teams.get(team.id)?.members.map((member) => member.name)).toEqual([
+      'Ada Slam',
+      'Bea Bruise',
+      'Cat Astrophe',
+    ]);
   });
 });
 
