@@ -215,7 +215,8 @@ export function reduceRoster(state: RosterState, action: RosterAction): RosterSt
     case 'ready': {
       const { key } = action;
       if (action.screen !== state.screen || state.leaving || state.phases[key] !== 'waiting') return state;
-      if (state.quiet.includes(key)) return withPhase(state, [key], 'shown');
+      // A reloaded card coming up may let in a card that was waiting its turn behind it.
+      if (state.quiet.includes(key)) return advance(withPhase(state, [key], 'shown'));
       if (key === TITLE) return withPhase(state, [key], 'entering');
       return advance(withPhase(state, [key], 'ready'));
     }

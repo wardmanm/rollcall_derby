@@ -277,6 +277,16 @@ describe('TeamRoster', () => {
     expect(screen.queryByRole('figure')).toBeNull();
   });
 
+  it('a reloaded card coming up lets in a card that was waiting its turn behind it', () => {
+    const { rerender } = render(<TeamRoster onAir={row(1)} />);
+    rerender(<TeamRoster onAir={row(1, 2)} />);
+    fireEvent.load(img(card('Skater 2')));
+    expect(card('Skater 2').dataset.state).toBe('ready');
+    fireEvent.load(img(card('Skater 1')));
+    expect(card('Skater 1').dataset.state).toBe('shown');
+    expect(card('Skater 2').dataset.state).toBe('opening');
+  });
+
   it("a transition inside a card's place doesn't open it", () => {
     const { rerender } = reload(row(1));
     rerender(<TeamRoster onAir={row(1, 2)} />);

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { RosterTeam } from '@rollcall/producer-contract';
 import { cssVars } from './roster/css-vars.ts';
 import { teamColorVariables } from './roster/team-colors.ts';
@@ -13,16 +13,20 @@ export interface TeamBannerProps {
 
 // The team's title banner: a bar on the team color with the logo, name and league, and an underline in the secondary color.
 export function TeamBanner({ team, onReady }: TeamBannerProps) {
-  const ready = useReadyOnce(onReady);
+  // The logo that failed or hung: the banner comes in without it, rather than with an empty circle it might pop into on
+  // air. A new logo address is tried.
+  const [failedLogo, setFailedLogo] = useState<string | null>(null);
+  const logoUrl = team.logoUrl === failedLogo ? null : team.logoUrl;
+  const ready = useReadyOnce(onReady, () => setFailedLogo(team.logoUrl));
   useEffect(() => {
-    if (team.logoUrl === null) ready();
-  }, [team.logoUrl, ready]);
+    if (logoUrl === null) ready();
+  }, [logoUrl, ready]);
 
   return (
     <div className={classes.banner} style={cssVars(teamColorVariables(team))}>
-      {team.logoUrl !== null && (
-        <div className={classes.logo}>
-          <img src={team.logoUrl} alt="" onLoad={ready} onError={ready} />
+      {logoUrl !== null && (
+        <div className={classes.logo} data-testid="banner-logo">
+          <img src={logoUrl} alt="" onLoad={ready} onError={() => setFailedLogo(logoUrl)} />
         </div>
       )}
       <div className={classes.text}>
