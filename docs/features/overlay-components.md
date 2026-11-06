@@ -30,10 +30,10 @@ Admins place and configure components in the Screen Builder. Producers, and Anno
 
 ### Team roster
 
-The first component, built for [skater intros](skater-intros.md). Its Behavior is there.
+The first component, built for [skater intros](skater-intros.md). That page is the home of what it shows and how it behaves.
 
-- **R5.** It shows one team's people as a row of person cards, opened by a **title card** (a banner with the logo, team name and league) that is part of the roster, not a component of its own. The title card takes the roster's entrance and sits in the roster's spot. Cards show photo, number, name, roles and pronouns, in the team page's order.
-- **R6.** Its **options schema** (`RosterOptionsSchema`, in `@rollcall/producer-contract`) holds how many people show at once (1 to 20, or the whole team), how it moves on (when Next is pressed, or every 2 to 60 seconds), whether cards show pronouns (on by default) and the entrance (pop, slide up, fade or wipe). Where it sits (a spot and a distance from the edge) is placement, not an option: an intro stores it beside the options, and a screen will take it from the component's placed box.
+- **R5.** It shows one team's people as a row of person cards, opened by a **title card** that is part of the roster, not a component of its own. What the cards and the title card show is in [skater intros](skater-intros.md#on-the-obs-page).
+- **R6.** Its **options schema** (`RosterOptionsSchema`, in `@rollcall/producer-contract`) holds an intro's settings for how many people show at once, how it moves on, whether cards show pronouns and the entrance. Their choices and defaults are in [skater intros](skater-intros.md#requirements) (R1). Where it sits (a spot and a distance from the edge) is placement, not an option: an intro stores it beside the options, and a screen will take it from the component's placed box.
 - **R7.** Its **data need** is a team, read fresh from core.
 - **R8.** Its **live controls** are **Start** (for a team), **Next** and **Clear**. They are not options.
 
@@ -43,7 +43,7 @@ This is a starting list, not a commitment. Each entry becomes real once its requ
 
 | Component | Shows | Data source |
 |---|---|---|
-| Team roster | Skaters (numbers, names, photos) and bench staff | [Team](team-builder.md), plus the game roster |
+| Team roster | Skaters (numbers, names, photos) and bench staff | [Team](team-builder.md) |
 | Skater spotlight / lower third | One skater with photo and details | Team member |
 | Game info card | Teams, date, location, event name | [Live Mode](live-mode.md) game and event |
 | Matchup / intro card | Both teams with logos | Game |
@@ -52,12 +52,9 @@ This is a starting list, not a commitment. Each entry becomes real once its requ
 
 ## Behavior
 
-Only the team roster is built; see [skater intros](skater-intros.md#on-the-obs-page).
-
-Long rosters are answered by the roster's options: how many people show at once, and whether it moves on by Next or by a timer. A full row leaves together and the next person starts a new one.
+Only the team roster is built. How it looks on air is in [skater intros](skater-intros.md#on-the-obs-page), and how a long roster goes through its rows is in [running it](skater-intros.md#running-it).
 
 ## Open questions
 
-- Which components ship first? The roadmap suggests the team roster (Phase 2).
 - Do we generate options forms automatically from Zod schemas, or hand-build them per component?
 - Do we need a plugin model so new component types can be added without touching core code, or is a registry in `rcl-core/web` enough?

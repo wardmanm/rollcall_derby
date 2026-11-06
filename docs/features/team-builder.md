@@ -61,4 +61,3 @@ R1–R7 are built. Teams travel in [export files](import-export.md) (R6).
 
 - Should we offer a read-only import of a team from a CRG `PreparedTeam` (via `GET /SaveJSON/`) so rosters don't have to be retyped? Importing from a spreadsheet is a candidate too.
 - How do we match our members to CRG's skaters during a game so overlays can show photos? By roster number?
-- Should team colors feed theme tokens? See [Theme Builder](theme-builder.md).
